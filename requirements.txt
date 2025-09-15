@@ -5,7 +5,7 @@ langchain-community>=0.0.20
 langchain-core>=0.1.23
 langchain-chroma>=0.1.0
 langchain-text-splitters>=0.0.1
-
+langgraph==0.6.6
 # Local model support
 ollama>=0.1.7
 
