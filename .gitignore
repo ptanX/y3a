@@ -8,8 +8,9 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-rawiq_db/
-.idea/
+documentations/**
+rawiq_db/**
+.idea/**
 build/
 develop-eggs/
 dist/
