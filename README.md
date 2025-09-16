@@ -14,7 +14,7 @@ https://github.com/user-attachments/assets/c12ee305-86fe-4f71-9219-57c7f438f291
 
 
 ## Requirements
-1. **Install Ollama then install these model **'
+1. **Install Ollama then install these model**
     ```bash
     ollama pull llama3.1:8b
     ollama pull nomic-embed-text
@@ -36,3 +36,19 @@ https://github.com/user-attachments/assets/c12ee305-86fe-4f71-9219-57c7f438f291
 3. **Use the Application**:
    - Enter your query in the main interface.
    - Optionally, upload research papers in the sidebar to enhance the database.
+
+## UPDATE
+Prerequisite: Follow requirements
+
+1. **Deploy and register model**
+    ```bash
+    python deployment.py deploy
+    ```
+2. **Serve model Mlflow**
+    ```bash
+     mlflow models serve -m "models:/rawiq-quickstart-model@champion"
+    ```
+3. **Run the Application**:
+   ```bash
+   streamlit run rawiq_app.py
+   ```

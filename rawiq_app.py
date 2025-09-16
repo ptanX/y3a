@@ -1,5 +1,7 @@
+import json
 import os
 
+import requests
 import streamlit as st
 from langchain_chroma import Chroma
 from langchain_community.document_loaders import PyPDFLoader
@@ -132,6 +134,42 @@ def run_rag_chain(query, model_name="llama3.1"):
         return "Error: Could not generate response. Please check your Ollama setup."
 
 
+def submit(question):
+    # Prompt template
+    PROMPT_TEMPLATE = f"""
+    You are a highly knowledgeable assistant specializing in pharmaceutical sciences. 
+    Answer the question based only on the following context:
+
+    Question: {question}
+
+    Provide a clear, accurate, and concise answer based on the context above.
+    Don't justify your answers or mention the context explicitly.
+    If the context doesn't contain relevant information, say "I don't have enough information to answer this question."
+    """
+
+    message = {
+        "inputs": {
+            "messages": [
+                {
+                    "role": "user",
+                    "content": PROMPT_TEMPLATE.format(question=question)
+                }
+            ]
+        }
+    }
+    url = "http://127.0.0.1:5000/invocations"
+    headers = {
+        'Content-Type': 'application/json'
+    }
+
+    # Explain: just the curl sample
+    # TODO:
+    #  - Impl the chain and the parser
+
+    response = requests.request("POST", url, headers=headers, data=json.dumps(message))
+    print(response.text)
+    return response.json().get("predictions").get("messages")
+
 def main():
     """Main Streamlit application - 100% HuggingFace-free."""
 
@@ -163,7 +201,8 @@ def main():
                 selected_model = st.session_state.get("selected_model", "llama3.1")
 
                 with st.spinner(f"🤔 Processing with {selected_model}..."):
-                    result = run_rag_chain(query, model_name=selected_model)
+                    # result = run_rag_chain(query, model_name=selected_model)
+                    result = submit(query)
 
                 st.success("✅ Response generated!")
                 st.markdown("### 📋 Answer:")
