@@ -6,7 +6,7 @@ langchain-core>=0.1.23
 langchain-chroma>=0.1.0
 langchain-text-splitters>=0.0.1
 langchain_ollama==0.3.8
-langchain-google-genai
+langchain-google-genai==2.1.12
 langgraph==0.6.6
 mlflow==3.3.1
 # Local model support
@@ -23,6 +23,6 @@ numpy>=1.24.0
 pandas>=2.0.0
 python-dotenv>=1.0.0
 mlflow==3.3.1
-nltk
+nltk==3.9.1
 
 # NO torch, transformers, sentence-transformers, or huggingface dependencies!

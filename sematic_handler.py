@@ -11,7 +11,7 @@ from nltk import sent_tokenize
 
 nltk.download('punkt_tab')
 
-os.environ["GOOGLE_API_KEY"] = "MAY_THANG_HACKER_NGHI_TAO_NGU_MA_POST_TOKEN_AH"
+# os.environ["GOOGLE_API_KEY"] = "MAY_THANG_HACKER_NGHI_TAO_NGU_MA_POST_TOKEN_AH"
 
 
 def semantic_chunking(text, max_tokens=1024):
