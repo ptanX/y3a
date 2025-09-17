@@ -2,6 +2,7 @@ import os
 import uuid
 from typing import Any
 
+import mlflow
 from langchain_chroma import Chroma
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.output_parsers import StrOutputParser
