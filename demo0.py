@@ -110,19 +110,19 @@ class Demo0GraphProvider(GraphProvider[DefaultState]):
 
 class Demo0ChatAgent(ChatAgent):
 
-    def __init__(self, graph: CompiledStateGraph):
+    def __init__(self, graph: GraphProvider):
         self.graph = graph
         self.mapper = DefaultStateMapper()
 
     def predict(self, messages: list[ChatAgentMessage], context: ChatContext | None = None,
                 custom_inputs: dict[str, Any] | None = None) -> ChatAgentResponse:
         input_state = self.mapper.map_from_message_to_state(messages)
-        state = self.graph.invoke(input_state)
+        state = self.graph.provide().invoke(input_state)
         result = self.mapper.map_from_state_to_message(state)
         return ChatAgentResponse(messages=result)
 
 
-graph2 = Demo0ChatAgent(graph=Demo0GraphProvider().provide())
+graph2 = Demo0ChatAgent(graph=Demo0GraphProvider())
 message = ChatAgentMessage(role="user", content="hello who are you")
 result = graph2.predict(messages=[message])
 print(result)
