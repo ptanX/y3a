@@ -52,17 +52,17 @@ class Demo0DefaultStateMapper(StateMapper[DefaultState, list[ChatAgentMessage]])
 class Demo0GraphProvider(GraphProvider[Demo0DefaultState]):
 
     def __init__(self):
-        embedding = OllamaEmbeddings(
-            model="nomic-embed-text",
-            base_url="http://localhost:11434"
-        )
-        # embedding = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
+        # embedding = OllamaEmbeddings(
+        #     model="nomic-embed-text",
+        #     base_url="http://localhost:11434"
+        # )
+        embedding = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
         # Test the model
         print(embedding.embed_query("test connection"))
         print("✅ Successfully loaded embedding model")
         self.embedding = embedding
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash",
+            model="gemini-2.5-pro",
             temperature=0
         )
         self.known_banks = ["LPBANK", "MBBANK", "VPBANK", "TECHCOMBANK"]
