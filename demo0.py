@@ -1,4 +1,5 @@
 import os
+from typing import Any
 
 from langchain_chroma import Chroma
 from langchain_community.document_loaders import PyPDFLoader
@@ -9,8 +10,11 @@ from langchain_ollama import ChatOllama, OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langgraph.constants import START, END
 from langgraph.graph.state import CompiledStateGraph, StateGraph
+from mlflow.pyfunc import ChatAgent
+from mlflow.types.agent import ChatAgentMessage, ChatContext, ChatAgentResponse
 
 from graph.graph_provider import GraphProvider
+from state.mapper import DefaultStateMapper
 from state.type import DefaultState
 
 
@@ -62,7 +66,7 @@ class Demo0GraphProvider(GraphProvider[DefaultState]):
                          persist_directory='./rawiq_db')
 
     def provide(self) -> CompiledStateGraph:
-        self.add_to_db()
+        # self.add_to_db()
         graph_builder = StateGraph(DefaultState)
         graph_builder.add_node("chatbot", self.chatbot)
         graph_builder.add_edge(START, "chatbot")
@@ -104,6 +108,21 @@ class Demo0GraphProvider(GraphProvider[DefaultState]):
         return {"messages": response}
 
 
-graph = Demo0GraphProvider().provide()
-result = graph.invoke({"messages": "Trả lời tiếng việt cho tôi doanh thu ngân hàng năm 2024 của LPBANK"})
+class Demo0ChatAgent(ChatAgent):
+
+    def __init__(self, graph: CompiledStateGraph):
+        self.graph = graph
+        self.mapper = DefaultStateMapper()
+
+    def predict(self, messages: list[ChatAgentMessage], context: ChatContext | None = None,
+                custom_inputs: dict[str, Any] | None = None) -> ChatAgentResponse:
+        input_state = self.mapper.map_from_message_to_state(messages)
+        state = self.graph.invoke(input_state)
+        result = self.mapper.map_from_state_to_message(state)
+        return ChatAgentResponse(messages=result)
+
+
+graph2 = Demo0ChatAgent(graph=Demo0GraphProvider().provide())
+message = ChatAgentMessage(role="user", content="hello who are you")
+result = graph2.predict(messages=[message])
 print(result)
