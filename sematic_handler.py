@@ -1,10 +1,11 @@
 import os
 
 import nltk
+from chromadb import Settings, Client
 from langchain_chroma import Chroma
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_ollama import OllamaEmbeddings
 from nltk import sent_tokenize
 
 nltk.download('punkt_tab')
@@ -12,7 +13,7 @@ nltk.download('punkt_tab')
 os.environ["GOOGLE_API_KEY"] = "MAY_THANG_HACKER_NGHI_TAO_NGU_MA_POST_TOKEN_AH"
 
 
-def semantic_chunking(text, max_tokens=1024):
+def semantic_chunking(text, max_tokens=512):
     sentences = sent_tokenize(text)
     chunks, current_chunk, current_length = [], [], 0
 
@@ -60,22 +61,27 @@ def store_chunks(db, chunks):
     db.add_documents(documents=documents)
 
 
+MAPPING_COLLECTION = {
+    "LPB_Baocaothuongnien_2024.pdf": "LPBANK",
+    "MBB_Baocaothuongnien_2024.pdf": "MBBANK"
+}
+
+
 def init_predefined_docs_to_db():
     """Processes and adds uploaded PDF files to the database."""
-    embedding = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
-    # embedding = OllamaEmbeddings(
-    #     model="nomic-embed-text",
-    #     base_url="http://localhost:11434"
-    # )
-    # Test the model
-    print(embedding.embed_query("test connection"))
-    print("✅ Successfully loaded nomic-embed-text embedding model")
-    db = Chroma(collection_name="rawiq_database",
-                embedding_function=embedding,
-                persist_directory='./rawiq_db')
+    # embedding = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
     documentations_path = "./documentations"
 
     for filename in os.listdir(documentations_path):
+        collection_name = MAPPING_COLLECTION[filename]
+        embedding = OllamaEmbeddings(
+            model="nomic-embed-text",
+            base_url="http://localhost:11434"
+        )
+        # Test the model
+        db = Chroma(collection_name=collection_name,
+                    embedding_function=embedding,
+                    persist_directory='./rawiq_db')
         file_path = os.path.join(documentations_path, filename)
         # Check if it's a file (not a subfolder)
         if os.path.isfile(file_path):

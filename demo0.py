@@ -2,13 +2,13 @@ import os
 import uuid
 from typing import Any
 
-import mlflow
 from langchain_chroma import Chroma
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from langchain_ollama import OllamaEmbeddings
 from langgraph.graph.state import CompiledStateGraph, StateGraph
 from mlflow.pyfunc import ChatAgent
 from mlflow.types.agent import ChatAgentMessage, ChatContext, ChatAgentResponse
@@ -40,7 +40,7 @@ class Demo0DefaultStateMapper(StateMapper[DefaultState, list[ChatAgentMessage]])
             content = message
         elif isinstance(message, AIMessage):
             content = message.content
-        result = [ChatAgentMessage(role="assistant",content=content, id=str(uuid.uuid4()))]
+        result = [ChatAgentMessage(role="assistant", content=content, id=str(uuid.uuid4()))]
         return result
 
     def map_from_message_to_state(self, message: list[ChatAgentMessage]) -> DefaultState:
@@ -51,18 +51,15 @@ class Demo0DefaultStateMapper(StateMapper[DefaultState, list[ChatAgentMessage]])
 class Demo0GraphProvider(GraphProvider[Demo0DefaultState]):
 
     def __init__(self):
-        # embedding = OllamaEmbeddings(
-        #     model="nomic-embed-text",
-        #     base_url="http://localhost:11434"
-        # )
-        embedding = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
+        embedding = OllamaEmbeddings(
+            model="nomic-embed-text",
+            base_url="http://localhost:11434"
+        )
+        # embedding = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
         # Test the model
         print(embedding.embed_query("test connection"))
         print("✅ Successfully loaded embedding model")
         self.embedding = embedding
-        self.db = Chroma(collection_name="rawiq_database",
-                         embedding_function=self.embedding,
-                         persist_directory='./rawiq_db')
         self.llm = ChatGoogleGenerativeAI(
             model="gemini-2.5-flash",
             temperature=0
@@ -111,10 +108,16 @@ class Demo0GraphProvider(GraphProvider[Demo0DefaultState]):
     def handle_banking_comparison(self, state):
         bank1, bank2 = state["banks"]
         current_question = state.get("question", "")
+        bank1_db = Chroma(collection_name=bank1,
+                          embedding_function=self.embedding,
+                          persist_directory='./rawiq_db')
+        bank2_db = Chroma(collection_name=bank2,
+                          embedding_function=self.embedding,
+                          persist_directory='./rawiq_db')
         retriever_1 = RunnableLambda(
-            lambda _: self.db.similarity_search(f"tóm tắt thông tin kinh doanh {bank1}"))
+            lambda _: bank1_db.similarity_search(f"tóm tắt thông tin kinh doanh {bank1}"))
         retriever_2 = RunnableLambda(
-            lambda _: self.db.similarity_search(f"tóm tắt thông tin kinh doanh {bank2}"))
+            lambda _: bank2_db.similarity_search(f"tóm tắt thông tin kinh doanh {bank2}"))
 
         prompt_template = """
         Bạn là một chuyên gia phân tích tài chính ngân hàng với kinh nghiệm phân tích báo cáo tài chính, đánh giá rủi ro và hiệu quả hoạt động của các ngân hàng.
@@ -178,7 +181,11 @@ class Demo0GraphProvider(GraphProvider[Demo0DefaultState]):
         return {"message": rag_chain.invoke(current_question)}
 
     def handle_querying_single_bank(self, state):
-        retriever = self.db.as_retriever(search_type="similarity", search_kwargs={'k': 5})
+        bank1 = state['banks'][0]
+        bank1_db = Chroma(collection_name=bank1,
+                          embedding_function=self.embedding,
+                          persist_directory='./rawiq_db')
+        retriever = bank1_db.as_retriever(search_type="similarity")
         # Prompt template
         prompt = """
         Bạn là một chuyên gia phân tích tài chính ngân hàng với kinh nghiệm phân tích báo cáo tài chính, đánh giá rủi ro và hiệu quả hoạt động của các ngân hàng.
@@ -253,7 +260,7 @@ class Demo0ChatAgent(ChatAgent):
 
 
 # graph2 = Demo0ChatAgent(graph=Demo0GraphProvider())
-# incoming_message = ChatAgentMessage(role="user", content="so sánh thông tin kinh doanh LPBank và MBBank năm 2024")
+# incoming_message = ChatAgentMessage(role="user", content="so sánh kết quả kinh doanh LPBank và MBBank năm 2024")
 # test_result = graph2.predict(messages=[incoming_message])
 # print(test_result)
 
