@@ -136,23 +136,12 @@ def run_rag_chain(query, model_name="llama3.1"):
 
 def submit(question):
     # Prompt template
-    PROMPT_TEMPLATE = f"""
-    You are a highly knowledgeable assistant specializing in pharmaceutical sciences. 
-    Answer the question based only on the following context:
-
-    Question: {question}
-
-    Provide a clear, accurate, and concise answer based on the context above.
-    Don't justify your answers or mention the context explicitly.
-    If the context doesn't contain relevant information, say "I don't have enough information to answer this question."
-    """
-
     message = {
         "inputs": {
             "messages": [
                 {
                     "role": "user",
-                    "content": PROMPT_TEMPLATE.format(question=question)
+                    "content": question
                 }
             ]
         }
@@ -166,7 +155,7 @@ def submit(question):
     # TODO:
     #  - Impl the chain and the parser
 
-    response = requests.request("POST", url, headers=headers, data=json.dumps(message))
+    response = requests.request("POST", url, headers=headers, data=json.dumps(message), timeout=300)
     print(response.text)
     return response.json().get("predictions").get("messages")
 

@@ -12,7 +12,6 @@ from src.config.settings import MODEL_NAME, MODEL_VERSION_ALIAS
 
 client = MlflowClient()
 
-
 def print_model_info(rm: RegisteredModel):
     print("--Model--")
     print("Name: {}".format(rm.name))

@@ -7,6 +7,7 @@ __pycache__/
 *.so
 
 # Distribution / packaging
+install-pyenv-win.ps1
 .Python
 documentations/**
 rawiq_db/**
@@ -211,3 +212,4 @@ marimo/_lsp/
 __marimo__/
 
 mlruns
+whole_files

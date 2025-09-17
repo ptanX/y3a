@@ -8,4 +8,4 @@ MESSAGE_DTO = TypeVar('MESSAGE_DTO')
 
 
 class DefaultState(TypedDict):
-    messages: Annotated[List[BaseMessage], add_messages]
+    message: BaseMessage

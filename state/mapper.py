@@ -36,12 +36,10 @@ def convert_to_mlflow_message(message) -> ChatAgentMessage:
 class DefaultStateMapper(StateMapper[DefaultState, list[ChatAgentMessage]]):
 
     def map_from_state_to_message(self, state: DefaultState) -> list[ChatAgentMessage]:
-        messages = state.get('messages', [])
-        result = []
-        for message in messages:
-            result.append(convert_to_mlflow_message(message))
+        message = state.get('message', {})
+        result = [convert_to_mlflow_message(message)]
         return result
 
     def map_from_message_to_state(self, message: list[ChatAgentMessage]) -> DefaultState:
         actual_message = message[-1].content
-        return {"messages": [HumanMessage(content=actual_message)]}
+        return {"message": HumanMessage(content=actual_message)}
