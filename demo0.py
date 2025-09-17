@@ -1,6 +1,7 @@
 import os
 from typing import Any
 
+import mlflow
 from langchain_chroma import Chroma
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.output_parsers import StrOutputParser
@@ -13,6 +14,7 @@ from langgraph.graph.state import CompiledStateGraph, StateGraph
 from mlflow.pyfunc import ChatAgent
 from mlflow.types.agent import ChatAgentMessage, ChatContext, ChatAgentResponse
 
+from agent.agent_application import AgentApplication
 from graph.graph_provider import GraphProvider
 from state.mapper import DefaultStateMapper
 from state.type import DefaultState
@@ -90,7 +92,7 @@ class Demo0GraphProvider(GraphProvider[DefaultState]):
 
         prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
         llm = ChatOllama(
-            model="gemma3:4b",
+            model="llama3.1:8b",
             temperature=0
         )
         output_parser = StrOutputParser()
@@ -122,7 +124,6 @@ class Demo0ChatAgent(ChatAgent):
         return ChatAgentResponse(messages=result)
 
 
-graph2 = Demo0ChatAgent(graph=Demo0GraphProvider())
-message = ChatAgentMessage(role="user", content="hello who are you")
-result = graph2.predict(messages=[message])
-print(result)
+mlflow.langchain.autolog()
+chat_agent = Demo0ChatAgent(graph=Demo0GraphProvider())
+mlflow.models.set_model(chat_agent)

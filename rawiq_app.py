@@ -157,7 +157,7 @@ def submit(question):
             ]
         }
     }
-    url = "http://127.0.0.1:5000/invocations"
+    url = "http://127.0.0.1:8080/invocations"
     headers = {
         'Content-Type': 'application/json'
     }

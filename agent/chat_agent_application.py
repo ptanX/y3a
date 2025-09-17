@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Generic, Any
+from typing import Generic, Any, List, Union
 
 from langgraph.graph.state import CompiledStateGraph
 from mlflow.pyfunc import ChatAgent
@@ -12,7 +12,7 @@ from state.type import GRAPH_STATE, MESSAGE_DTO, DefaultState
 
 class ChatAgentApplication(ABC, ChatAgent, Generic[GRAPH_STATE, MESSAGE_DTO]):
     def __init__(self,
-                 graph: CompiledStateGraph[GRAPH_STATE] | GraphProvider[GRAPH_STATE],
+                 graph: Union[CompiledStateGraph, GraphProvider],
                  mapper: StateMapper[GRAPH_STATE, MESSAGE_DTO]):
         self.mapper = mapper
         self.graph = graph

@@ -5,6 +5,7 @@ langchain-community>=0.0.20
 langchain-core>=0.1.23
 langchain-chroma>=0.1.0
 langchain-text-splitters>=0.0.1
+langchain_ollama==0.3.8
 langgraph==0.6.6
 mlflow==3.3.1
 # Local model support
@@ -20,5 +21,6 @@ chromadb>=0.4.22
 numpy>=1.24.0
 pandas>=2.0.0
 python-dotenv>=1.0.0
+mlflow==3.3.1
 
 # NO torch, transformers, sentence-transformers, or huggingface dependencies!

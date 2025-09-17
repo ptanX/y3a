@@ -5,6 +5,8 @@ import mlflow
 from mlflow import MlflowClient, MlflowException
 from mlflow.entities.model_registry import RegisteredModel
 
+from agent.chat_agent_application import DefaultChatAgentApplicationFactory
+from demo0 import Demo0GraphProvider, Demo0ChatAgent
 from src.chat_agent import BasicChatAgent
 from src.config.settings import MODEL_NAME, MODEL_VERSION_ALIAS
 
@@ -34,11 +36,11 @@ def deploy():
     }
 
     with mlflow.start_run() as run:
+        provider = Demo0GraphProvider()
         model_info = mlflow.pyfunc.log_model(
             name=MODEL_NAME,
             ## TODO implement the factory initialize agent here
-            python_model=BasicChatAgent(),
-            ## TODO END
+            python_model="demo0.py",
             input_example=data_example,
             pip_requirements="requirements.txt"
         )
@@ -70,7 +72,7 @@ def destroy(version):
 
 
 def main():
-    commands = ["plan", "show", "deploy", "destroy"]
+    commands = ["show", "deploy", "destroy"]
     if len(sys.argv) < 2:
         print(f"Args be {commands} python3 main.py deploy_model")
         sys.exit(1)

@@ -46,9 +46,13 @@ Prerequisite: Follow requirements
     ```
 2. **Serve model Mlflow**
     ```bash
-     mlflow models serve -m "models:/rawiq-quickstart-model@champion"
+     mlflow models serve -m "models:/rawiq-quickstart-model@champion" --port 8080
     ```
-3. **Run the Application**:
+3. **Run the Application**
    ```bash
    streamlit run rawiq_app.py
    ```
+4. **Run the Application**
+    ```bash
+    mlflow ui
+    ```
