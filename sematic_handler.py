@@ -3,23 +3,14 @@ import re
 
 import nltk
 from PyPDF2 import PdfReader, PdfWriter
-from chromadb import Settings, Client
+from google import genai
+from google.genai import types
 from langchain_chroma import Chroma
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough
-from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
-from langchain_ollama import OllamaEmbeddings, ChatOllama
-import fitz
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
 from nltk import sent_tokenize
-from google import genai
-from google.genai import types
-import pathlib
-
-# nltk.download('punkt_tab')
 
 nltk.download('punkt_tab')
 
@@ -105,56 +96,6 @@ def init_predefined_docs_to_db():
             store_chunks(db, chunks)
 
 
-# def check_table_contents():
-#     llm = ChatGoogleGenerativeAI(
-#             model="gemini-2.5-pro",
-#             temperature=0
-#         )
-#     prompt_template = """
-#             Bạn là một trợ lý AI chuyên phân tích tài liệu PDF báo cáo tài chính.
-#
-#             Dưới đây là nội dung được trích xuất từ một hoặc nhiều trang PDF. Nhiệm vụ của bạn là:
-#
-#             1. Xác định xem nội dung có phải là **mục lục** của {question} hay không.
-#             2. Nếu đúng là mục lục, hãy trích xuất các **chương**, **tiêu đề chính**, và **tiêu đề phụ** (nếu có) theo cấu trúc sau:
-#     [
-#       {{
-#         "chapter": "Tên chương",
-#         "sections": [
-#           "Tiêu đề phụ 1",
-#           "Tiêu đề phụ 2",
-#           ...
-#         ]
-#       }},
-#       ...
-#     ]
-#             3. Nếu **không phải mục lục**, hãy trả lời rõ ràng: “Không phải mục lục.” — không được suy diễn hoặc giả định.
-#
-#             Mục lục thường có các đặc điểm như:
-#             - Có từ khóa như “CHƯƠNG”, “MỤC LỤC”, “Nội dung”, “Thông tin”, “Báo cáo…”
-#             - Có cấu trúc liệt kê theo thứ tự, có thể kèm số trang hoặc dấu “∙”, “-”, “•”
-#             - Có nhiều tiêu đề ngắn gọn liên tiếp
-#
-#             Dưới đây là nội dung cần phân tích:
-#             NGÂN HÀNG
-# THƯƠNG MẠI CỔ
-# PHẦN LỘC PHÁT VIỆT
-# NAM
-# Digitally signed by NGÂN
-# HÀNG THƯƠNG MẠI CỔ
-# PHẦN LỘC PHÁT VIỆT NAM
-# Date: 2025.04.18 23:28:57
-# +07'00'
-# B ÁO  C ÁO  TH ƯỜN G  N IÊ N  2 024
-#             """
-#     prompt = ChatPromptTemplate.from_template(prompt_template)
-#     chain = ({"question": RunnablePassthrough()} | prompt | llm | StrOutputParser())
-#     response = chain.invoke("Báo cáo thường niên LPBANK năm 2024")
-#     print(response)
-
-
-# check_table_contents()
-
 def cut_pdf(input_pdf, output_pdf, start_page, end_page):
     """Extracts pages from start_page to end_page (inclusive) into a new PDF."""
     reader = PdfReader(input_pdf)
@@ -170,8 +111,8 @@ def cut_pdf(input_pdf, output_pdf, start_page, end_page):
 # cut_pdf("./landing/banking_financial_report/shb/2024.pdf", "./landing/banking_financial_report/shb/2024_fine_grain.pdf", start_page=7, end_page=12)
 
 
-banking_report_filepath = pathlib.Path(
-    '/Users/binhnt8/Desktop/work/learning/code/y3a/landing/banking_financial_report/shb/2024_fine_grain.pdf')
+# banking_report_filepath = pathlib.Path(
+#     '/Users/binhnt8/Desktop/work/learning/code/y3a/landing/banking_financial_report/shb/2024_fine_grain.pdf')
 
 
 # Retrieve and encode the PDF byte
@@ -320,8 +261,8 @@ def smart_split_text(text, semantic_splitter):
     return final_chunks
 
 
-def chunk_the_extracted_report():
-    with open("landing/banking_financial_report/vpb/extracted_2024.md", "r", encoding="utf-8") as f:
+def chunk_the_extracted_report(file_path, bank, year):
+    with open(file_path, "r", encoding="utf-8") as f:
         markdown_text = f.read()
 
     headers_to_split_on = [
@@ -352,7 +293,7 @@ def chunk_the_extracted_report():
                 print(f"Found table chunk: {len(section_content)} characters")
                 final_chunks.append(Document(
                     page_content=section_content,
-                    metadata={**doc.metadata, "content_type": "table"}
+                    metadata={**doc.metadata, "year": year}
                 ))
             else:
                 # Apply semantic chunking to regular text
@@ -361,20 +302,25 @@ def chunk_the_extracted_report():
                     if chunk.strip():
                         final_chunks.append(Document(
                             page_content=chunk,
-                            metadata={**doc.metadata, "content_type": "text"}
+                            metadata={**doc.metadata, "year": year}
                         ))
 
     print(f"Total chunks created: {len(final_chunks)}")
 
-    # Display results
-    for i, doc in enumerate(final_chunks):
-        print(f"\n--- Chunk {i + 1} ---")
-        print(f"Metadata: {doc.metadata}")
-        print(f"Content ({doc.page_content}):")
-        print()
+    # Display result
 
     return final_chunks
 
 
-chunk_the_extracted_report()
+def chunk_and_store_to_vector_search(file_path, bank, year):
+    docs = chunk_the_extracted_report(file_path, bank, year)
+    embedding = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
+    # Test the model
+    db = Chroma(collection_name=bank,
+                embedding_function=embedding,
+                persist_directory='./rawiq_db')
+    db.add_documents(docs)
+
+
+chunk_and_store_to_vector_search("landing/banking_financial_report/shb/extracted_2023.md", "shb", 2023)
 # extract_information_from_report(banking_report_filepath)

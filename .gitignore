@@ -12,7 +12,6 @@ install-pyenv-win.ps1
 documentations/**
 rawiq_db/**
 .idea/**
-.idea/
 build/
 develop-eggs/
 dist/
