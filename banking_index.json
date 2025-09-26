@@ -1,0 +1,510 @@
+{
+  "SHB": {
+    "2022": {
+      "CAPITAL_ADEQUACY": {
+        "total_equity": 42904471,
+        "charter_capital": 30673832,
+        "share_premium": 1449603,
+        "reserves": 4061834,
+        "retained_earnings": 7330806,
+        "treasury_shares": -5260,
+        "total_assets": 550904120,
+        "net_profit_after_tax": 7728918,
+        "foreign_exchange_differences": -606344
+      },
+      "ASSET_QUALITY": {
+        "gross_loans_to_customers": 385633215,
+        "loan_loss_provision": -7057772,
+        "net_loans_to_customers": 378575443,
+        "interbank_deposits_loans": 63008862,
+        "trading_securities_gross": 3881,
+        "trading_securities_provision": -2334,
+        "investment_securities_afs": 12988616,
+        "investment_securities_htm": 20063662,
+        "investment_securities_provision": -97602,
+        "long_term_investments": 46699,
+        "fixed_assets_net": 4954396,
+        "other_assets": 54049318,
+        "interest_and_fees_receivable": 15295742
+      },
+      "MANAGEMENT_EFFICIENCY": {
+        "total_operating_expenses": -4391593,
+        "staff_costs": null,
+        "general_admin_expenses": null,
+        "depreciation_amortization": null,
+        "other_operating_expenses": null,
+        "net_interest_income": 17550084,
+        "net_fee_income": 890554,
+        "fx_trading_income": 116250,
+        "securities_trading_income": 92641,
+        "other_operating_income": 691453,
+        "total_operating_income": 19340982
+      },
+      "EARNINGS_PROFITABILITY": {
+        "gross_interest_income": 40773670,
+        "interest_expenses": -23223586,
+        "net_interest_income": 17550084,
+        "fee_and_commission_income": 1241869,
+        "fee_and_commission_expenses": -351315,
+        "net_trading_income": 208891,
+        "other_income": 691453,
+        "total_operating_income": 19340982,
+        "provision_expenses": -5260021,
+        "profit_before_tax": 9689368,
+        "income_tax_expense": -1960450,
+        "net_profit_after_tax": 7728918,
+        "earnings_per_share": 2520
+      },
+      "LIQUIDITY_RISK": {
+        "cash_and_cash_equivalents": 69500092,
+        "deposits_with_central_bank": 15145862,
+        "interbank_deposits": 52456685,
+        "interbank_loans": 10651971,
+        "trading_securities_net": 1547,
+        "investment_securities_liquid": 12988616,
+        "customer_deposits": 361675593,
+        "interbank_borrowings": 78283936,
+        "issued_debt_securities": 36440208,
+        "other_borrowed_funds": 11330798,
+        "payables_and_accruals": 20269114
+      },
+      "OFF_BALANCE_SHEET": {
+        "loan_commitments": null,
+        "guarantees_issued": 16059238,
+        "letters_of_credit": 19146337,
+        "derivative_instruments": 38872143,
+        "contingent_liabilities": null
+      },
+      "REPORT_METADATA": {
+        "report_year": 2022,
+        "report_period": "Full Year",
+        "bank_name": "SHB",
+        "currency_unit": "Triệu VND",
+        "consolidated_report": null,
+        "extraction_date": "2024-05-24"
+      }
+    },
+    "2023": {
+      "CAPITAL_ADEQUACY": {
+        "total_equity": 50098280,
+        "charter_capital": 36193981,
+        "share_premium": 1449603,
+        "reserves": 5138098,
+        "retained_earnings": 8010896,
+        "treasury_shares": -5260,
+        "total_assets": 630500685,
+        "net_profit_after_tax": 7324758,
+        "foreign_exchange_differences": -689038
+      },
+      "ASSET_QUALITY": {
+        "gross_loans_to_customers": 438464147,
+        "loan_loss_provision": -9101418,
+        "net_loans_to_customers": 429362729,
+        "interbank_deposits_loans": 63548928,
+        "trading_securities_gross": 7853152,
+        "trading_securities_provision": -60410,
+        "investment_securities_afs": 14373759,
+        "investment_securities_htm": 17833636,
+        "investment_securities_provision": -143735,
+        "long_term_investments": 414448,
+        "fixed_assets_net": 5229416,
+        "other_assets": 35954267,
+        "interest_and_fees_receivable": 13949182
+      },
+      "MANAGEMENT_EFFICIENCY": {
+        "total_operating_expenses": -5051539,
+        "staff_costs": null,
+        "general_admin_expenses": null,
+        "depreciation_amortization": null,
+        "other_operating_expenses": null,
+        "net_interest_income": 19285353,
+        "net_fee_income": 544927,
+        "fx_trading_income": 282207,
+        "securities_trading_income": null,
+        "other_operating_income": null,
+        "total_operating_income": null
+      },
+      "EARNINGS_PROFITABILITY": {
+        "gross_interest_income": 57589391,
+        "interest_expenses": -38304038,
+        "net_interest_income": 19285353,
+        "fee_and_commission_income": 912654,
+        "fee_and_commission_expenses": -367727,
+        "net_trading_income": null,
+        "other_income": 501021,
+        "total_operating_income": null,
+        "provision_expenses": -7037837,
+        "profit_before_tax": 9239021,
+        "income_tax_expense": -1914263,
+        "net_profit_after_tax": 7324758,
+        "earnings_per_share": 2024
+      },
+      "LIQUIDITY_RISK": {
+        "cash_and_cash_equivalents": 110859786,
+        "deposits_with_central_bank": 54763646,
+        "interbank_deposits": 54825905,
+        "interbank_loans": 8841433,
+        "trading_securities_net": 7792742,
+        "investment_securities_liquid": 14373759,
+        "customer_deposits": 447503426,
+        "interbank_borrowings": 70766294,
+        "issued_debt_securities": 42821727,
+        "other_borrowed_funds": null,
+        "payables_and_accruals": 16268913
+      },
+      "OFF_BALANCE_SHEET": {
+        "loan_commitments": null,
+        "guarantees_issued": null,
+        "letters_of_credit": 5085207,
+        "derivative_instruments": 15454640,
+        "contingent_liabilities": null
+      },
+      "REPORT_METADATA": {
+        "report_year": 2023,
+        "report_period": "Full Year",
+        "bank_name": "SHB",
+        "currency_unit": "VND",
+        "consolidated_report": null,
+        "extraction_date": "2024-05-24"
+      }
+    },
+    "2024": {
+      "CAPITAL_ADEQUACY": {
+        "total_equity": 58067344,
+        "charter_capital": 36629085,
+        "share_premium": 1449603,
+        "reserves": 7191833,
+        "retained_earnings": 13333023,
+        "treasury_shares": -5260,
+        "total_assets": 747478069,
+        "net_profit_after_tax": 9321949,
+        "foreign_exchange_differences": -530940
+      },
+      "ASSET_QUALITY": {
+        "gross_loans_to_customers": 519949991,
+        "loan_loss_provision": -8796841,
+        "net_loans_to_customers": 511153150,
+        "interbank_deposits_loans": 117348823,
+        "trading_securities_gross": 4949608,
+        "trading_securities_provision": -39152,
+        "investment_securities_afs": 14956915,
+        "investment_securities_htm": 17812962,
+        "investment_securities_provision": -433902,
+        "long_term_investments": 441291,
+        "fixed_assets_net": 5328025,
+        "other_assets": 46959904,
+        "interest_and_fees_receivable": 12221898
+      },
+      "MANAGEMENT_EFFICIENCY": {
+        "total_operating_expenses": -5760231,
+        "staff_costs": null,
+        "general_admin_expenses": null,
+        "depreciation_amortization": null,
+        "other_operating_expenses": null,
+        "net_interest_income": 21232119,
+        "net_fee_income": 1283420,
+        "fx_trading_income": 86288,
+        "securities_trading_income": null,
+        "other_operating_income": 1155668,
+        "total_operating_income": null
+      },
+      "EARNINGS_PROFITABILITY": {
+        "gross_interest_income": 50487346,
+        "interest_expenses": -29255227,
+        "net_interest_income": 21232119,
+        "fee_and_commission_income": 1569532,
+        "fee_and_commission_expenses": -286112,
+        "net_trading_income": null,
+        "other_income": 1341801,
+        "total_operating_income": null,
+        "provision_expenses": -6242792,
+        "profit_before_tax": 11569242,
+        "income_tax_expense": -2247293,
+        "net_profit_after_tax": 9321949,
+        "earnings_per_share": 2306
+      },
+      "LIQUIDITY_RISK": {
+        "cash_and_cash_equivalents": 121317534,
+        "deposits_with_central_bank": 27436936,
+        "interbank_deposits": 92635563,
+        "interbank_loans": 24713260,
+        "trading_securities_net": 4910456,
+        "investment_securities_liquid": 14956915,
+        "customer_deposits": 499896571,
+        "interbank_borrowings": 134090990,
+        "issued_debt_securities": 39248195,
+        "other_borrowed_funds": null,
+        "payables_and_accruals": 13440528
+      },
+      "OFF_BALANCE_SHEET": {
+        "loan_commitments": null,
+        "guarantees_issued": null,
+        "letters_of_credit": 26254923,
+        "derivative_instruments": 13754686,
+        "contingent_liabilities": null
+      },
+      "REPORT_METADATA": {
+        "report_year": 2024,
+        "report_period": "Năm",
+        "bank_name": "SHB",
+        "currency_unit": "Triệu VND",
+        "consolidated_report": null,
+        "extraction_date": "2024-05-24"
+      }
+    }
+  },
+  "VPB": {
+    "2022": {
+      "CAPITAL_ADEQUACY": {
+        "total_equity": 103501920,
+        "charter_capital": 67434236,
+        "share_premium": null,
+        "reserves": 13535084,
+        "retained_earnings": 16751804,
+        "treasury_shares": -883466,
+        "total_assets": 631012886,
+        "net_profit_after_tax": 16908807,
+        "foreign_exchange_differences": null
+      },
+      "ASSET_QUALITY": {
+        "gross_loans_to_customers": 438338047,
+        "loan_loss_provision": -13675665,
+        "net_loans_to_customers": 424662382,
+        "interbank_deposits_loans": 47965493,
+        "trading_securities_gross": 7850639,
+        "trading_securities_provision": -57192,
+        "investment_securities_afs": 82718218,
+        "investment_securities_htm": 610279,
+        "investment_securities_provision": -252600,
+        "long_term_investments": 189210,
+        "fixed_assets_net": 1858126,
+        "other_assets": 51981273,
+        "interest_and_fees_receivable": 7879131
+      },
+      "MANAGEMENT_EFFICIENCY": {
+        "total_operating_expenses": -14115731,
+        "staff_costs": null,
+        "general_admin_expenses": null,
+        "depreciation_amortization": null,
+        "other_operating_expenses": null,
+        "net_interest_income": 41021058,
+        "net_fee_income": 6437752,
+        "fx_trading_income": -618050,
+        "securities_trading_income": null,
+        "other_operating_income": 10583967,
+        "total_operating_income": 57797089
+      },
+      "EARNINGS_PROFITABILITY": {
+        "gross_interest_income": 62200250,
+        "interest_expenses": -21179192,
+        "net_interest_income": 41021058,
+        "fee_and_commission_income": 10455695,
+        "fee_and_commission_expenses": -4017943,
+        "net_trading_income": null,
+        "other_income": 10583967,
+        "total_operating_income": 57797089,
+        "provision_expenses": -22461226,
+        "profit_before_tax": 21220132,
+        "income_tax_expense": -4311325,
+        "net_profit_after_tax": 16908807,
+        "earnings_per_share": 2718
+      },
+      "LIQUIDITY_RISK": {
+        "cash_and_cash_equivalents": 54045171,
+        "deposits_with_central_bank": 9935379,
+        "interbank_deposits": 40771879,
+        "interbank_loans": 7193614,
+        "trading_securities_net": 7793447,
+        "investment_securities_liquid": 82718218,
+        "customer_deposits": 303151417,
+        "interbank_borrowings": 88923189,
+        "issued_debt_securities": 63699974,
+        "other_borrowed_funds": null,
+        "payables_and_accruals": 9813382
+      },
+      "OFF_BALANCE_SHEET": {
+        "loan_commitments": null,
+        "guarantees_issued": null,
+        "letters_of_credit": 46948724,
+        "derivative_instruments": 162851173,
+        "contingent_liabilities": 550597539
+      },
+      "REPORT_METADATA": {
+        "report_year": 2022,
+        "report_period": "Year",
+        "bank_name": "SHB",
+        "currency_unit": "triệu đồng",
+        "consolidated_report": null,
+        "extraction_date": "2024-05-24"
+      }
+    },
+    "2023": {
+      "CAPITAL_ADEQUACY": {
+        "total_equity": 139795527,
+        "charter_capital": 79339236,
+        "share_premium": 23992546,
+        "reserves": 12233282,
+        "retained_earnings": 19065969,
+        "treasury_shares": null,
+        "total_assets": 817566922,
+        "net_profit_after_tax": 8494171,
+        "foreign_exchange_differences": null
+      },
+      "ASSET_QUALITY": {
+        "gross_loans_to_customers": 566271290,
+        "loan_loss_provision": -14799224,
+        "net_loans_to_customers": 551472066,
+        "interbank_deposits_loans": 94093778,
+        "trading_securities_gross": 12406274,
+        "trading_securities_provision": -80465,
+        "investment_securities_afs": 88050457,
+        "investment_securities_htm": 6755260,
+        "investment_securities_provision": -218241,
+        "long_term_investments": 189210,
+        "fixed_assets_net": 1923801,
+        "other_assets": 51445520,
+        "interest_and_fees_receivable": 8976228
+      },
+      "MANAGEMENT_EFFICIENCY": {
+        "total_operating_expenses": -13941218,
+        "staff_costs": null,
+        "general_admin_expenses": null,
+        "depreciation_amortization": null,
+        "other_operating_expenses": null,
+        "net_interest_income": 38174676,
+        "net_fee_income": 7211882,
+        "fx_trading_income": -805973,
+        "securities_trading_income": null,
+        "other_operating_income": 4525551,
+        "total_operating_income": 49739488
+      },
+      "EARNINGS_PROFITABILITY": {
+        "gross_interest_income": 76557377,
+        "interest_expenses": -38382701,
+        "net_interest_income": 38174676,
+        "fee_and_commission_income": 12307787,
+        "fee_and_commission_expenses": -5095905,
+        "net_trading_income": null,
+        "other_income": 4525551,
+        "total_operating_income": 49739488,
+        "provision_expenses": -24994374,
+        "profit_before_tax": 10803896,
+        "income_tax_expense": -2309725,
+        "net_profit_after_tax": 8494171,
+        "earnings_per_share": 1433
+      },
+      "LIQUIDITY_RISK": {
+        "cash_and_cash_equivalents": 93667470,
+        "deposits_with_central_bank": 8422511,
+        "interbank_deposits": 81299073,
+        "interbank_loans": 12794705,
+        "trading_securities_net": 12325809,
+        "investment_securities_liquid": 88050457,
+        "customer_deposits": 442368381,
+        "interbank_borrowings": 156356651,
+        "issued_debt_securities": 47787312,
+        "other_borrowed_funds": 4118311,
+        "payables_and_accruals": 13240708
+      },
+      "OFF_BALANCE_SHEET": {
+        "loan_commitments": 205810854,
+        "guarantees_issued": null,
+        "letters_of_credit": 38680116,
+        "derivative_instruments": 296858798,
+        "contingent_liabilities": 641955933
+      },
+      "REPORT_METADATA": {
+        "report_year": 2023,
+        "report_period": "Năm",
+        "bank_name": "SHB",
+        "currency_unit": "Triệu đồng",
+        "consolidated_report": true,
+        "extraction_date": "2024-05-21"
+      }
+    },
+    "2024": {
+  "CAPITAL_ADEQUACY": {
+    "total_equity": 147275262,
+    "charter_capital": 79339236,
+    "share_premium": 23992546,
+    "reserves": 14565614,
+    "retained_earnings": 24007579,
+    "treasury_shares": null,
+    "total_assets": 923847637,
+    "net_profit_after_tax": 15986826,
+    "foreign_exchange_differences": null
+  },
+  "ASSET_QUALITY": {
+    "gross_loans_to_customers": 692875738,
+    "loan_loss_provision": -16330140,
+    "net_loans_to_customers": 676545598,
+    "interbank_deposits_loans": 134643662,
+    "trading_securities_gross": 13180721,
+    "trading_securities_provision": -69750,
+    "investment_securities_afs": 51857428,
+    "investment_securities_htm": 992927,
+    "investment_securities_provision": -67301,
+    "long_term_investments": 189210,
+    "fixed_assets_net": 2023899,
+    "other_assets": 27275914,
+    "interest_and_fees_receivable": 8384069
+  },
+  "MANAGEMENT_EFFICIENCY": {
+    "total_operating_expenses": -14339732,
+    "staff_costs": null,
+    "general_admin_expenses": null,
+    "depreciation_amortization": null,
+    "other_operating_expenses": null,
+    "net_interest_income": 49080407,
+    "net_fee_income": 6126323,
+    "fx_trading_income": 827240,
+    "securities_trading_income": null,
+    "other_operating_income": 5377662,
+    "total_operating_income": 62255056
+  },
+  "EARNINGS_PROFITABILITY": {
+    "gross_interest_income": 80111645,
+    "interest_expenses": -31031238,
+    "net_interest_income": 49080407,
+    "fee_and_commission_income": 13201660,
+    "fee_and_commission_expenses": -7075337,
+    "net_trading_income": null,
+    "other_income": 5377662,
+    "total_operating_income": 62255056,
+    "provision_expenses": -27902624,
+    "profit_before_tax": 20012700,
+    "income_tax_expense": -4025874,
+    "net_profit_after_tax": 15986826,
+    "earnings_per_share": 1989
+  },
+  "LIQUIDITY_RISK": {
+    "cash_and_cash_equivalents": 143002784,
+    "deposits_with_central_bank": 14327215,
+    "interbank_deposits": 126527280,
+    "interbank_loans": 8116382,
+    "trading_securities_net": 13110971,
+    "investment_securities_liquid": 51857428,
+    "customer_deposits": 485666548,
+    "interbank_borrowings": 89893212,
+    "issued_debt_securities": 66975704,
+    "other_borrowed_funds": 5713,
+    "payables_and_accruals": null
+  },
+  "OFF_BALANCE_SHEET": {
+    "loan_commitments": 229511446,
+    "guarantees_issued": null,
+    "letters_of_credit": 16461049,
+    "derivative_instruments": 300000752,
+    "contingent_liabilities": 690753389
+  },
+  "REPORT_METADATA": {
+    "report_year": 2024,
+    "report_period": null,
+    "bank_name": "SHB",
+    "currency_unit": "Triệu đồng",
+    "consolidated_report": null,
+    "extraction_date": "2024-05-24"
+  }
+}
+  }
+}

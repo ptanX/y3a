@@ -1,5 +1,6 @@
 import os
 import re
+from typing import List
 
 import nltk
 from PyPDF2 import PdfReader, PdfWriter
@@ -8,13 +9,16 @@ from google.genai import types
 from langchain_chroma import Chroma
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
+from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
 from nltk import sent_tokenize
 
 nltk.download('punkt_tab')
 
-# os.environ["GOOGLE_API_KEY"] = "MAY_THANG_HACKER_NGHI_TAO_NGU_MA_POST_TOKEN_AH"
 
 
 def semantic_chunking(text, max_tokens=1024):
@@ -261,7 +265,7 @@ def smart_split_text(text, semantic_splitter):
     return final_chunks
 
 
-def chunk_the_extracted_report(file_path, bank, year):
+def chunk_the_extracted_report(file_path, year):
     with open(file_path, "r", encoding="utf-8") as f:
         markdown_text = f.read()
 
@@ -313,14 +317,235 @@ def chunk_the_extracted_report(file_path, bank, year):
 
 
 def chunk_and_store_to_vector_search(file_path, bank, year):
-    docs = chunk_the_extracted_report(file_path, bank, year)
+    docs = chunk_the_extracted_report(file_path, year)
     embedding = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
     # Test the model
+    # embedding = OllamaEmbeddings(
+    #     model="toshk0/nomic-embed-text-v2-moe:Q6_K",
+    #     base_url="http://localhost:11434"
+    # )
     db = Chroma(collection_name=bank,
                 embedding_function=embedding,
                 persist_directory='./rawiq_db')
     db.add_documents(docs)
 
 
-chunk_and_store_to_vector_search("landing/banking_financial_report/shb/extracted_2023.md", "shb", 2023)
+# chunk_and_store_to_vector_search("landing/banking_financial_report/vpb/extracted_2022.md", "vpb", 2022)
 # extract_information_from_report(banking_report_filepath)
+def format_docs(docs):
+    """Formats a list of document objects into a single string."""
+    return "\n\n".join(doc.page_content for doc in docs)
+
+
+def query_context_with_metadata(db, query_terms: List[str], year: int = 2024,
+                                k: int = 10):
+    """
+    Query vector DB với metadata filter và multiple query terms
+    """
+    all_results = []
+
+    for query_term in query_terms:
+        try:
+            # Query với metadata filter
+            results = db.similarity_search(
+                query=query_term,
+                k=k,
+                filter={"year": year}  # Filter theo năm trong metadata
+            )
+            all_results.extend(results)
+        except Exception as e:
+            print(f"Error querying '{query_term}': {e}")
+            continue
+    return format_docs(all_results)
+
+
+def handle_querying_single_bank(bank, year):
+    embedding = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
+    # embedding = OllamaEmbeddings(
+    #     model="toshk0/nomic-embed-text-v2-moe:Q6_K",
+    #     base_url="http://localhost:11434"
+    # )
+    # Test the model
+    print(embedding.embed_query("test connection"))
+    print("✅ Successfully loaded embedding model")
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-2.5-pro",
+        temperature=0
+    )
+    bank_db = Chroma(collection_name=bank,
+                     embedding_function=embedding,
+                     persist_directory='./rawiq_db')
+    context_queries = {
+        "balance_sheet": [
+            "BÁO CÁO TÌNH HÌNH TÀI CHÍNH HỢP NHẤT",
+            "Bảng cân đối kế toán",
+            "tài sản có",
+            "nợ phải trả",
+            "vốn chủ sở hữu"
+        ],
+        "income_statement": [
+            "BÁO CÁO KẾT QUẢ HOẠT ĐỘNG HỢP NHẤT",
+            "thu nhập lãi thuần",
+            "chi phí hoạt động",
+            "lợi nhuận",
+            "chi phí dự phòng"
+        ],
+        "cash_flow": [
+            "BÁO CÁO LƯU CHUYỂN TIỀN TỆ HỢP NHẤT",
+            "hoạt động kinh doanh",
+            "hoạt động đầu tư",
+            "hoạt động tài chính"
+        ],
+        "off_balance": [
+            "CÁC CHỈ TIÊU NGOÀI BÁO CÁO TÌNH HÌNH TÀI CHÍNH",
+            "bảo lãnh",
+            "cam kết",
+            "công cụ tài chính phái sinh"
+        ]
+    }
+    balance_sheet = query_context_with_metadata(db=bank_db, query_terms=context_queries.get("balance_sheet"), year=year)
+    income_statement = query_context_with_metadata(db=bank_db, query_terms=context_queries.get("income_statement"),
+                                                   year=year)
+    cash_flow = query_context_with_metadata(db=bank_db, query_terms=context_queries.get("cash_flow"), year=year)
+    off_balance = query_context_with_metadata(db=bank_db, query_terms=context_queries.get("off_balance"), year=year)
+
+    # Prompt template
+    prompt = """
+    Bạn là một chuyên gia phân tích tài chính ngân hàng chuyên nghiệp. Nhiệm vụ của bạn là phân tích các báo cáo tài chính được cung cấp từ vector search và trích xuất thông số theo mô hình đánh giá CAMELS.
+
+## NGUYÊN TẮC QUAN TRỌNG:
+- CHỈ sử dụng dữ liệu từ năm báo cáo được chỉ định
+- CHỈ lấy số liệu có sẵn trong báo cáo, KHÔNG tự suy diễn
+- Nếu không tìm thấy thông tin, ghi "null"
+- Đơn vị: giữ nguyên như trong báo cáo gốc
+- Trả về format JSON chuẩn
+
+## CONTEXT TỪ VECTOR SEARCH:
+
+**Context 1 - Bảng Cân đối Kế toán:**
+{balance_sheet}
+
+**Context 2 - Báo cáo Kết quả Kinh doanh:**
+{income_statement}
+
+**Context 3 - Báo cáo Lưu chuyển Tiền tệ:**
+{cash_flow}
+
+**Context 4 - Các chỉ tiêu ngoài BCTC:**
+{off_balance}
+
+## YÊU CẦU TRÍCH XUẤT:
+
+Dựa trên các context trên, hãy trích xuất dữ liệu theo mô hình CAMELS và trả về JSON với cấu trúc sau:
+```json
+{{
+  "CAPITAL_ADEQUACY": {{
+    "total_equity": null,
+    "charter_capital": null,
+    "share_premium": null,
+    "reserves": null,
+    "retained_earnings": null,
+    "treasury_shares": null,
+    "total_assets": null,
+    "net_profit_after_tax": null,
+    "foreign_exchange_differences": null
+  }},
+
+  "ASSET_QUALITY": {{
+    "gross_loans_to_customers": null,
+    "loan_loss_provision": null,
+    "net_loans_to_customers": null,
+    "interbank_deposits_loans": null,
+    "trading_securities_gross": null,
+    "trading_securities_provision": null,
+    "investment_securities_afs": null,
+    "investment_securities_htm": null,
+    "investment_securities_provision": null,
+    "long_term_investments": null,
+    "fixed_assets_net": null,
+    "other_assets": null,
+    "interest_and_fees_receivable": null
+  }},
+
+  "MANAGEMENT_EFFICIENCY": {{
+    "total_operating_expenses": null,
+    "staff_costs": null,
+    "general_admin_expenses": null,
+    "depreciation_amortization": null,
+    "other_operating_expenses": null,
+    "net_interest_income": null,
+    "net_fee_income": null,
+    "fx_trading_income": null,
+    "securities_trading_income": null,
+    "other_operating_income": null,
+    "total_operating_income": null
+  }},
+
+  "EARNINGS_PROFITABILITY": {{
+    "gross_interest_income": null,
+    "interest_expenses": null,
+    "net_interest_income": null,
+    "fee_and_commission_income": null,
+    "fee_and_commission_expenses": null,
+    "net_trading_income": null,
+    "other_income": null,
+    "total_operating_income": null,
+    "provision_expenses": null,
+    "profit_before_tax": null,
+    "income_tax_expense": null,
+    "net_profit_after_tax": null,
+    "earnings_per_share": null
+  }},
+
+  "LIQUIDITY_RISK": {{
+    "cash_and_cash_equivalents": null,
+    "deposits_with_central_bank": null,
+    "interbank_deposits": null,
+    "interbank_loans": null,
+    "trading_securities_net": null,
+    "investment_securities_liquid": null,
+    "customer_deposits": null,
+    "interbank_borrowings": null,
+    "issued_debt_securities": null,
+    "other_borrowed_funds": null,
+    "payables_and_accruals": null
+  }},
+
+  "OFF_BALANCE_SHEET": {{
+    "loan_commitments": null,
+    "guarantees_issued": null,
+    "letters_of_credit": null,
+    "derivative_instruments": null,
+    "contingent_liabilities": null
+  }},
+
+  "REPORT_METADATA": {{
+    "report_year": null,
+    "report_period": null,
+    "bank_name": null,
+    "currency_unit": null,
+    "consolidated_report": null,
+    "extraction_date": null
+  }}
+}}
+Chỉ trả về JSON hợp lệ, không cần giải thích thêm.
+
+## QUESTION: {question}
+    """
+    prompt = ((prompt.replace("{balance_sheet}", balance_sheet).
+               replace("{income_statement}", income_statement)).
+              replace("{cash_flow}", cash_flow).
+              replace("{off_balance}", off_balance))
+
+    prompt_template = ChatPromptTemplate.from_template(prompt)
+
+    # 3. Tạo chain
+    chain = ({"question": RunnablePassthrough()} |
+             prompt_template
+             | llm
+             | StrOutputParser()
+             )
+    return chain.invoke("trích xuất các chỉ số CAMELS cho SHB")
+
+
+print(handle_querying_single_bank("vpb", 2024))
