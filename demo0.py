@@ -1,4 +1,3 @@
-import os
 import uuid
 from typing import Any
 
@@ -9,7 +8,6 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
-from langchain_ollama import OllamaEmbeddings
 from langgraph.graph.state import CompiledStateGraph, StateGraph
 from mlflow.pyfunc import ChatAgent
 from mlflow.types.agent import ChatAgentMessage, ChatContext, ChatAgentResponse
@@ -17,8 +15,6 @@ from mlflow.types.agent import ChatAgentMessage, ChatContext, ChatAgentResponse
 from graph.graph_provider import GraphProvider
 from state.mapper import StateMapper
 from state.type import DefaultState
-
-# os.environ["GOOGLE_API_KEY"] = "MAY_THANG_HACKER_NGHI_TAO_NGU_MA_POST_TOKEN_AH"
 
 
 def format_docs(docs):

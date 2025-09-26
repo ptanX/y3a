@@ -19,9 +19,6 @@ from state.mapper import StateMapper
 from state.type import DefaultState
 
 
-# os.environ["GOOGLE_API_KEY"] = "MAY_THANG_HACKER_NGHI_TAO_NGU_MA_POST_TOKEN_AH"
-
-
 def query_context_with_metadata(db, query_terms: List[str], year: int = 2024,
                                 k: int = 10):
     """
