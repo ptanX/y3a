@@ -3,7 +3,7 @@ from typing import Generic
 
 from langgraph.graph.state import CompiledStateGraph
 
-from state.type import GRAPH_STATE
+from src.state.type import GRAPH_STATE
 
 
 class GraphProvider(ABC, Generic[GRAPH_STATE]):

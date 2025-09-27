@@ -14,9 +14,9 @@ from mlflow.types.agent import ChatAgentMessage, ChatContext, ChatAgentResponse
 
 from banking_formular import CapitalAdequacyCalculator, AssetQualityCalculator, ManagementCompetenceCalculator, \
     EarningStrengthCalculator
-from graph.graph_provider import GraphProvider
-from state.mapper import StateMapper
-from state.type import DefaultState
+from src.graph.graph_provider import GraphProvider
+from src.state.mapper import StateMapper
+from src.state.type import DefaultState
 
 
 # os.environ["GOOGLE_API_KEY"] = "MAY_THANG_HACKER_NGHI_TAO_NGU_MA_POST_TOKEN_AH"

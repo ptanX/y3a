@@ -1,9 +1,9 @@
 from langgraph.graph.state import CompiledStateGraph
 
-from agent.chat_agent_application import ChatAgentApplicationFactory, ChatAgentApplication, \
+from src.agent.chat_agent_application import ChatAgentApplicationFactory, ChatAgentApplication, \
     DefaultChatAgentApplicationFactory
-from graph.graph_provider import GraphProvider
-from state.type import GRAPH_STATE, MESSAGE_DTO
+from src.graph.graph_provider import GraphProvider
+from src.state.type import GRAPH_STATE, MESSAGE_DTO
 
 
 class AgentApplication:

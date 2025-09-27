@@ -5,7 +5,6 @@ import mlflow
 from mlflow import MlflowClient, MlflowException
 from mlflow.entities.model_registry import RegisteredModel
 
-from agent.chat_agent_application import DefaultChatAgentApplicationFactory
 from demo0 import Demo0GraphProvider, Demo0ChatAgent
 from src.chat_agent import BasicChatAgent
 from src.config.settings import MODEL_NAME, MODEL_VERSION_ALIAS

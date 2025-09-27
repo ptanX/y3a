@@ -17,8 +17,9 @@ from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
 from nltk import sent_tokenize
 
-nltk.download('punkt_tab')
+from src.chunking.chunking_handler import chunk_the_extracted_report_enhanced
 
+nltk.download('punkt_tab')
 
 
 def semantic_chunking(text, max_tokens=1024):
@@ -317,7 +318,7 @@ def chunk_the_extracted_report(file_path, year):
 
 
 def chunk_and_store_to_vector_search(file_path, bank, year):
-    docs = chunk_the_extracted_report(file_path, year)
+    docs = chunk_the_extracted_report_enhanced(file_path, year)
     embedding = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
     # Test the model
     # embedding = OllamaEmbeddings(
@@ -330,7 +331,7 @@ def chunk_and_store_to_vector_search(file_path, bank, year):
     db.add_documents(docs)
 
 
-# chunk_and_store_to_vector_search("landing/banking_financial_report/vpb/extracted_2022.md", "vpb", 2022)
+# chunk_and_store_to_vector_search("landing/banking_financial_report/vpb/extracted_2024.md", "vpb", 2024)
 # extract_information_from_report(banking_report_filepath)
 def format_docs(docs):
     """Formats a list of document objects into a single string."""

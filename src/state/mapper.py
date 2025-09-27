@@ -4,7 +4,7 @@ from typing import Generic
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from mlflow.types.agent import ChatAgentMessage
 
-from state.type import GRAPH_STATE, MESSAGE_DTO, DefaultState
+from src.state.type import GRAPH_STATE, MESSAGE_DTO, DefaultState
 
 
 class StateMapper(ABC, Generic[GRAPH_STATE, MESSAGE_DTO]):

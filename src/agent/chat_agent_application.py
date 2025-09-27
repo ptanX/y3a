@@ -1,13 +1,13 @@
 from abc import ABC, abstractmethod
-from typing import Generic, Any, List, Union
+from typing import Generic, Any, Union
 
 from langgraph.graph.state import CompiledStateGraph
 from mlflow.pyfunc import ChatAgent
 from mlflow.types.agent import ChatAgentMessage, ChatContext, ChatAgentResponse
 
-from graph.graph_provider import GraphProvider
-from state.mapper import StateMapper, DefaultStateMapper
-from state.type import GRAPH_STATE, MESSAGE_DTO, DefaultState
+from src.graph.graph_provider import GraphProvider
+from src.state.mapper import StateMapper, DefaultStateMapper
+from src.state.type import GRAPH_STATE, MESSAGE_DTO, DefaultState
 
 
 class ChatAgentApplication(ABC, ChatAgent, Generic[GRAPH_STATE, MESSAGE_DTO]):
