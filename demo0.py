@@ -16,8 +16,6 @@ from src.graph.graph_provider import GraphProvider
 from src.state.mapper import StateMapper
 from src.state.type import DefaultState
 
-# os.environ["GOOGLE_API_KEY"] = "MAY_THANG_HACKER_NGHI_TAO_NGU_MA_POST_TOKEN_AH"
-
 
 def format_docs(docs):
     """Formats a list of document objects into a single string."""
