@@ -1,7 +1,7 @@
 # Rawiq
 
 ## Overview
-Rawiq is an advanced Rawiq Insight Retrieval System designed to help users gain meaningful insights from research papers and documents in the pharmaceutical domain.
+Rawiq is an advanced Rawiq Insight Retrieval Platform
 
 ## Features
 - **Natural Language Querying**: Ask complex questions about the pharmaceutical industry and get concise, accurate answers.
