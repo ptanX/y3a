@@ -35,6 +35,6 @@ pathlib
 docling
 transformers
 accelerate
-boto3
+sqlalchemy
 
 # NO torch, transformers, sentence-transformers, or huggingface dependencies!
