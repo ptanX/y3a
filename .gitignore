@@ -214,3 +214,6 @@ mlruns
 whole_files
 .DS_Store
 **.db
+
+# Goole Credentials
+google_credentials.json

@@ -36,5 +36,8 @@ docling
 transformers
 accelerate
 sqlalchemy
+boto3
+google-cloud-documentai==3.6.0
+google-auth==2.40.3
 
 # NO torch, transformers, sentence-transformers, or huggingface dependencies!
