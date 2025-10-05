@@ -1,0 +1,46 @@
+{
+  "business_registration_cert": {
+    "business_info": {
+      "business_code": "0102459106",
+      "charter_capital": "3.300.000.000.000 đồng",
+      "company_abbr": "DNSE JSC",
+      "company_name_en": "DNSE SECURITIES JOINT STOCK COMPANY",
+      "company_name_vn": "CÔNG TY CỔ PHẦN CHỨNG KHOÁN DNSE",
+      "email": "info@dnse.com.vn",
+      "hq_address": "Tầng 6 tòa nhà Pax Sky, 63-65 Ngô Thì Nhậm, Phường Phạm Đình Hổ, Quận Hai Bà Trưng, Thành phố Hà Nội, Việt Nam",
+      "initial_registration_date": "ngày 30 tháng 10 năm 2007",
+      "number_of_changes": "9, ngày 25 tháng 03 năm 2024",
+      "par_value": "10.000 đồng",
+      "phone": "024.7108.9234",
+      "total_shares": "330.000.000"
+    },
+    "legal_rep_info": {
+      "birth_date": "17/11/1985",
+      "ethnicity": "Kinh",
+      "full_name": "PHẠM THỊ THANH HOA",
+      "gender": "Nữ",
+      "id_type": "Thẻ căn cước công dân",
+      "issue_date": "19/11/2014",
+      "issue_place": "CỤC CẢNH SÁT DKQL CƯ TRÚ VÀ DLQG VỀ DÂN CƯ",
+      "nationality": "Việt Nam",
+      "position": "Tổng giám đốc"
+    }
+  },
+  "company_charter": {
+    "business_info": {
+      "company_abbr": "DNSE Jsc",
+      "company_name_en": "DNSE Securities Joint Stock Company",
+      "company_name_vn": "Công ty Cổ phần Chứng khoán DNSE",
+      "email": "info@dnse.com.vn",
+      "main_business_activity": "Môi giới chứng khoán",
+      "office_address": "Tầng 6, Tòa nhà Pax Sky, số 63-65 Ngô Thì Nhậm, Phường Phạm Đình Hổ, Quận Hai Bà Trưng, Thành phố Hà Nội",
+      "phone": "(84-24) 710 89234",
+      "organizational_management_structure": "Hội đồng quản trị",
+      "charter_capital": "3.300.000.000.000 đồng (Ba nghìn ba trăm tỷ đồng)",
+      "par_value": "10.000 đồng/cổ phần"
+    },
+    "legal_rep_info": {
+      "position": "Tổng giám đốc Công ty"
+    }
+  }
+}

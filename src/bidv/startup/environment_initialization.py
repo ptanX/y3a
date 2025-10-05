@@ -7,13 +7,13 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from src.bidv.db.entity.bidv_entity import Base, CustomerProfile, LegalRepresentative
+from src.bidv.db.bidv_entity import Base, CustomerProfile, LegalRepresentative
 
 load_dotenv()
 DATABASE_PATH = os.environ['BIDV_DB_PATH']
 CUSTOMER_PROFILE_DATA = os.environ['CUSTOMER_PROFILE_DATA']
 LEGAL_REPRESENTATIVE_DATA = os.environ['LEGAL_REPRESENTATIVE_DATA']
-COLLATERAL_ASSETS_DATAA = os.environ['COLLATERAL_ASSETS_DATA']
+# COLLATERAL_ASSETS_DATAA = os.environ['COLLATERAL_ASSETS_DATA']
 
 
 def create_database_now():

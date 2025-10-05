@@ -49,7 +49,7 @@ class DataValidatorService:
     def validate_with_database(self, data: Dict[str, Any]) -> List[FieldValidationResult]:
         """
         Validate data consistency across documents and database records.
-        Extracts business_registration_number and id_number from unified data.
+        Extracts business_code and id_number from unified data.
 
         Args:
             data: The nested dictionary to validate
@@ -63,20 +63,20 @@ class DataValidatorService:
         # Get unified data and document consistency info
         unified_data = self.unify_to_schema(data)
 
-        # Extract business_registration_number and id_number from unified data
-        business_registration_number = unified_data.get('business_info', {}).get('business_registration_number')
+        # Extract business_code and id_number from unified data
+        business_code = unified_data.get('business_info', {}).get('business_code')
         id_number = unified_data.get('legal_rep_info', {}).get('id_number')
 
-        if not business_registration_number:
-            raise ValueError("business_registration_number not found in unified data")
+        if not business_code:
+            raise ValueError("business_code not found in unified data")
         if not id_number:
-            raise ValueError("id_number not found in unified data")
+            print("id_number not found in unified data")
 
         doc_consistency = self._get_document_consistency(data)
 
         # Get database records
-        customer_record = self._get_customer_profile(business_registration_number)
-        legal_rep_record = self._get_legal_representative(business_registration_number, id_number)
+        customer_record = self._get_customer_profile(business_code)
+        legal_rep_record = self._get_legal_representative(business_code, id_number)
 
         # Create field mapping between unified schema and database fields
         field_mappings = self._create_field_mappings()
@@ -124,7 +124,7 @@ class DataValidatorService:
                 'charter_capital': {'db_field': 'von_dieu_le'},
                 'par_value': {'db_field': 'menh_gia_co_phan'},
                 'total_shares': {'db_field': 'tong_so_co_phan'},
-                'business_registration_number': {'db_field': 'ma_so_doanh_nghiep'}
+                'business_code': {'db_field': 'ma_so_doanh_nghiep'}
             },
             'legal_rep_info': {
                 'legal_rep': {'db_field': 'ho_ten'},
@@ -144,18 +144,18 @@ class DataValidatorService:
             }
         }
 
-    def _get_customer_profile(self, business_registration_number: str) -> Optional[CustomerProfile]:
+    def _get_customer_profile(self, business_code: str) -> Optional[CustomerProfile]:
         """Get customer profile from database using ORM."""
         session = self.Session()
         try:
             customer = session.query(CustomerProfile).filter(
-                CustomerProfile.ma_so_doanh_nghiep == business_registration_number
+                CustomerProfile.ma_so_doanh_nghiep == business_code
             ).first()
             return customer
         finally:
             session.close()
 
-    def _get_legal_representative(self, business_registration_number: str, id_number: str) -> Optional[
+    def _get_legal_representative(self, business_code: str, id_number: str) -> Optional[
         LegalRepresentative]:
         """Get legal representative from database using ORM."""
         session = self.Session()
@@ -163,7 +163,7 @@ class DataValidatorService:
             legal_rep = session.query(LegalRepresentative).join(
                 CustomerProfile, LegalRepresentative.customer_id == CustomerProfile.customer_id
             ).filter(
-                CustomerProfile.ma_so_doanh_nghiep == business_registration_number,
+                CustomerProfile.ma_so_doanh_nghiep == business_code,
                 LegalRepresentative.so_giay_to == id_number
             ).first()
             return legal_rep
@@ -293,7 +293,7 @@ class DataValidatorService:
                 "charter_capital": "",
                 "par_value": "",
                 "total_shares": "",
-                "business_registration_number": ""
+                "business_code": ""
             },
             "legal_rep_info": {
                 "legal_rep": "",
@@ -362,7 +362,7 @@ class DataValidatorService:
 #         "business_registration_cert": {
 #             "business_info": {
 #                 "company_name_vn": "CÔNG TY CỔ PHẦN CHỨNG KHOÁN DNSE",
-#                 "business_registration_number": "0102459106",
+#                 "business_code": "0102459106",
 #                 "company_name_en": "DNSE SECURITIES JOINT STOCK",
 #                 "company_abbr": "DNSE JSC",
 #                 "hq_address": "Tầng 6 tòa nhà Pax Sky, 63-65 Ngô Thì Nhậm, Phường Phạm Đình Hổ, Quận Hai Bà Trưng, Thành phố Hà Nội, Việt Nam",
@@ -393,7 +393,7 @@ class DataValidatorService:
 #             "business_info": {
 #                 "company_name_vn": "CÔNG TY CỔ PHẦN CHỨNG KHOÁN DNSE",
 #                 "company_name_en": "DNSE SECURITIES JOINT STOCK",
-#                 "business_registration_number": "0102459106",
+#                 "business_code": "0102459106",
 #                 "company_abbr": "DNSE JSC",
 #                 "office_address": "Tầng 6 tòa nhà Pax Sky, 63-65 Ngô Thì Nhậm, Phường Phạm Đình Hổ, Quận Hai Bà Trưng, Thành phố Hà Nội, Việt Nam",
 #                 "phone": "024.7108.9234",
@@ -418,21 +418,21 @@ class DataValidatorService:
 #             }
 #         }
 #     }
-# 
+#
 #     # Initialize with ORM session factory
 #     load_dotenv()
 #     DATABASE_PATH = os.environ['BIDV_DB_PATH']
 #     engine = create_engine(f"sqlite:///{DATABASE_PATH}")
 #     Session = sessionmaker(bind=engine)
 #     validator = DataValidatorService(Session)
-# 
+#
 #     # For demo without database
 #     # validator = DataValidatorService()
-# 
+#
 #     # Basic validation without database
 #     # inconsistent_fields = validator.get_inconsistent_fields(sample_data)
 #     # print(f"Found {len(inconsistent_fields)} inconsistent fields")
-# 
+#
 #     # With database (uncomment when you have DB connection)
 #     results = validator.validate_with_database(sample_data)
 #     #
