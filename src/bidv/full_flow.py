@@ -16,17 +16,17 @@ from src.bidv.services.data_validator_service import DataValidatorService
 load_dotenv()
 
 
-async def execute(file_path):
-    asyncio.create_task(heavy_tasks(file_path))
+async def execute(file_path, email_input):
+    asyncio.create_task(heavy_tasks(file_path, email_input))
     return {"status": "success"}
 
 
-async def heavy_tasks(file_path):
+async def heavy_tasks(file_path, email_input):
     business_file_path, company_charter_file_path = split_report(file_path)
-    # raw_data = extraction(business_file_path, company_charter_file_path)
-    raw_data = fake_raw_data()
+    raw_data = extraction(business_file_path, company_charter_file_path)
+    # raw_data = fake_raw_data()
     results = validate_with_database(raw_data)
-    email_handling.execute(results)
+    email_handling.execute(results, email_input)
 
 
 def fake_raw_data():

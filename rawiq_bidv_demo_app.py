@@ -6,7 +6,7 @@ import streamlit as st
 from src.bidv import full_flow
 
 
-def process(uploaded_file):
+def process(uploaded_file, email_input):
     if not uploaded_file:
         st.error("No files uploaded!")
         return
@@ -18,7 +18,7 @@ def process(uploaded_file):
     with open(temp_file_path, "wb") as temp_file:
         temp_file.write(uploaded_file.getbuffer())
 
-    asyncio.run(full_flow.execute(temp_file_path))
+    asyncio.run(full_flow.execute(temp_file_path, email_input))
 
 
 def main():
@@ -39,17 +39,26 @@ def main():
         help="Add document to start analyzing."
     )
 
-    if st.button("📚 Process Documents"):
-        if not uploaded_file:
-            st.warning("⚠️ Please upload PDF file first")
-        else:
-            with st.spinner("🔄 Processing document..."):
-                try:
-                    process(uploaded_file)
-                    st.success(f"✅ Successfully processed {uploaded_file.name} document!")
-                except Exception as e:
-                    st.error(f"❌ Error processing documents: {e}")
+    col1, col2 = st.columns(2)
 
+    with col1:
+        email_input = st.text_input(
+            "Email",
+            placeholder="Email",
+            label_visibility="collapsed"
+        )
+
+    with col2:
+        if st.button("📚 Process Documents"):
+            if not uploaded_file:
+                st.warning("⚠️ Please upload PDF file first")
+            else:
+                with st.spinner("🔄 Processing document..."):
+                    try:
+                        process(uploaded_file, email_input)
+                        st.success(f"Đã tiếp nhận yêu cầu thành công. Vui lòng đợi kết quả gửi vào hòm mail {email_input}")
+                    except Exception as e:
+                        st.error(f"❌ Error processing documents: {e}")
 
     # Sidebar configuration
     with st.sidebar:

@@ -295,10 +295,12 @@ def send_validation_email(sender_email, sender_password, recipient_email, valida
         return False
 
 
-def execute(validation_data):
+def execute(validation_data, email_input=None):
     SENDER_EMAIL = os.getenv("SENDER_EMAIL")
     SENDER_PASSWORD = os.getenv("SENDER_PASSWORD")
     RECIPIENT_EMAIL = ["vanhci52@gmail.com", "nguyenthaibinhbk@gmail.com"]
+    if email_input is not None:
+        RECIPIENT_EMAIL.append(email_input)
 
     # Send the validation email
     send_validation_email(
