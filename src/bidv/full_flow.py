@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import threading
 import unicodedata
 from datetime import datetime
 
@@ -16,8 +17,12 @@ from src.bidv.services.data_validator_service import DataValidatorService
 load_dotenv()
 
 
-async def execute(file_path, email_input):
-    asyncio.create_task(heavy_tasks(file_path, email_input))
+def execute(file_path, email_input):
+    # Start async task in background thread
+    threading.Thread(
+        target=lambda: asyncio.run(heavy_tasks(file_path, email_input)),
+        daemon=True
+    ).start()
     return {"status": "success"}
 
 

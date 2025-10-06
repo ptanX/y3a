@@ -18,7 +18,7 @@ def process(uploaded_file, email_input):
     with open(temp_file_path, "wb") as temp_file:
         temp_file.write(uploaded_file.getbuffer())
 
-    asyncio.run(full_flow.execute(temp_file_path, email_input))
+    full_flow.execute(temp_file_path, email_input)
 
 
 def main():
