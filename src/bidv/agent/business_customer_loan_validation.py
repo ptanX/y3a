@@ -13,8 +13,12 @@ from pydantic import BaseModel, Field
 
 from src.agent.agent_application import AgentApplication
 from src.bidv.agent.documentation import TEST_QUESTION
-from src.bidv.agent.lending_prompt import INCOMING_QUESTION_ANALYSIS, OVERALL_ANALYSIS_PROMPT, TRENDING_ANALYSIS_PROMPT, \
-    DEEP_ANALYSIS_PROMPT
+from src.bidv.agent.lending_prompt import (
+    INCOMING_QUESTION_ANALYSIS,
+    OVERALL_ANALYSIS_PROMPT,
+    TRENDING_ANALYSIS_PROMPT,
+    DEEP_ANALYSIS_PROMPT,
+)
 from src.graph.graph_provider import GraphProvider
 from src.state.type import DefaultState
 
@@ -41,7 +45,8 @@ class DimensionRequest(BaseModel):
     """Schema cho từng dimension được request"""
 
     dimension_name: str = Field(
-        description="Tên dimension từ danh sách hợp lệ: capital_adequacy, asset_quality, management_quality, earnings, liquidity, sensitivity_to_market_risk"
+        description="Tên dimension từ danh sách hợp lệ: capital_adequacy, asset_quality, management_quality, earnings,"
+                    " liquidity, sensitivity_to_market_risk"
     )
     sub_dimension_name: List[str] = Field(
         description="Danh sách các sub-dimension names thuộc dimension này"
@@ -60,12 +65,8 @@ class OrchestrationInformation(BaseModel):
     time_period: List[str] = Field(
         description="Các khoảng thời gian cần phân tích: 2021, 2022, 2023, Q1_2024"
     )
-    confidence: float = Field(
-        description="mức độ tự tin"
-    )
-    reasoning: str = Field(
-        description="lý do đưa ra quyết định"
-    )
+    confidence: float = Field(description="mức độ tự tin")
+    reasoning: str = Field(description="lý do đưa ra quyết định")
     suggested_clarifications: List[str] = Field(
         description="clarification nếu như confidence < 0.7"
     )
@@ -101,23 +102,26 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         documents = structured_message.get("documents")
         orchestration_information = self.get_orchestration_information(question)
         fined_grain_data = calculate_financial_metrics(documents)
-        return {"question": question,
-                "orchestration_information": orchestration_information,
-                "documents": documents,
-                "fined_grain_data": fined_grain_data
-                }
+        return {
+            "question": question,
+            "orchestration_information": orchestration_information,
+            "documents": documents,
+            "fined_grain_data": fined_grain_data,
+        }
 
     def get_orchestration_information(self, question):
         prompt_template = ChatPromptTemplate.from_template(INCOMING_QUESTION_ANALYSIS)
         rag_chain = (
-                {"question": RunnablePassthrough()}
-                | prompt_template
-                | self.llm.with_structured_output(OrchestrationInformation, method="json_mode")
+            {"question": RunnablePassthrough()}
+            | prompt_template
+            | self.llm.with_structured_output(
+                OrchestrationInformation, method="json_mode"
+            )
         )
         return rag_chain.invoke(question)
 
     def route_function(self, state):
-        orchestration_information = state['orchestration_information']
+        orchestration_information = state["orchestration_information"]
         confidence = orchestration_information.confidence
         if confidence is None:
             confidence = 0.0
@@ -128,47 +132,55 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
 
     def handle_fallback(self, state):
         question = state["question"]
-        orchestration_information = state['orchestration_information']
-        clarifications = [] if orchestration_information is None else orchestration_information.suggested_clarifications
-        raw_clarifications = ', '.join(clarifications) if clarifications is not None and len(clarifications) > 0 else ""
+        orchestration_information = state["orchestration_information"]
+        clarifications = (
+            []
+            if orchestration_information is None
+            else orchestration_information.suggested_clarifications
+        )
+        raw_clarifications = (
+            ", ".join(clarifications)
+            if clarifications is not None and len(clarifications) > 0
+            else ""
+        )
         prompt = """Tôi chưa xác định được rõ yêu cầu của bạn. Bạn có thể làm rõ thêm câu hỏi sau không?
         Câu hỏi: {question}
         Làm rõ: {clarifications}
         """
         prompt_template = ChatPromptTemplate.from_template(prompt)
         rag_chain = (
-                {
-                    "question": RunnablePassthrough(),
-                    "clarifications": lambda _: raw_clarifications,
-                }
-                | prompt_template
-                | self.llm
-                | StrOutputParser()
+            {
+                "question": RunnablePassthrough(),
+                "clarifications": lambda _: raw_clarifications,
+            }
+            | prompt_template
+            | self.llm
+            | StrOutputParser()
         )
         return {"message": rag_chain.invoke(question)}
 
     def handle_final_answer(self, state):
         question = state["question"]
-        orchestration_request = state['orchestration_information']
-        financial_data_input = state['fined_grain_data']
+        orchestration_request = state["orchestration_information"]
+        financial_data_input = state["fined_grain_data"]
         analysis_type = orchestration_request.analysis_type
-        if analysis_type == 'overall':
+        if analysis_type == "overall":
             prompt_template = ChatPromptTemplate.from_template(OVERALL_ANALYSIS_PROMPT)
-        elif analysis_type == 'trending':
+        elif analysis_type == "trending":
             prompt_template = ChatPromptTemplate.from_template(TRENDING_ANALYSIS_PROMPT)
-        elif analysis_type == 'deep_analysis':
+        elif analysis_type == "deep_analysis":
             prompt_template = ChatPromptTemplate.from_template(DEEP_ANALYSIS_PROMPT)
         else:
             raise Exception(f"Illegal analysis type {analysis_type}")
         rag_chain = (
-                {
-                    "question": RunnablePassthrough(),
-                    "orchestration_request": lambda _: orchestration_request,
-                    "financial_data_input": lambda _: financial_data_input,
-                }
-                | prompt_template
-                | self.llm
-                | StrOutputParser()
+            {
+                "question": RunnablePassthrough(),
+                "orchestration_request": lambda _: orchestration_request,
+                "financial_data_input": lambda _: financial_data_input,
+            }
+            | prompt_template
+            | self.llm
+            | StrOutputParser()
         )
         return {"message": rag_chain.invoke(question)}
 
@@ -412,8 +424,8 @@ def calculate_financial_metrics(data):
         ros = (
             net_profit_after_tax / total_operating_revenue
             if net_profit_after_tax
-               and total_operating_revenue
-               and total_operating_revenue != 0
+            and total_operating_revenue
+            and total_operating_revenue != 0
             else None
         )
         roa = (
@@ -444,8 +456,8 @@ def calculate_financial_metrics(data):
         cash_ratio = (
             cash_and_equivalents / short_term_liabilities
             if cash_and_equivalents
-               and short_term_liabilities
-               and short_term_liabilities != 0
+            and short_term_liabilities
+            and short_term_liabilities != 0
             else None
         )
         working_capital = (
@@ -568,7 +580,10 @@ def calculate_financial_metrics(data):
     return results
 
 
-mlflow.langchain.autolog()
+# mlflow.langchain.autolog()
 graph = BusinessLoanValidationGraphProvider().provide()
 chat_agent = AgentApplication.initialize(graph=graph)
-mlflow.models.set_model(chat_agent)
+incoming_message = ChatAgentMessage(role="user", content=TEST_QUESTION)
+response = chat_agent.predict([incoming_message])
+print(response)
+# mlflow.models.set_model(chat_agent)
