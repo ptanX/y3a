@@ -1,16 +1,29 @@
 from typing import Dict
 
 from src.graph.node_executions_dispatcher import ExecutionHandler
-from src.state.type import EXECUTION_INPUT
 
 
-class CapitalHandler(ExecutionHandler):
+class CapitalHandler(ExecutionHandler[Dict]):
 
-    async def handle(self, execution_input: EXECUTION_INPUT) -> Dict:
+    async def handle(self, execution_input: Dict) -> Dict:
         return {}
 
 
 class AssetHandler(ExecutionHandler):
-    async def handle(self, execution_input: EXECUTION_INPUT) -> Dict:
+    async def handle(self, execution_input: Dict) -> Dict:
         return {}
 
+
+class ManagementHandler(ExecutionHandler):
+    async def handle(self, execution_input: Dict) -> Dict:
+        return {}
+
+
+class EarningHandler(ExecutionHandler):
+    async def handle(self, execution_input: Dict) -> Dict:
+        return {}
+
+
+class LiquidityHandler(ExecutionHandler):
+    async def handle(self, execution_input: Dict) -> Dict:
+        return {}
