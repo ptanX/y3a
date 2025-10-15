@@ -9,6 +9,7 @@ langchain_ollama==0.3.8
 langchain-google-genai==2.1.12
 langgraph==0.6.6
 mlflow==3.3.1
+
 # Local model support
 ollama>=0.1.7
 
@@ -18,11 +19,10 @@ pypdf>=3.17.0
 # Vector database
 chromadb>=0.4.22
 
-# Basic utilities
-numpy>=1.24.0
+# Basic utilities - LOCK NUMPY VERSION
+numpy>=1.24.0,<2.0.0  # ← Quan trọng: lock numpy 1.x
 pandas>=2.0.0
 python-dotenv>=1.0.0
-mlflow==3.3.1
 nltk==3.9.1
 pymupdf
 pdfplumber
@@ -33,11 +33,12 @@ Pillow
 google-genai
 pathlib
 docling
-transformers
-accelerate
 sqlalchemy
 boto3
 google-cloud-documentai==3.6.0
 google-auth==2.40.3
 
-# NO torch, transformers, sentence-transformers, or huggingface dependencies!
+# ML dependencies - these require PyTorch
+transformers
+accelerate
+torch>=2.0.0  # ← Thêm torch explicit để tương thích numpy 1.x
