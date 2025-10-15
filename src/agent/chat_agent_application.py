@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Generic, Any, Union
+from typing import Generic, Any, Union, Generator
 
 from langgraph.graph.state import CompiledStateGraph
 from mlflow.pyfunc import ChatAgent
-from mlflow.types.agent import ChatAgentMessage, ChatContext, ChatAgentResponse
+from mlflow.types.agent import ChatAgentMessage, ChatContext, ChatAgentResponse, ChatAgentChunk
 
 from src.graph.graph_provider import GraphProvider
 from src.state.mapper import StateMapper, DefaultStateMapper
@@ -11,17 +11,29 @@ from src.state.type import GRAPH_STATE, MESSAGE_DTO, DefaultState
 
 
 class ChatAgentApplication(ABC, ChatAgent, Generic[GRAPH_STATE, MESSAGE_DTO]):
-    def __init__(self,
-                 graph: Union[CompiledStateGraph, GraphProvider],
-                 mapper: StateMapper[GRAPH_STATE, MESSAGE_DTO]):
+    def __init__(
+        self,
+        graph: Union[CompiledStateGraph, GraphProvider],
+        mapper: StateMapper[GRAPH_STATE, MESSAGE_DTO],
+    ):
         self.mapper = mapper
         self.graph = graph
 
 
-class DefaultChatAgentApplication(ChatAgentApplication[DefaultState, list[ChatAgentMessage]]):
+class DefaultChatAgentApplication(
+    ChatAgentApplication[DefaultState, list[ChatAgentMessage]]
+):
 
-    def predict(self, messages: list[ChatAgentMessage], context: ChatContext | None = None,
-                custom_inputs: dict[str, Any] | None = None) -> ChatAgentResponse:
+    def predict_stream(self, messages: list[ChatAgentMessage], context: ChatContext | None = None,
+                       custom_inputs: dict[str, Any] | None = None) -> Generator[ChatAgentChunk, None, None]:
+        pass
+
+    def predict(
+        self,
+        messages: list[ChatAgentMessage],
+        context: ChatContext | None = None,
+        custom_inputs: dict[str, Any] | None = None,
+    ) -> ChatAgentResponse:
         input_state = self.mapper.map_from_message_to_state(messages)
         if isinstance(self.graph, GraphProvider):
             graph = self.graph.provide()
@@ -35,11 +47,17 @@ class DefaultChatAgentApplication(ChatAgentApplication[DefaultState, list[ChatAg
 class ChatAgentApplicationFactory(ABC, Generic[GRAPH_STATE, MESSAGE_DTO]):
 
     @abstractmethod
-    def create(self, graph: GraphProvider[GRAPH_STATE] | CompiledStateGraph[GRAPH_STATE]):
+    def create(
+        self, graph: GraphProvider[GRAPH_STATE] | CompiledStateGraph[GRAPH_STATE]
+    ):
         pass
 
 
-class DefaultChatAgentApplicationFactory(ChatAgentApplicationFactory[DefaultState, list[ChatAgentMessage]]):
-    def create(self, graph: GraphProvider[GRAPH_STATE] | CompiledStateGraph[GRAPH_STATE]):
+class DefaultChatAgentApplicationFactory(
+    ChatAgentApplicationFactory[DefaultState, list[ChatAgentMessage]]
+):
+    def create(
+        self, graph: GraphProvider[GRAPH_STATE] | CompiledStateGraph[GRAPH_STATE]
+    ):
         mapper: StateMapper[DefaultState, list[ChatAgentMessage]] = DefaultStateMapper()
         return DefaultChatAgentApplication(graph=graph, mapper=mapper)
