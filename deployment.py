@@ -5,8 +5,6 @@ import mlflow
 from mlflow import MlflowClient, MlflowException
 from mlflow.entities.model_registry import RegisteredModel
 
-from demo0 import Demo0GraphProvider, Demo0ChatAgent
-from src.chat_agent import BasicChatAgent
 from src.config.settings import MODEL_NAME, MODEL_VERSION_ALIAS
 
 client = MlflowClient()
@@ -34,7 +32,6 @@ def deploy():
     }
 
     with mlflow.start_run() as run:
-        provider = Demo0GraphProvider()
         model_info = mlflow.pyfunc.log_model(
             name=MODEL_NAME,
             ## TODO implement the factory initialize agent here
