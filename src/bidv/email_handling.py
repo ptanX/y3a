@@ -4,11 +4,12 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 
-def build_validation_table_html(data):
+def build_validation_table_html(document_id, data):
     """
     Build an HTML table from validation results data
 
     Args:
+        document_id: Document ID
         data: Dictionary containing validation results
 
     Returns:
@@ -109,7 +110,8 @@ def build_validation_table_html(data):
     <body>
         <div class="container">
             <div class="content">
-                <h1>📊 Validation Results Report</h1>
+            """ + f"""
+                <h1>[DocumentID={document_id}] Validation Results Report</h1>
                 <div class="intro">
                     <p>This report contains the validation results for document data verification against the database.</p>
                 </div>
@@ -243,11 +245,12 @@ def build_validation_table_text(data):
     return "\n".join(lines)
 
 
-def send_validation_email(sender_email, sender_password, recipient_email, validation_data, subject=None):
+def send_validation_email(document_id, sender_email, sender_password, recipient_email, validation_data, subject=None):
     """
     Send validation results as a pretty formatted email
 
     Args:
+        document_id: Document ID
         sender_email: Your email address
         sender_password: Your email password or app-specific password
         recipient_email: Recipient's email address
@@ -272,7 +275,7 @@ def send_validation_email(sender_email, sender_password, recipient_email, valida
 
     # Create plain text and HTML versions
     body_text = build_validation_table_text(validation_data)
-    body_html = build_validation_table_html(validation_data)
+    body_html = build_validation_table_html(document_id, validation_data)
 
     part1 = MIMEText(body_text, 'plain')
     part2 = MIMEText(body_html, 'html')
@@ -295,7 +298,7 @@ def send_validation_email(sender_email, sender_password, recipient_email, valida
         return False
 
 
-def execute(validation_data, email_input=None):
+def execute(document_id, validation_data, email_input=None):
     SENDER_EMAIL = os.getenv("SENDER_EMAIL")
     SENDER_PASSWORD = os.getenv("SENDER_PASSWORD")
     RECIPIENT_EMAIL = ["vanhci52@gmail.com", "nguyenthaibinhbk@gmail.com"]
@@ -304,6 +307,7 @@ def execute(validation_data, email_input=None):
 
     # Send the validation email
     send_validation_email(
+        document_id,
         sender_email=SENDER_EMAIL,
         sender_password=SENDER_PASSWORD,
         recipient_email=RECIPIENT_EMAIL,

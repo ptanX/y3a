@@ -355,30 +355,3 @@ class DocumentAIExtractor:
     def _is_single_statement(text: Any) -> bool:
         has_separator_in_middle = '.' in str(text) or ';' in str(text)
         return not has_separator_in_middle
-
-
-if __name__ == "__main__":
-    PROJECT_ID = "387819483924"
-    LOCATION = "us"
-    business_registration_processor_id = "5110722c3ac24f03"
-    company_character_processor_id = "12676ebbd1c0ed5"
-    hoso1_file_path = "/Users/anhdv7/Desktop/practice/y3a/documentations/ho-so-dnse-1.pdf"
-    hoso2_file_path = "/Users/anhdv7/Desktop/practice/y3a/documentations/ho-so-dnse-2.pdf"
-    field_mask = "entities"  # The fields to return in the Document object.
-
-    extractor1 = DocumentAIExtractor(project_id=PROJECT_ID,
-                                     location=LOCATION,
-                                     processor_id=business_registration_processor_id,
-                                     )
-    document1 = extractor1.extract_normalized_text(file_path=hoso1_file_path)
-
-    extractor2 = DocumentAIExtractor(project_id=PROJECT_ID,
-                                     location=LOCATION,
-                                     processor_id=company_character_processor_id,
-                                     )
-    document2 = extractor2.extract_normalized_text(file_path=hoso2_file_path)
-
-    result = {"business_registration_cert": document1, "company_charter": document2}
-
-    with open("final_result.json", 'w', encoding='utf-8') as f:
-        json.dump(result, f, ensure_ascii=False, indent=2)

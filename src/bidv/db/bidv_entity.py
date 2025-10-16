@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String
+from sqlalchemy import Column, String, Text
 from sqlalchemy.orm import DeclarativeBase
 
 
@@ -79,3 +79,12 @@ class LegalRepresentative(Base):
 
     def __repr__(self):
         return f"<LegalRepresentative(rep_id='{self.rep_id}', name='{self.ho_ten}')>"
+
+
+class DocumentationInformation(Base):
+    """Documentation Information table with exact schema - all STRING columns"""
+    __tablename__ = 'documentation_information'
+
+    # Primary key
+    id = Column(String(50), primary_key=True, nullable=False)
+    data = Column(Text, nullable=False)

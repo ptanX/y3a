@@ -3,6 +3,7 @@ import uuid
 from typing import Any, List
 
 import mlflow
+from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
@@ -17,6 +18,8 @@ from banking_formular import CapitalAdequacyCalculator, AssetQualityCalculator, 
 from src.graph.graph_provider import GraphProvider
 from src.state.mapper import StateMapper
 from src.state.type import DefaultState
+
+load_dotenv()
 
 
 def query_context_with_metadata(db, query_terms: List[str], year: int = 2024,

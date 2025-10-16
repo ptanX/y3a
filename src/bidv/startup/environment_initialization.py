@@ -36,6 +36,7 @@ def create_database_with_schema():
         Base.metadata.create_all(engine)
         # Show created tables
         tables = list(Base.metadata.tables.keys())
+        print(tables)
         # Create session factory
         Session = sessionmaker()
         Session.configure(bind=engine)
