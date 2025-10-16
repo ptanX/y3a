@@ -338,45 +338,44 @@ else:
 ## TEMPLATE OUTPUT
 ───────────────────────────────────────────────────────────
 
-════════════════════════════════════════════════════════════════
-BÁO CÁO TỔNG QUAN TÌNH HÌNH TÀI CHÍNH
-[company]
-════════════════════════════════════════════════════════════════
+# BÁO CÁO TỔNG QUAN TÌNH HÌNH TÀI CHÍNH
+**[company]**
 
-📋 THÔNG TIN
-────────────────────────────────────────────────────────────
-Công ty  : [company]
-Kỳ báo cáo: [time_period - VD: "2022, 2023, Q1/2024"]
-Đơn vị  : [currency] (Số tiền), Số lần (Ratio), % (Tỷ lệ)
-Ngày tạo: [Ngày hiện tại]
+---
 
-════════════════════════════════════════════════════════════════
+## 📋 THÔNG TIN
+
+- **Công ty:** [company]
+- **Kỳ báo cáo:** [time_period - VD: "2022, 2023, Q1/2024"]
+- **Đơn vị:** [currency] (Số tiền), Số lần (Ratio), % (Tỷ lệ)
+- **Ngày tạo:** [Ngày hiện tại]
+
+---
 
 [CHỈ TẠO CHO DIMENSIONS ĐƯỢC YÊU CẦU]
 
-I. [DIMENSION_MAPPING[dimension_name]]
-────────────────────────────────────────────────────────────
+## I. [DIMENSION_MAPPING[dimension_name]]
 
-Bảng 1: [SUB_DIMENSION_MAPPING[sub_dimension_name]]
+### Bảng 1: [SUB_DIMENSION_MAPPING[sub_dimension_name]]
 
-┌──────────────────────────┬──────────┬──────────┬──────────┐
-│ Chỉ tiêu                 │ 2022     │ 2023     │ Q1/2024  │
-├──────────────────────────┼──────────┼──────────┼──────────┤
-│ [Field TV]               │ [Value]  │ [Value]  │ [Value]  │
-│ [Field TV]               │ [Value]  │ [Value]  │ [Value]  │
-└──────────────────────────┴──────────┴──────────┴──────────┘
+| Chỉ tiêu | 2022 | 2023 | Q1/2024 |
+|:---------|-----:|-----:|--------:|
+| [Field TV] | [Value] | [Value] | [Value] |
+| [Field TV] | [Value] | [Value] | [Value] |
 
 [Lặp cho sub_dimensions khác]
 
-════════════════════════════════════════════════════════════════
-📌 GHI CHÚ:
-────────────────────────────────────────────────────────────
+---
+
+## 📌 GHI CHÚ
+
 - Báo cáo chỉ hiển thị các chiều và chỉ tiêu được yêu cầu
 - Chỉ tiêu không có dữ liệu được ký hiệu "-"
 - Số tiền: {{currency}}
 - Tỷ số: số thập phân
 - Tỷ lệ: %
-════════════════════════════════════════════════════════════════
+
+---
 
 ## VÍ DỤ
 ───────────────────────────────────────────────────────────
@@ -397,52 +396,49 @@ Bảng 1: [SUB_DIMENSION_MAPPING[sub_dimension_name]]
 
 **Output:**
 
-════════════════════════════════════════════════════════════════
-BÁO CÁO TỔNG QUAN TÌNH HÌNH TÀI CHÍNH
-DNSE Securities Joint Stock Company
-════════════════════════════════════════════════════════════════
+# BÁO CÁO TỔNG QUAN TÌNH HÌNH TÀI CHÍNH
+**DNSE Securities Joint Stock Company**
 
-📋 THÔNG TIN
-────────────────────────────────────────────────────────────
-Công ty  : DNSE Securities Joint Stock Company
-Kỳ báo cáo: 2022, 2023, Q1/2024
-Đơn vị  : VND (Số tiền), Số lần (Ratio), % (Tỷ lệ)
-Ngày tạo: 15/10/2025
+---
 
-════════════════════════════════════════════════════════════════
+## 📋 THÔNG TIN
 
-I. LỢI NHUẬN
-────────────────────────────────────────────────────────────
+- **Công ty:** DNSE Securities Joint Stock Company
+- **Kỳ báo cáo:** 2022, 2023, Q1/2024
+- **Đơn vị:** VND (Số tiền), Số lần (Ratio), % (Tỷ lệ)
+- **Ngày tạo:** 15/10/2025
 
-Bảng 1: Lợi nhuận và thuế
+---
 
-┌──────────────────────────┬──────────────────┬──────────────────┬──────────────────┐
-│ Chỉ tiêu                 │ 2022             │ 2023             │ Q1/2024          │
-├──────────────────────────┼──────────────────┼──────────────────┼──────────────────┤
-│ Lợi nhuận hoạt động      │   84,954,159,411 │   84,954,159,411 │   84,954,159,411 │
-│ Lợi nhuận trước thuế     │   94,923,798,523 │   94,923,798,523 │   94,923,798,523 │
-│ Lợi nhuận sau thuế       │   77,762,818,412 │   77,762,818,412 │   77,762,818,412 │
-└──────────────────────────┴──────────────────┴──────────────────┴──────────────────┘
+## I. LỢI NHUẬN
 
-Bảng 2: Tỷ suất sinh lời
+### Bảng 1: Lợi nhuận và thuế
 
-┌──────────────────────────┬──────────┬──────────┬──────────┐
-│ Chỉ tiêu                 │ 2022     │ 2023     │ Q1/2024  │
-├──────────────────────────┼──────────┼──────────┼──────────┤
-│ ROS                      │   0.1720 │   0.1720 │   0.1720 │
-│ ROA                      │        - │   0.0121 │   0.0121 │
-│ ROE                      │        - │   0.0248 │   0.0248 │
-└──────────────────────────┴──────────┴──────────┴──────────┘
+| Chỉ tiêu | 2022 | 2023 | Q1/2024 |
+|:---------|-----:|-----:|--------:|
+| Lợi nhuận hoạt động | 84,954,159,411 | 84,954,159,411 | 84,954,159,411 |
+| Lợi nhuận trước thuế | 94,923,798,523 | 94,923,798,523 | 94,923,798,523 |
+| Lợi nhuận sau thuế | 77,762,818,412 | 77,762,818,412 | 77,762,818,412 |
 
-════════════════════════════════════════════════════════════════
-📌 GHI CHÚ:
-────────────────────────────────────────────────────────────
+### Bảng 2: Tỷ suất sinh lời
+
+| Chỉ tiêu | 2022 | 2023 | Q1/2024 |
+|:---------|-----:|-----:|--------:|
+| ROS | 0.1720 | 0.1720 | 0.1720 |
+| ROA | - | 0.0121 | 0.0121 |
+| ROE | - | 0.0248 | 0.0248 |
+
+---
+
+## 📌 GHI CHÚ
+
 - Báo cáo chỉ hiển thị các chiều và chỉ tiêu được yêu cầu
 - Chỉ tiêu không có dữ liệu được ký hiệu "-"
 - Số tiền: VND
 - Tỷ số: số thập phân
 - Tỷ lệ: %
-════════════════════════════════════════════════════════════════
+
+---
 """
 
 TRENDING_ANALYSIS_PROMPT = """
@@ -607,36 +603,33 @@ tăng/giảm [Δ], tương đương [±%]% so với [kỳ 1].
 ## TEMPLATE OUTPUT
 ───────────────────────────────────────────────────────────
 
-════════════════════════════════════════════════════════════════
-BÁO CÁO XU HƯỚNG TÀI CHÍNH
-[company]
-════════════════════════════════════════════════════════════════
+# BÁO CÁO XU HƯỚNG TÀI CHÍNH
+**[company]**
 
-📋 THÔNG TIN
-────────────────────────────────────────────────────────────
-Công ty  : [company]
-Giai đoạn: [period[0]] đến [period[-1]]
-Số kỳ    : [n] kỳ
-Đơn vị   : [currency]
+---
 
-════════════════════════════════════════════════════════════════
+## 📋 THÔNG TIN
+
+- **Công ty:** [company]
+- **Giai đoạn:** [period[0]] đến [period[-1]]
+- **Số kỳ:** [n] kỳ
+- **Đơn vị:** [currency]
+
+---
 
 [CHỈ TẠO CHO DIMENSIONS ĐƯỢC YÊU CẦU]
 
-I. [DIMENSION_MAPPING[dim]]
-────────────────────────────────────────────────────────────
+## I. [DIMENSION_MAPPING[dim]]
 
-**1. [SUB_DIMENSION_MAPPING[sub_dim]]**
+### 1. [SUB_DIMENSION_MAPPING[sub_dim]]
 
-📊 **Bảng số liệu:**
+#### 📊 Bảng số liệu:
 
-┌──────────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
-│ Chỉ tiêu             │ 2022     │ 2023     │ Q1/2024  │ Δ(22→23) │ %(22→23) │
-├──────────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-│ [Field TV]           │ [Value]  │ [Value]  │ [Value]  │ [±Δ]     │ [±%]     │
-└──────────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
+| Chỉ tiêu | 2022 | 2023 | Q1/2024 | Δ(22→23) | %(22→23) |
+|:---------|-----:|-----:|--------:|---------:|---------:|
+| [Field TV] | [Value] | [Value] | [Value] | [±Δ] | [±%] |
 
-📝 **Mô tả xu hướng:**
+#### 📝 Mô tả xu hướng:
 
 [Field 1] năm 2022 đạt [giá trị], năm 2023 đạt [giá trị], 
 tăng/giảm [Δ], tương đương [±%]% so với năm 2022.
@@ -644,17 +637,17 @@ Quý I/2024 đạt [giá trị], tăng/giảm [Δ], tương đương [±%]% so v
 
 [Field 2] ...
 
-💡 **Nhận xét:**
+#### 💡 Nhận xét:
+
 [1-2 câu mô tả xu hướng chung - KHÔNG phân tích nguyên nhân]
 
-────────────────────────────────────────────────────────────
+---
 
 [LẶP CHO SUB_DIMENSIONS KHÁC]
 
-════════════════════════════════════════════════════════════════
+---
 
-📊 TÓM TẮT
-────────────────────────────────────────────────────────────
+## 📊 TÓM TẮT
 
 **Xu hướng chính:**
 - [Dim 1]: [Tóm tắt với số liệu]
@@ -664,14 +657,16 @@ Quý I/2024 đạt [giá trị], tăng/giảm [Δ], tương đương [±%]% so v
 - Biến động lớn: [Chỉ tiêu] ±[%]%
 - Ổn định: [Chỉ tiêu] qua [n] kỳ
 
-════════════════════════════════════════════════════════════════
-📌 GHI CHÚ:
-────────────────────────────────────────────────────────────
+---
+
+## 📌 GHI CHÚ
+
 - Báo cáo CHỈ mô tả xu hướng, không phân tích nguyên nhân
 - Δ: chênh lệch tuyệt đối
 - %: tỷ lệ thay đổi so với kỳ trước
 - Để hiểu NGUYÊN NHÂN, xem báo cáo Deep Analysis
-════════════════════════════════════════════════════════════════
+
+---
 
 ## VÍ DỤ
 ───────────────────────────────────────────────────────────
@@ -682,22 +677,19 @@ Quý I/2024 đạt [giá trị], tăng/giảm [Δ], tương đương [±%]% so v
 
 **Output:**
 
-I. LỢI NHUẬN
-────────────────────────────────────────────────────────────
+## I. LỢI NHUẬN
 
-**1. Tỷ suất sinh lời**
+### 1. Tỷ suất sinh lời
 
-📊 **Bảng số liệu:**
+#### 📊 Bảng số liệu:
 
-┌──────────────────┬──────┬──────┬─────────┬──────────┬─────────┐
-│ Chỉ tiêu         │ 2022 │ 2023 │ Q1/2024 │ Δ(22→23) │%(22→23) │
-├──────────────────┼──────┼──────┼─────────┼──────────┼─────────┤
-│ ROS              │ 0.17 │ 0.17 │ 0.17    │ 0.00     │ 0.0%    │
-│ ROA              │ -    │ 0.01 │ 0.01    │ +0.01    │ N/A     │
-│ ROE              │ -    │ 0.02 │ 0.02    │ +0.02    │ N/A     │
-└──────────────────┴──────┴──────┴─────────┴──────────┴─────────┘
+| Chỉ tiêu | 2022 | 2023 | Q1/2024 | Δ(22→23) | %(22→23) |
+|:---------|-----:|-----:|--------:|---------:|---------:|
+| ROS | 0.17 | 0.17 | 0.17 | 0.00 | 0.0% |
+| ROA | - | 0.01 | 0.01 | +0.01 | N/A |
+| ROE | - | 0.02 | 0.02 | +0.02 | N/A |
 
-📝 **Mô tả xu hướng:**
+#### 📝 Mô tả xu hướng:
 
 ROS năm 2022 đạt 0.1720 (17.20%), năm 2023 duy trì 0.1720, 
 không thay đổi. Quý I/2024 tiếp tục 0.1720, không biến động.
@@ -708,11 +700,12 @@ Quý I/2024 duy trì 0.0121.
 ROE năm 2022 chưa có dữ liệu. Năm 2023 đạt 0.0248 (2.48%). 
 Quý I/2024 duy trì 0.0248.
 
-💡 **Nhận xét:**
+#### 💡 Nhận xét:
+
 Các tỷ suất sinh lời duy trì ổn định qua các kỳ. ROA và ROE 
 xuất hiện từ 2023 và không biến động trong Q1/2024.
 
-────────────────────────────────────────────────────────────
+---
 """
 
 DEEP_ANALYSIS_PROMPT = """
@@ -767,59 +760,39 @@ Bạn là Chuyên gia Thẩm định Tín dụng Senior với 20+ năm kinh nghi
 
 ### TIÊU CHUẨN TÍN DỤNG NGÀNH CHỨNG KHOÁN
 
-```
-┌─────────────────────────────┬──────────┬──────────┬──────────┐
-│ CHỈ TIÊU                    │   TỐT    │ CHẤP NHẬN│  RỦI RO  │
-├─────────────────────────────┼──────────┼──────────┼──────────┤
-│ A. THANH KHOẢN                                               │
-├─────────────────────────────┼──────────┼──────────┼──────────┤
-│ Current Ratio               │  ≥ 1.5   │ 1.2-1.5  │  < 1.2   │
-│ Quick Ratio                 │  ≥ 1.0   │ 0.8-1.0  │  < 0.8   │
-│ Cash Ratio                  │  ≥ 0.3   │ 0.15-0.3 │  < 0.15  │
-│ Tiền mặt/Tổng tài sản       │  ≥ 15%   │  8%-15%  │  < 8%    │
-│ Tiền mặt/Nợ ngắn hạn        │  ≥ 20%   │ 10%-20%  │  < 10%   │
-├─────────────────────────────┼──────────┼──────────┼──────────┤
-│ B. CẤU TRÚC VỐN & ĐÒN BẨY                                    │
-├─────────────────────────────┼──────────┼──────────┼──────────┤
-│ Nợ/Vốn chủ (D/E)            │  ≤ 1.0   │  1.0-2.0 │  > 2.0   │
-│ Nợ/Tổng tài sản             │  ≤ 50%   │ 50%-65%  │  > 65%   │
-│ Vốn chủ/Tổng tài sản        │  ≥ 50%   │ 35%-50%  │  < 35%   │
-│ Nợ ngắn/Tổng nợ             │  ≤ 50%   │ 50%-70%  │  > 70%   │
-│ Vốn điều lệ (tỷ VND)        │  ≥ 2,000 │ 1,000-   │  < 1,000 │
-│                             │          │  2,000   │          │
-├─────────────────────────────┼──────────┼──────────┼──────────┤
-│ C. KHẢ NĂNG SINH LỜI                                         │
-├─────────────────────────────┼──────────┼──────────┼──────────┤
-│ ROE (%)                     │  ≥ 15%   │  8%-15%  │  < 8%    │
-│ ROA (%)                     │  ≥ 5%    │  2%-5%   │  < 2%    │
-│ Biên lợi nhuận ròng (%)     │  ≥ 15%   │  8%-15%  │  < 8%    │
-│ Biên lợi nhuận hoạt động(%) │  ≥ 20%   │ 10%-20%  │  < 10%   │
-│ Tăng trưởng doanh thu YoY   │  ≥ 15%   │  5%-15%  │  < 5%    │
-│ Tăng trưởng lợi nhuận YoY   │  ≥ 20%   │  0%-20%  │  < 0%    │
-├─────────────────────────────┼──────────┼──────────┼──────────┤
-│ D. CHẤT LƯỢNG TÀI SẢN                                        │
-├─────────────────────────────┼──────────┼──────────┼──────────┤
-│ Dự phòng/Tổng cho vay (%)   │  ≤ 2%    │  2%-5%   │  > 5%    │
-│ Nợ quá hạn/Tổng phải thu(%) │  ≤ 5%    │  5%-10%  │  > 10%   │
-│ Cho vay/Tổng tài sản        │ 30%-50%  │ 20%-30%  │  < 20%   │
-│                             │          │  or      │  or      │
-│                             │          │ 50%-60%  │  > 60%   │
-├─────────────────────────────┼──────────┼──────────┼──────────┤
-│ E. HIỆU QUẢ HOẠT ĐỘNG                                        │
-├─────────────────────────────┼──────────┼──────────┼──────────┤
-│ Chi phí/Thu nhập (%)        │  ≤ 60%   │ 60%-75%  │  > 75%   │
-│ Chi phí quản lý/Doanh thu(%)│  ≤ 10%   │ 10%-15%  │  > 15%   │
-│ Doanh thu môi giới/Tổng DT  │ 30%-50%  │ 20%-30%  │  < 20%   │
-│                             │          │  or      │  or      │
-│                             │          │ 50%-70%  │  > 70%   │
-├─────────────────────────────┼──────────┼──────────┼──────────┤
-│ F. DÒNG TIỀN                                                 │
-├─────────────────────────────┼──────────┼──────────┼──────────┤
-│ CF hoạt động/Nợ ngắn hạn    │  ≥ 30%   │ 15%-30%  │  < 15%   │
-│ CF hoạt động/Tổng nợ        │  ≥ 25%   │ 10%-25%  │  < 10%   │
-│ CF hoạt động                │  Dương   │ Âm 1 kỳ  │ Âm 2+ kỳ │
-└─────────────────────────────┴──────────┴──────────┴──────────┘
-```
+| CHỈ TIÊU | TỐT | CHẤP NHẬN | RỦI RO |
+|:---------|----:|----------:|-------:|
+| **A. THANH KHOẢN** | | | |
+| Current Ratio | ≥ 1.5 | 1.2-1.5 | < 1.2 |
+| Quick Ratio | ≥ 1.0 | 0.8-1.0 | < 0.8 |
+| Cash Ratio | ≥ 0.3 | 0.15-0.3 | < 0.15 |
+| Tiền mặt/Tổng tài sản | ≥ 15% | 8%-15% | < 8% |
+| Tiền mặt/Nợ ngắn hạn | ≥ 20% | 10%-20% | < 10% |
+| **B. CẤU TRÚC VỐN & ĐÒN BẨY** | | | |
+| Nợ/Vốn chủ (D/E) | ≤ 1.0 | 1.0-2.0 | > 2.0 |
+| Nợ/Tổng tài sản | ≤ 50% | 50%-65% | > 65% |
+| Vốn chủ/Tổng tài sản | ≥ 50% | 35%-50% | < 35% |
+| Nợ ngắn/Tổng nợ | ≤ 50% | 50%-70% | > 70% |
+| Vốn điều lệ (tỷ VND) | ≥ 2,000 | 1,000-2,000 | < 1,000 |
+| **C. KHẢ NĂNG SINH LỜI** | | | |
+| ROE (%) | ≥ 15% | 8%-15% | < 8% |
+| ROA (%) | ≥ 5% | 2%-5% | < 2% |
+| Biên lợi nhuận ròng (%) | ≥ 15% | 8%-15% | < 8% |
+| Biên lợi nhuận hoạt động(%) | ≥ 20% | 10%-20% | < 10% |
+| Tăng trưởng doanh thu YoY | ≥ 15% | 5%-15% | < 5% |
+| Tăng trưởng lợi nhuận YoY | ≥ 20% | 0%-20% | < 0% |
+| **D. CHẤT LƯỢNG TÀI SẢN** | | | |
+| Dự phòng/Tổng cho vay (%) | ≤ 2% | 2%-5% | > 5% |
+| Nợ quá hạn/Tổng phải thu(%) | ≤ 5% | 5%-10% | > 10% |
+| Cho vay/Tổng tài sản | 30%-50% | 20%-30% hoặc 50%-60% | < 20% hoặc > 60% |
+| **E. HIỆU QUẢ HOẠT ĐỘNG** | | | |
+| Chi phí/Thu nhập (%) | ≤ 60% | 60%-75% | > 75% |
+| Chi phí quản lý/Doanh thu(%) | ≤ 10% | 10%-15% | > 15% |
+| Doanh thu môi giới/Tổng DT | 30%-50% | 20%-30% hoặc 50%-70% | < 20% hoặc > 70% |
+| **F. DÒNG TIỀN** | | | |
+| CF hoạt động/Nợ ngắn hạn | ≥ 30% | 15%-30% | < 15% |
+| CF hoạt động/Tổng nợ | ≥ 25% | 10%-25% | < 10% |
+| CF hoạt động | Dương | Âm 1 kỳ | Âm 2+ kỳ |
 
 ### CREDIT RATING MATRIX
 
@@ -1348,42 +1321,37 @@ CREDIT RATING CUỐI CÙNG: CCC (Very Weak)
 ## TEMPLATE OUTPUT CHI TIẾT
 ───────────────────────────────────────────────────────────
 
-════════════════════════════════════════════════════════════════
-BÁO CÁO PHÂN TÍCH CHUYÊN SÂU TÍN DỤNG
-════════════════════════════════════════════════════════════════
+# BÁO CÁO PHÂN TÍCH CHUYÊN SÂU TÍN DỤNG
 
-📋 THÔNG TIN CƠ BẢN
-────────────────────────────────────────────────────────────
-Khách hàng       : [company_name]
-Ngành nghề       : [industry - VD: Công ty Chứng khoán]
-Kỳ phân tích     : [latest_period]
-Kỳ so sánh       : [previous_period]
-Đơn vị tính      : [currency]
-Người phân tích  : Credit Analyst - AI System
-Ngày báo cáo     : [current_date]
+---
 
-════════════════════════════════════════════════════════════════
+## 📋 THÔNG TIN CƠ BẢN
 
-📊 TÓM TẮT ĐIỀU HÀNH (EXECUTIVE SUMMARY)
-────────────────────────────────────────────────────────────
+- **Khách hàng:** [company_name]
+- **Ngành nghề:** [industry - VD: Công ty Chứng khoán]
+- **Kỳ phân tích:** [latest_period]
+- **Kỳ so sánh:** [previous_period]
+- **Đơn vị tính:** [currency]
+- **Người phân tích:** Credit Analyst - AI System
+- **Ngày báo cáo:** [current_date]
 
-┌─────────────────────────────────────────────────────────────┐
-│ 🏆 CREDIT RATING: [AAA/AA/A/BBB/BB/B/CCC]                   │
-│ 📈 Outlook: [Tích cực / Ổn định / Tiêu cực]                │
-└─────────────────────────────────────────────────────────────┘
+---
 
-**QUY MÔ HOẠT ĐỘNG:**
+## 📊 TÓM TẮT ĐIỀU HÀNH (EXECUTIVE SUMMARY)
 
-┌────────────────────┬──────────────┬──────────────┬──────────┐
-│ Chỉ tiêu           │ [Period 1]   │ [Period 2]   │ % Change │
-├────────────────────┼──────────────┼──────────────┼──────────┤
-│ Tổng tài sản       │ [Value] tỷ   │ [Value] tỷ   │ [±X%]    │
-│ Vốn chủ sở hữu     │ [Value] tỷ   │ [Value] tỷ   │ [±X%]    │
-│ Doanh thu          │ [Value] tỷ   │ [Value] tỷ   │ [±X%]    │
-│ Lợi nhuận sau thuế │ [Value] tỷ   │ [Value] tỷ   │ [±X%]    │
-└────────────────────┴──────────────┴──────────────┴──────────┘
+> 🏆 **CREDIT RATING:** [AAA/AA/A/BBB/BB/B/CCC]  
+> 📈 **Outlook:** [Tích cực / Ổn định / Tiêu cực]
 
-**ĐÁNH GIÁ TỔNG QUAN:**
+### QUY MÔ HOẠT ĐỘNG:
+
+| Chỉ tiêu | [Period 1] | [Period 2] | % Change |
+|:---------|----------:|-----------:|---------:|
+| Tổng tài sản | [Value] tỷ | [Value] tỷ | [±X%] |
+| Vốn chủ sở hữu | [Value] tỷ | [Value] tỷ | [±X%] |
+| Doanh thu | [Value] tỷ | [Value] tỷ | [±X%] |
+| Lợi nhuận sau thuế | [Value] tỷ | [Value] tỷ | [±X%] |
+
+### ĐÁNH GIÁ TỔNG QUAN:
 
 [Viết 3-4 câu tóm tắt tình hình chính, bao gồm:
 - Tình trạng tài chính tổng thể
@@ -1391,7 +1359,7 @@ Ngày báo cáo     : [current_date]
 - Rủi ro nổi bật nhất
 - Khả năng trả nợ]
 
-**✅ ĐIỂM MẠNH NỔI BẬT (Top 3):**
+### ✅ ĐIỂM MẠNH NỔI BẬT (Top 3):
 
 1. **[Tên điểm mạnh]:** [Giá trị cụ thể]
    - Chuẩn: [Benchmark]
@@ -1402,7 +1370,7 @@ Ngày báo cáo     : [current_date]
 
 3. **[Điểm mạnh 3]:** [...]
 
-**🚩 ĐIỂM YẾU QUAN TRỌNG (Top 3):**
+### 🚩 ĐIỂM YẾU QUAN TRỌNG (Top 3):
 
 1. **[Tên điểm yếu]:** [Giá trị cụ thể]
    - Chuẩn: [Benchmark]
@@ -1413,56 +1381,52 @@ Ngày báo cáo     : [current_date]
 
 3. **[Điểm yếu 3]:** [...]
 
-**🔴 RỦI RO CHÍNH (Top 3):**
+### 🔴 RỦI RO CHÍNH (Top 3):
 
-1. **[Tên rủi ro]** - Mức độ: [🔴 Cao / 🟡 TB / 🟢 Thấp]
+**1. [Tên rủi ro]** - Mức độ: [🔴 Cao / 🟡 TB / 🟢 Thấp]
 
-   [Mô tả chi tiết rủi ro với số liệu cụ thể, 2-3 câu]
+[Mô tả chi tiết rủi ro với số liệu cụ thể, 2-3 câu]
 
-   Bằng chứng:
-   - [Số liệu 1]
-   - [Số liệu 2]
-   - [Số liệu 3]
+Bằng chứng:
+- [Số liệu 1]
+- [Số liệu 2]
+- [Số liệu 3]
 
-2. **[Rủi ro 2]** - Mức độ: [...]
-   [Mô tả...]
+**2. [Rủi ro 2]** - Mức độ: [...]
 
-3. **[Rủi ro 3]** - Mức độ: [...]
-   [Mô tả...]
+[Mô tả...]
 
-════════════════════════════════════════════════════════════════
+**3. [Rủi ro 3]** - Mức độ: [...]
 
-PHẦN I: PHÂN TÍCH CHI TIẾT THEO CHIỀU
-────────────────────────────────────────────────────────────
+[Mô tả...]
+
+---
+
+## PHẦN I: PHÂN TÍCH CHI TIẾT THEO CHIỀU
 
 [LƯU Ý: CHỈ TẠO CÁC SECTIONS CHO DIMENSIONS ĐƯỢC YÊU CẦU 
 TRONG ORCHESTRATION REQUEST]
 
-══════════════════════════════════════════════════════════
-I. [DIMENSION NAME - VD: THANH KHOẢN VÀ KHẢ NĂNG THANH TOÁN]
-══════════════════════════════════════════════════════════
+---
+
+## I. [DIMENSION NAME - VD: THANH KHOẢN VÀ KHẢ NĂNG THANH TOÁN]
 
 ### 1.1. [Sub-dimension name - VD: Khả năng thanh toán ngắn hạn]
 
-**📊 HIỆN TRẠNG:**
+#### 📊 HIỆN TRẠNG:
 
-┌──────────────────────┬─────────────┬─────────────┬─────────┬──────────┐
-│ Chỉ tiêu             │ [Period 1]  │ [Period 2]  │ % Δ     │ Xu hướng │
-├──────────────────────┼─────────────┼─────────────┼─────────┼──────────┤
-│ [Field 1 - VD: TSNH] │ [Value] tỷ  │ [Value] tỷ  │ [-5.2%] │ [📉]     │
-├──────────────────────┼─────────────┼─────────────┼─────────┼──────────┤
-│ [Field 2 - VD: Nợ NH]│ [Value] tỷ  │ [Value] tỷ  │ [+2.8%] │ [📈]     │
-├──────────────────────┼─────────────┼─────────────┼─────────┼──────────┤
-│ Current Ratio        │ [1.66]      │ [1.36]      │ [-18%]  │ [📉]     │
-│ Chuẩn: ≥1.5          │ [✅ Tốt]    │ [⚠️ CB]     │         │          │
-├──────────────────────┼─────────────┼─────────────┼─────────┼──────────┤
-│ Tiền mặt/Tổng TS     │ [6.7%]      │ [5.7%]      │ [-15%]  │ [📉]     │
-│ Chuẩn: ≥8%           │ [⚠️ CB]     │ [🚩 RR]     │         │          │
-└──────────────────────┴─────────────┴─────────────┴─────────┴──────────┘
+| Chỉ tiêu | [Period 1] | [Period 2] | % Δ | Xu hướng |
+|:---------|----------:|-----------:|----:|---------:|
+| [Field 1 - VD: TSNH] | [Value] tỷ | [Value] tỷ | [-5.2%] | [📉] |
+| [Field 2 - VD: Nợ NH] | [Value] tỷ | [Value] tỷ | [+2.8%] | [📈] |
+| Current Ratio | [1.66] | [1.36] | [-18%] | [📉] |
+| _Chuẩn: ≥1.5_ | [✅ Tốt] | [⚠️ CB] | | |
+| Tiền mặt/Tổng TS | [6.7%] | [5.7%] | [-15%] | [📉] |
+| _Chuẩn: ≥8%_ | [⚠️ CB] | [🚩 RR] | | |
 
 **Đánh giá chung:** [⚠️ CHẤP NHẬN / 🚩 RỦI RO]
 
-**📉 NGUYÊN NHÂN:**
+#### 📉 NGUYÊN NHÂN:
 
 [Viết 2-3 đoạn văn giải thích CHI TIẾT nguyên nhân, dựa trên mối quan hệ các số liệu]
 
@@ -1482,13 +1446,14 @@ Ví dụ cấu trúc:
 
 Kết quả là tỷ lệ thanh khoản giảm từ mức "Tốt" (1.66) xuống "Chấp nhận" (1.36) và đang tiến gần vùng "Rủi ro" (<1.2)."
 
-**💡 Ý NGHĨA:**
+#### 💡 Ý NGHĨA:
 
 **✅ Tích cực:**
 - [Nếu có điểm tích cực, liệt kê với số liệu]
 - [Nếu không có, ghi: "Không có điểm tích cực nổi bật"]
 
 **🚩 Rủi ro:**
+
 1. **[Tên rủi ro 1]:** [Mô tả với số liệu]
    - Mức độ: [🔴 Cao / 🟡 TB / 🟢 Thấp]
    - Tác động: [Giải thích hậu quả]
@@ -1499,24 +1464,23 @@ Kết quả là tỷ lệ thanh khoản giảm từ mức "Tốt" (1.66) xuống
 
 **Mức độ rủi ro tổng thể:** [🔴 CAO / 🟡 TRUNG BÌNH / 🟢 THẤP]
 
-────────────────────────────────────────────────────────────
+---
 
 ### 1.2. [Sub-dimension tiếp theo]
 
 [Lặp lại cấu trúc tương tự cho mỗi sub-dimension]
 
-══════════════════════════════════════════════════════════
-II. [DIMENSION 2 - VD: CẤU TRÚC VỐN VÀ ĐÒN BẨY]
-══════════════════════════════════════════════════════════
+---
+
+## II. [DIMENSION 2 - VD: CẤU TRÚC VỐN VÀ ĐÒN BẨY]
 
 [Lặp lại cấu trúc cho mỗi dimension được yêu cầu]
 
-════════════════════════════════════════════════════════════════
+---
 
-PHẦN II: TỔNG HỢP ĐIỂM MẠNH - YẾU - RỦI RO
-────────────────────────────────────────────────────────────
+## PHẦN II: TỔNG HỢP ĐIỂM MẠNH - YẾU - RỦI RO
 
-**A. ĐIỂM MẠNH (Strengths)**
+### A. ĐIỂM MẠNH (Strengths)
 
 [Liệt kê tối đa 5 điểm mạnh, sắp xếp từ quan trọng nhất]
 
@@ -1530,7 +1494,7 @@ PHẦN II: TỔNG HỢP ĐIỂM MẠNH - YẾU - RỦI RO
 
 [...]
 
-**B. ĐIỂM YẾU (Weaknesses)**
+### B. ĐIỂM YẾU (Weaknesses)
 
 [Liệt kê tối đa 5 điểm yếu, sắp xếp từ nghiêm trọng nhất]
 
@@ -1544,11 +1508,11 @@ PHẦN II: TỔNG HỢP ĐIỂM MẠNH - YẾU - RỦI RO
 
 [...]
 
-**C. RỦI RO CHÍNH (Key Risks)**
+### C. RỦI RO CHÍNH (Key Risks)
 
 [Liệt kê tối đa 3 rủi ro nghiêm trọng nhất]
 
-🔴 **1. [TÊN RỦI RO - VD: RỦI RO THANH KHOẢN]**
+**🔴 1. [TÊN RỦI RO - VD: RỦI RO THANH KHOẢN]**
 
 **Mức độ:** [🔴 CAO / 🟡 TRUNG BÌNH / 🟢 THẤP]
 
@@ -1568,24 +1532,23 @@ PHẦN II: TỔNG HỢP ĐIỂM MẠNH - YẾU - RỦI RO
 **Khuyến nghị giảm thiểu:**
 [Đề xuất các biện pháp giảm thiểu - KHÔNG phải điều kiện cho vay cụ thể]
 
-────────────────────────────────────────────────────────────
+---
 
-🟡 **2. [RỦI RO 2]**
-
-[Cấu trúc tương tự]
-
-────────────────────────────────────────────────────────────
-
-🟡 **3. [RỦI RO 3]**
+**🟡 2. [RỦI RO 2]**
 
 [Cấu trúc tương tự]
 
-════════════════════════════════════════════════════════════════
+---
 
-PHẦN III: XU HƯỚNG VÀ PHÁT TRIỂN
-────────────────────────────────────────────────────────────
+**🟡 3. [RỦI RO 3]**
 
-**A. XU HƯỚNG QUA CÁC KỲ**
+[Cấu trúc tương tự]
+
+---
+
+## PHẦN III: XU HƯỚNG VÀ PHÁT TRIỂN
+
+### A. XU HƯỚNG QUA CÁC KỲ
 
 [Phân tích xu hướng chung của các chỉ số chính qua 2-3 kỳ]
 
@@ -1598,14 +1561,14 @@ PHẦN III: XU HƯỚNG VÀ PHÁT TRIỂN
 **3. Xu hướng Dòng tiền:**
 [Mô tả...]
 
-**B. CÁC ĐIỂM CHUYỂN BIẾN QUAN TRỌNG**
+### B. CÁC ĐIỂM CHUYỂN BIẾN QUAN TRỌNG
 
 [Nhận diện các sự kiện/thời điểm quan trọng gây thay đổi đáng kể]
 
 - [Kỳ X]: [Sự kiện và tác động]
 - [Kỳ Y]: [...]
 
-**C. DỰ BÁO XU HƯỚNG NGẮN HẠN**
+### C. DỰ BÁO XU HƯỚNG NGẮN HẠN
 
 [Dựa trên xu hướng hiện tại, đưa ra nhận định định tính về 1-2 kỳ tới]
 
@@ -1617,12 +1580,11 @@ Nếu xu hướng hiện tại tiếp diễn:
 
 🚨 **Cảnh báo:** [Nếu có các nguy cơ cần chú ý đặc biệt]
 
-════════════════════════════════════════════════════════════════
+---
 
-PHẦN IV: KẾT LUẬN VÀ ĐÁNH GIÁ TỔNG THỂ
-────────────────────────────────────────────────────────────
+## PHẦN IV: KẾT LUẬN VÀ ĐÁNH GIÁ TỔNG THỂ
 
-**A. TỔNG QUAN TÌNH HÌNH TÀI CHÍNH**
+### A. TỔNG QUAN TÌNH HÌNH TÀI CHÍNH
 
 [Viết 3-4 đoạn văn tổng hợp, mỗi đoạn 4-5 câu]
 
@@ -1638,15 +1600,10 @@ PHẦN IV: KẾT LUẬN VÀ ĐÁNH GIÁ TỔNG THỂ
 **Đoạn 4 - Chất lượng Tài sản:**
 [Tổng hợp về chất lượng danh mục, dự phòng, nợ xấu]
 
-**B. CREDIT RATING & JUSTIFICATION**
+### B. CREDIT RATING & JUSTIFICATION
 
-┌─────────────────────────────────────────────────────────────┐
-│                                                             │
-│           🏆 CREDIT RATING: [AAA/.../CCC]                   │
-│                                                             │
-│           Outlook: [Positive/Stable/Negative]              │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+> 🏆 **CREDIT RATING:** [AAA/.../CCC]  
+> **Outlook:** [Positive/Stable/Negative]
 
 **CƠ SỞ XẾP HẠNG:**
 
@@ -1662,6 +1619,7 @@ PHẦN IV: KẾT LUẬN VÀ ĐÁNH GIÁ TỔNG THỂ
 - ➡️ Ổn định: [X] chỉ số ([Y%])
 
 **3. Red Flags:**
+
 [Liệt kê các Red Flags bị kích hoạt]
 - [✓/✗] Lợi nhuận âm 2+ kỳ
 - [✓/✗] CF hoạt động âm 2+ kỳ
@@ -1683,7 +1641,7 @@ PHẦN IV: KẾT LUẬN VÀ ĐÁNH GIÁ TỔNG THỂ
 - Số lượng Red Flags
 - So sánh với tiêu chuẩn của rating]
 
-**C. ĐIỂM MẠNH - YẾU TỔNG HỢP**
+### C. ĐIỂM MẠNH - YẾU TỔNG HỢP
 
 **ĐIỂM MẠNH NỔI BẬT (Top 3):**
 
@@ -1697,52 +1655,54 @@ PHẦN IV: KẾT LUẬN VÀ ĐÁNH GIÁ TỔNG THỂ
 2. [Điểm yếu 2]
 3. [Điểm yếu 3]
 
-**D. ĐÁNH GIÁ KHẢ NĂNG TRẢ NỢ**
+### D. ĐÁNH GIÁ KHẢ NĂNG TRẢ NỢ
 
 **Khả năng trả nợ ngắn hạn:** [Tốt/Trung bình/Yếu]
+
 [Giải thích 2-3 câu dựa trên thanh khoản, CF, tiền mặt]
 
 **Khả năng trả nợ dài hạn:** [Tốt/Trung bình/Yếu]
+
 [Giải thích 2-3 câu dựa trên cấu trúc vốn, sinh lời, xu hướng]
 
 **Rủi ro vỡ nợ:** [Thấp/Trung bình/Cao/Rất cao]
+
 [Giải thích chi tiết]
 
-════════════════════════════════════════════════════════════════
+---
 
-PHẦN V: KHUYẾN NGHỊ
-────────────────────────────────────────────────────────────
+## PHẦN V: KHUYẾN NGHỊ
 
-**A. THÔNG TIN CẦN BỔ SUNG ĐỂ ĐÁNH GIÁ TOÀN DIỆN**
+### A. THÔNG TIN CẦN BỔ SUNG ĐỂ ĐÁNH GIÁ TOÀN DIỆN
 
 Để có đánh giá chính xác hơn, cần bổ sung:
 
-□ **Báo cáo định tính:**
-  - Chiến lược kinh doanh và kế hoạch tương lai
-  - Cơ cấu tổ chức và đội ngũ quản lý
-  - Vị thế cạnh tranh trong ngành
+**□ Báo cáo định tính:**
+- Chiến lược kinh doanh và kế hoạch tương lai
+- Cơ cấu tổ chức và đội ngũ quản lý
+- Vị thế cạnh tranh trong ngành
 
-□ **Thông tin tín dụng:**
-  - Lịch sử vay nợ và trả nợ (CIC report)
-  - Quan hệ với các ngân hàng khác
-  - Cam kết tín dụng hiện tại
+**□ Thông tin tín dụng:**
+- Lịch sử vay nợ và trả nợ (CIC report)
+- Quan hệ với các ngân hàng khác
+- Cam kết tín dụng hiện tại
 
-□ **Tài sản đảm bảo:**
-  - Danh mục TSĐB (nếu có)
-  - Định giá TSĐB
-  - Tính thanh khoản của TSĐB
+**□ Tài sản đảm bảo:**
+- Danh mục TSĐB (nếu có)
+- Định giá TSĐB
+- Tính thanh khoản của TSĐB
 
-□ **Phân tích ngành:**
-  - Xu hướng ngành chứng khoán
-  - So sánh với đối thủ cạnh tranh
-  - Rủi ro ngành đặc thù
+**□ Phân tích ngành:**
+- Xu hướng ngành chứng khoán
+- So sánh với đối thủ cạnh tranh
+- Rủi ro ngành đặc thù
 
-□ **Thông tin bổ sung khác:**
-  - Kế hoạch tài chính 12-24 tháng tới
-  - Giải trình các biến động bất thường
-  - Kế hoạch xử lý nợ xấu (nếu có)
+**□ Thông tin bổ sung khác:**
+- Kế hoạch tài chính 12-24 tháng tới
+- Giải trình các biến động bất thường
+- Kế hoạch xử lý nợ xấu (nếu có)
 
-**B. CÁC VẤN ĐỀ CẦN LÀM RÕ**
+### B. CÁC VẤN ĐỀ CẦN LÀM RÕ
 
 [Liệt kê các vấn đề cần khách hàng giải trình hoặc cung cấp thêm thông tin]
 
@@ -1751,7 +1711,7 @@ PHẦN V: KHUYẾN NGHỊ
 3. [Vấn đề 3 - VD: Biện pháp giảm nợ xấu]
 [...]
 
-**C. KHUYẾN NGHỊ GIẢM THIỂU RỦI RO**
+### C. KHUYẾN NGHỊ GIẢM THIỂU RỦI RO
 
 [Đề xuất các biện pháp mà doanh nghiệp nên thực hiện để cải thiện tình hình - KHÔNG phải điều kiện cho vay]
 
@@ -1770,12 +1730,11 @@ PHẦN V: KHUYẾN NGHỊ
 - [Biện pháp 2]
 - [Biện pháp 3]
 
-════════════════════════════════════════════════════════════════
+---
 
-📝 LƯU Ý QUAN TRỌNG
-────────────────────────────────────────────────────────────
+## 📝 LƯU Ý QUAN TRỌNG
 
-**1. GIỚI HẠN CỦA BÁO CÁO:**
+### 1. GIỚI HẠN CỦA BÁO CÁO:
 
 Báo cáo này CHỈ là PHÂN TÍCH TÀI CHÍNH dựa trên:
 - Dữ liệu báo cáo tài chính được cung cấp
@@ -1788,7 +1747,7 @@ Báo cáo KHÔNG BAO GỒM:
 - Đánh giá tài sản đảm bảo
 - Xác minh độ tin cậy của số liệu
 
-**2. QUYẾT ĐỊNH TÍN DỤNG:**
+### 2. QUYẾT ĐỊNH TÍN DỤNG:
 
 ⚠️ **Báo cáo này KHÔNG PHẢI là quyết định tín dụng.**
 
@@ -1813,54 +1772,44 @@ Cán bộ tín dụng cần:
   - Điều kiện và điều khoản
   - Yêu cầu tài sản đảm bảo
 
-**3. CẬP NHẬT:**
+### 3. CẬP NHẬT:
 
 Tình hình tài chính có thể thay đổi nhanh chóng. Khuyến nghị:
 - Cập nhật phân tích định kỳ (ít nhất hàng quý)
 - Giám sát các chỉ số cảnh báo sớm
 - Yêu cầu báo cáo tài chính thường xuyên nếu có rủi ro cao
 
-**4. TRÁCH NHIỆM:**
+### 4. TRÁCH NHIỆM:
 
 - Phân tích dựa trên dữ liệu được cung cấp, không xác minh độ tin cậy
 - Người quyết định tín dụng chịu trách nhiệm với quyết định của mình
 - Báo cáo mang tính tham khảo, không thay thế đánh giá chuyên môn
 
-════════════════════════════════════════════════════════════════
+---
 
-PHỤ LỤC: BẢNG CHỈ SỐ CHI TIẾT
-────────────────────────────────────────────────────────────
+## PHỤ LỤC: BẢNG CHỈ SỐ CHI TIẾT
 
 [Tạo bảng tổng hợp TẤT CẢ các chỉ số đã phân tích]
 
-┌────────────────────────┬─────────┬─────────┬────────┬────────┬──────────┐
-│ Chỉ tiêu               │ Period 1│ Period 2│ Change │ Chuẩn  │ Đánh giá │
-├────────────────────────┼─────────┼─────────┼────────┼────────┼──────────┤
-│ A. THANH KHOẢN                                                          │
-├────────────────────────┼─────────┼─────────┼────────┼────────┼──────────┤
-│ [Chỉ số 1]             │ [Value] │ [Value] │ [±X%]  │ [Std]  │ [✅/⚠️/🚩]│
-│ [Chỉ số 2]             │ [Value] │ [Value] │ [±X%]  │ [Std]  │ [✅/⚠️/🚩]│
-├────────────────────────┼─────────┼─────────┼────────┼────────┼──────────┤
-│ B. CẤU TRÚC VỐN                                                         │
-├────────────────────────┼─────────┼─────────┼────────┼────────┼──────────┤
-│ [...]                  │ [...]   │ [...]   │ [...]  │ [...]  │ [...]    │
-├────────────────────────┼─────────┼─────────┼────────┼────────┼──────────┤
-│ C. SINH LỜI                                                             │
-├────────────────────────┼─────────┼─────────┼────────┼────────┼──────────┤
-│ [...]                  │ [...]   │ [...]   │ [...]  │ [...]  │ [...]    │
-├────────────────────────┼─────────┼─────────┼────────┼────────┼──────────┤
-│ D. CHẤT LƯỢNG TÀI SẢN                                                   │
-├────────────────────────┼─────────┼─────────┼────────┼────────┼──────────┤
-│ [...]                  │ [...]   │ [...]   │ [...]  │ [...]  │ [...]    │
-├────────────────────────┼─────────┼─────────┼────────┼────────┼──────────┤
-│ E. HIỆU QUẢ                                                             │
-├────────────────────────┼─────────┼─────────┼────────┼────────┼──────────┤
-│ [...]                  │ [...]   │ [...]   │ [...]  │ [...]  │ [...]    │
-└────────────────────────┴─────────┴─────────┴────────┴────────┴──────────┘
+| Chỉ tiêu | Period 1 | Period 2 | Change | Chuẩn | Đánh giá |
+|:---------|--------:|---------:|-------:|------:|---------:|
+| **A. THANH KHOẢN** | | | | | |
+| [Chỉ số 1] | [Value] | [Value] | [±X%] | [Std] | [✅/⚠️/🚩] |
+| [Chỉ số 2] | [Value] | [Value] | [±X%] | [Std] | [✅/⚠️/🚩] |
+| **B. CẤU TRÚC VỐN** | | | | | |
+| [...] | [...] | [...] | [...] | [...] | [...] |
+| **C. SINH LỜI** | | | | | |
+| [...] | [...] | [...] | [...] | [...] | [...] |
+| **D. CHẤT LƯỢNG TÀI SẢN** | | | | | |
+| [...] | [...] | [...] | [...] | [...] | [...] |
+| **E. HIỆU QUẢ** | | | | | |
+| [...] | [...] | [...] | [...] | [...] | [...] |
 
-════════════════════════════════════════════════════════════════
-KẾT THÚC BÁO CÁO
-════════════════════════════════════════════════════════════════
+---
+
+**KẾT THÚC BÁO CÁO**
+
+---
 
 ## GHI CHÚ THỰC HIỆN
 ───────────────────────────────────────────────────────────
@@ -1945,9 +1894,9 @@ Tìm trong bảng: Tốt ≥15% | Chấp nhận 8%-15% | Rủi ro <8%
 ### 5. FORMAT OUTPUT
 
 **Sử dụng đúng format:**
-- Tiêu đề section: Dùng ══════ và số La Mã I, II, III
+- Tiêu đề section: Dùng ## và số La Mã I, II, III
 - Tiêu đề sub-section: Dùng ### và số 1.1, 1.2
-- Bảng: Dùng ┌─┬─┐ style như trong template
+- Bảng: Dùng markdown table chuẩn với | và ---
 - Icon: ✅ (Tốt), ⚠️ (Chấp nhận), 🚩 (Rủi ro)
 - Xu hướng: 📈 (Tăng mạnh), ↗️ (Tăng nhẹ), ➡️ (Ổn định), ↘️ (Giảm nhẹ), 📉 (Giảm mạnh)
 - Mức độ rủi ro: 🔴 (Cao), 🟡 (Trung bình), 🟢 (Thấp)
@@ -1955,16 +1904,16 @@ Tìm trong bảng: Tốt ≥15% | Chấp nhận 8%-15% | Rủi ro <8%
 ### 6. CHECKLIST TRƯỚC KHI TRẢ KẾT QUẢ
 
 Kiểm tra lại:
-□ Đã phân tích đầy đủ dimensions được yêu cầu?
-□ Mỗi phần có số liệu cụ thể?
-□ Đã giải thích nguyên nhân (WHY) chứ không chỉ mô tả (WHAT)?
-□ Đã so sánh với tiêu chuẩn?
-□ Đã phân tích xu hướng (nếu có nhiều kỳ)?
-□ Đã liệt kê rủi ro với bằng chứng?
-□ Không tính toán chỉ số mới?
-□ Không đưa ra quyết định tín dụng?
-□ Không đề xuất điều kiện cho vay cụ thể?
-□ Format đúng với template?
+- □ Đã phân tích đầy đủ dimensions được yêu cầu?
+- □ Mỗi phần có số liệu cụ thể?
+- □ Đã giải thích nguyên nhân (WHY) chứ không chỉ mô tả (WHAT)?
+- □ Đã so sánh với tiêu chuẩn?
+- □ Đã phân tích xu hướng (nếu có nhiều kỳ)?
+- □ Đã liệt kê rủi ro với bằng chứng?
+- □ Không tính toán chỉ số mới?
+- □ Không đưa ra quyết định tín dụng?
+- □ Không đề xuất điều kiện cho vay cụ thể?
+- □ Format đúng với template?
 
-════════════════════════════════════════════════════════════════
+---
 """
