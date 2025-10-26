@@ -1,6 +1,6 @@
 import asyncio
 from abc import ABC, abstractmethod
-from typing import Dict, List, Any
+from typing import Dict, List
 
 
 class ExecutionInput:
@@ -50,7 +50,7 @@ class ExecutionDispatcher:
     def __init__(self):
         self.dispatchers: Dict[str, ExecutionHandler] = {}
 
-    async def dispatch(self, list_inputs: List[ExecutionInput]) -> List[Dict[str, Any]]:
+    async def dispatch(self, list_inputs: List[ExecutionInput]) -> List[ExecutionOutput]:
         """
         Returns list of results in the same order as inputs.
         """
@@ -61,22 +61,29 @@ class ExecutionDispatcher:
         ]
 
         # Execute all concurrently
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+        results = await asyncio.gather(*tasks)
 
         # Format results
-        return [
-            {
-                'handler_name': result.handler_name,
-                'output': result if not isinstance(result, Exception) else None
-            }
-            for i, result in enumerate(results)
-        ]
+        formatted_results = []
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                # Convert exception to ExecutionOutput
+                raise ValueError(f"output error for '{str(result)}'")
+            else:
+                # Already an ExecutionOutput
+                formatted_results.append(result)
 
-    async def _execute_single(self, execution_input: ExecutionInput) -> Any:
+        return formatted_results
+
+    async def _execute_single(self, execution_input: ExecutionInput) -> ExecutionOutput:
         """Execute a single handler."""
         handler = self.dispatchers.get(execution_input.handler_name)
 
         if not handler:
             raise ValueError(f"No handler found for '{execution_input.handler_name}'")
 
-        return await handler.handle(execution_input.handler_input)
+        result = await handler.handle(execution_input.handler_input)
+        if isinstance(result, ExecutionOutput):
+            return result
+        else:
+            raise ValueError(f"output error for '{execution_input.handler_name}'")

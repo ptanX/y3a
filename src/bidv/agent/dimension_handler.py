@@ -1,6 +1,6 @@
 from typing import Dict
 
-from src.graph.executions_dispatcher import ExecutionHandler
+from src.dispatcher.executions_dispatcher import ExecutionHandler
 
 
 class CapitalHandler(ExecutionHandler[Dict]):
