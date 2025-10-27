@@ -1,6 +1,5 @@
 import asyncio
-from abc import ABC, abstractmethod
-from typing import Dict, List
+from typing import Dict, List, Callable, Awaitable
 
 
 class ExecutionInput:
@@ -16,11 +15,7 @@ class ExecutionOutput:
         self.handler_output = handler_output
 
 
-class ExecutionHandler(ABC):
-
-    @abstractmethod
-    async def handle(self, execution_input: ExecutionInput) -> ExecutionOutput:
-        pass
+ExecutionHandler = Callable[[ExecutionInput], Awaitable[ExecutionOutput]]
 
 
 class ExecutionDispatcherBuilder:
@@ -36,54 +31,43 @@ class ExecutionDispatcherBuilder:
         return self.execution_dispatcher
 
 
-class TestExecutionHandler(ExecutionHandler):
-
-    async def handle(self, execution_input: ExecutionInput) -> ExecutionOutput:
-        return ExecutionOutput(
-            handler_name=execution_input.handler_name,
-            handler_output=execution_input.handler_input,
-        )
+async def handle_simple_execution(execution_input: ExecutionInput) -> ExecutionOutput:
+    return ExecutionOutput(
+        handler_name=execution_input.handler_name,
+        handler_output=execution_input.handler_input,
+    )
 
 
 class ExecutionDispatcher:
-
     def __init__(self):
         self.dispatchers: Dict[str, ExecutionHandler] = {}
 
-    async def dispatch(self, list_inputs: List[ExecutionInput]) -> List[ExecutionOutput]:
+    async def dispatch(
+        self, list_inputs: List[ExecutionInput]
+    ) -> List[ExecutionOutput]:
         """
-        Returns list of results in the same order as inputs.
+        Returns list of results of execution input.
         """
-        # Create tasks as a list (preserves order)
         tasks = [
-            self._execute_single(execution_input)
-            for execution_input in list_inputs
+            self._execute_single(execution_input) for execution_input in list_inputs
         ]
-
-        # Execute all concurrently
-        results = await asyncio.gather(*tasks)
-
-        # Format results
-        formatted_results = []
+        results: List[ExecutionOutput | Exception] = list(
+            await asyncio.gather(*tasks, return_exceptions=True)
+        )
+        formatted_results: List[ExecutionOutput] = []
         for i, result in enumerate(results):
             if isinstance(result, Exception):
-                # Convert exception to ExecutionOutput
                 raise ValueError(f"output error for '{str(result)}'")
-            else:
-                # Already an ExecutionOutput
-                formatted_results.append(result)
-
+            formatted_results.append(result)
         return formatted_results
 
     async def _execute_single(self, execution_input: ExecutionInput) -> ExecutionOutput:
-        """Execute a single handler."""
         handler = self.dispatchers.get(execution_input.handler_name)
-
         if not handler:
             raise ValueError(f"No handler found for '{execution_input.handler_name}'")
 
-        result = await handler.handle(execution_input.handler_input)
+        result = await handler(execution_input)
         if isinstance(result, ExecutionOutput):
             return result
-        else:
-            raise ValueError(f"output error for '{execution_input.handler_name}'")
+        raise ValueError(f"output error for '{execution_input.handler_name}'")
+    
