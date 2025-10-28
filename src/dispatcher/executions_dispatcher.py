@@ -4,15 +4,17 @@ from typing import Dict, List, Callable, Awaitable
 
 class ExecutionInput:
 
-    def __init__(self, handler_name, handler_input):
+    def __init__(self, handler_name, execution_id, input_content):
         self.handler_name = handler_name
-        self.handler_input = handler_input
+        self.execution_id = execution_id
+        self.input_content = input_content
 
 
 class ExecutionOutput:
-    def __init__(self, handler_name, handler_output):
+    def __init__(self, handler_name, execution_id, output_content):
         self.handler_name = handler_name
-        self.handler_output = handler_output
+        self.execution_id = execution_id
+        self.output_content = output_content
 
 
 ExecutionHandler = Callable[[ExecutionInput], Awaitable[ExecutionOutput]]
@@ -34,7 +36,8 @@ class ExecutionDispatcherBuilder:
 async def handle_simple_execution(execution_input: ExecutionInput) -> ExecutionOutput:
     return ExecutionOutput(
         handler_name=execution_input.handler_name,
-        handler_output=execution_input.handler_input,
+        execution_id=execution_input.execution_id,
+        output_content=execution_input.input_content
     )
 
 
