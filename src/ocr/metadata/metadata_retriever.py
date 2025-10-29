@@ -1,3 +1,4 @@
+import asyncio
 import json
 from abc import ABC, abstractmethod
 from typing import List
@@ -9,8 +10,9 @@ from google.genai import types
 from src.dispatcher.executions_dispatcher import (
     ExecutionInput,
     ExecutionOutput,
-    ExecutionDispatcher,
+    ExecutionDispatcher, ExecutionDispatcherBuilder,
 )
+from src.ocr.metadata.financial_report_metadata import KPMG_SECURITIES_FINANCIAL_METADATA
 from src.ocr.ocr_model import (
     DocumentMetadata,
     DocumentType,
@@ -65,7 +67,7 @@ async def extract_single_page_raw_metadata(
 
     client = genai.Client()
     response = client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-2.0-flash-lite",
         contents=[
             types.Part.from_bytes(
                 data=page_content_in_bytes,
@@ -74,7 +76,6 @@ async def extract_single_page_raw_metadata(
             prompt,
         ],
     )
-    print(response.text)
     output = json.loads(response.text.replace("```json", "").replace("```", "").strip())
     return ExecutionOutput(
         handler_name=execution_input.handler_name,
@@ -86,21 +87,21 @@ async def extract_single_page_raw_metadata(
 async def retrieve_securities_financial_report(execution_dispatcher: ExecutionDispatcher,
                                                path: str) -> List[DocumentMetadata]:
     list_inputs = []
-    for i in range(1, 11):
+    for i in range(1, 7):
         execution_input = ExecutionInput(
             handler_name="extract_single_page_metadata",
             execution_id=i,
             input_content=path,
         )
         list_inputs.append(execution_input)
-    results = await execution_dispatcher.dispatch(list_inputs=list_inputs)
-    table_of_contents = get_table_of_contents(results)
+    raw_metadata = await execution_dispatcher.dispatch(list_inputs=list_inputs)
+    table_of_contents = get_table_of_contents(raw_metadata)
     if is_table_of_contents(table_of_contents) is True:
         return retrieve_securities_financial_metadata_from_toc(
             toc_page=table_of_contents.get("page"),
             toc=table_of_contents.get("table_of_contents"),
         )
-    return []
+    return retrieve_securities_financial_metadata_from_raw(raw_metadata)
 
 
 def is_table_of_contents(table_of_contents):
@@ -131,10 +132,37 @@ def retrieve_securities_financial_metadata_from_toc(toc_page, toc) -> List[Docum
             results.append(document_metadata)
     return results
 
-# def retrieve_securities_financial_metadata_from_raw(raw_inputs: List[ExecutionOutput]) -> List[DocumentMetadata]:
-#     for raw_input in raw_inputs:
-#         if "KPMG" in raw_input.output_content.get("raw_content", ""):
-#             return []
+
+def retrieve_securities_financial_metadata_from_raw(raw_inputs: List[ExecutionOutput]) -> List[DocumentMetadata]:
+    for raw_input in raw_inputs:
+        if "KPMG" in raw_input.output_content.get("raw_content", ""):
+            return retrieve_kpmg_securities_financial_metadata(raw_inputs)
+    return []
+
+
+def retrieve_kpmg_securities_financial_metadata(raw_inputs: List[ExecutionOutput]) -> List[DocumentMetadata]:
+    financial_statement_page = []
+    for raw_input in raw_inputs:
+        if "Báo cáo tình hình tài chính" in raw_input.output_content.get("raw_content", ""):
+            financial_statement_page.append(raw_input.execution_id)
+    from_page_of_financial_statement = min(financial_statement_page)
+    to_page_of_financial_statement = from_page_of_financial_statement + KPMG_SECURITIES_FINANCIAL_METADATA[
+        0].page_info.page_length - 1
+    from_page_of_income_statement = to_page_of_financial_statement + 1
+    to_page_of_income_statement = from_page_of_income_statement + KPMG_SECURITIES_FINANCIAL_METADATA[
+        1].page_info.page_length - 1
+    return [
+        DocumentMetadata(
+            component_type="financial_statement",
+            page_info=DocumentMetadataPageInfo(from_page=from_page_of_financial_statement,
+                                               to_page=to_page_of_financial_statement)
+        ),
+        DocumentMetadata(
+            component_type="income_statement",
+            page_info=DocumentMetadataPageInfo(from_page=from_page_of_income_statement,
+                                               to_page=to_page_of_income_statement)
+        )
+    ]
 
 
 def get_table_of_contents(raw_page_contents: List[ExecutionOutput]):
@@ -170,17 +198,16 @@ class LocalDocumentationMetadataRetriever(DocumentationMetadataRetriever):
         else:
             raise ValueError(f"path: {path} is invalid type")
 
+
 # if __name__ == "__main__":
 #     input_path = (
-#         "/Users/binhnt8/Desktop/work/learning/code/y3a/documentations/bctc_2023.pdf"
+#         "/Users/binhnt8/Desktop/work/learning/code/y3a/documentations/bctc_dnse_2022.pdf"
 #     )
 #     execution_dispatcher = (
-#         ExecutionDispatcherBuilder()
-#             .set_dispatcher(
+#         ExecutionDispatcherBuilder().set_dispatcher(
 #             name="extract_single_page_metadata",
 #             handler=extract_single_page_raw_metadata,
-#         )
-#             .build()
+#         ).build()
 #     )
 #     metadata_retriever = LocalDocumentationMetadataRetriever(
 #         execution_dispatcher=execution_dispatcher
