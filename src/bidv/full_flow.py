@@ -85,8 +85,8 @@ async def heavy_tasks(file_path, email_input):
 
     # Step 1: Validate the document
     business_file_path, company_charter_file_path = split_report_for_verify(file_path)
-    raw_data = extraction(business_file_path, company_charter_file_path)
-    # raw_data = fake_raw_data()
+    # raw_data = extraction(business_file_path, company_charter_file_path)
+    raw_data = fake_raw_data()
     validate_results = validate_with_database(raw_data)
 
     # Step 2: Split document then save to db
