@@ -1,4 +1,6 @@
 from enum import Enum
+from typing import List, Dict
+from pathlib import Path
 
 
 class DocumentType(str, Enum):
@@ -23,9 +25,23 @@ class DocumentMetadataPageInfo:
             self.page_length = page_length
 
 
-class DocumentMetadata:
+class DocumentSectionMetadata:
     def __init__(self,
                  component_type: str,
                  page_info: DocumentMetadataPageInfo = None):
         self.component_type = component_type
         self.page_info = page_info
+
+
+class DocumentMetadata:
+
+    def __init__(self,
+                 document_type: str,
+                 document_path: Path,
+                 sections: List[DocumentSectionMetadata] = None,
+                 other_info: Dict = None
+                 ):
+        self.document_type = document_type
+        self.sections = sections
+        self.document_path = document_path
+        self.other_info = other_info

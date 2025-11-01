@@ -1,6 +1,6 @@
-import asyncio
 import json
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import List
 
 from dotenv import load_dotenv
@@ -10,14 +10,13 @@ from google.genai import types
 from src.dispatcher.executions_dispatcher import (
     ExecutionInput,
     ExecutionOutput,
-    ExecutionDispatcher, ExecutionDispatcherBuilder,
-)
+    ExecutionDispatcher, )
 from src.ocr.metadata.financial_report_metadata import KPMG_SECURITIES_FINANCIAL_METADATA
 from src.ocr.ocr_model import (
-    DocumentMetadata,
+    DocumentSectionMetadata,
     DocumentType,
     MetadataPageType,
-    DocumentMetadataPageInfo,
+    DocumentMetadataPageInfo, DocumentMetadata,
 )
 from src.ocr.utils import cut_pdf_to_bytes
 
@@ -85,30 +84,58 @@ async def extract_single_page_raw_metadata(
 
 
 async def retrieve_securities_financial_report(execution_dispatcher: ExecutionDispatcher,
-                                               path: str) -> List[DocumentMetadata]:
+                                               path: Path) -> DocumentMetadata:
     list_inputs = []
+    name = path.name
+    report_date = get_report_date(name)
+    other_info = {"report_date": report_date}
     for i in range(1, 7):
         execution_input = ExecutionInput(
             handler_name="extract_single_page_metadata",
             execution_id=i,
-            input_content=path,
+            input_content=str(path),
         )
         list_inputs.append(execution_input)
     raw_metadata = await execution_dispatcher.dispatch(list_inputs=list_inputs)
     table_of_contents = get_table_of_contents(raw_metadata)
     if is_table_of_contents(table_of_contents) is True:
-        return retrieve_securities_financial_metadata_from_toc(
+        sections_metadata = retrieve_securities_financial_section_metadata_from_toc(
             toc_page=table_of_contents.get("page"),
             toc=table_of_contents.get("table_of_contents"),
         )
-    return retrieve_securities_financial_metadata_from_raw(raw_metadata)
+        return DocumentMetadata(document_type="securities_financial_report",
+                                document_path=path,
+                                sections=sections_metadata,
+                                other_info=other_info)
+    sections_metadata = retrieve_securities_financial_section_metadata_from_raw(raw_metadata)
+    return DocumentMetadata(document_type="securities_financial_report",
+                            document_path=path,
+                            sections=sections_metadata,
+                            other_info=other_info)
+
+
+def get_report_date(name: str):
+    report_period = name.split(".")[0].split("_")[-1]
+    if len(report_period) == 4:
+        return f"{report_period}-12-31"
+    else:
+        quarter = report_period[1]
+        year = report_period[2:-1]
+        if quarter == '1':
+            return f"{year}-03-31"
+        elif quarter == '2':
+            return f"{year}-06-30"
+        elif quarter == '3':
+            return f"{year}-09-30"
+        else:
+            return f"{year}-12-31"
 
 
 def is_table_of_contents(table_of_contents):
     return table_of_contents.get("is_table_of_contents")
 
 
-def retrieve_securities_financial_metadata_from_toc(toc_page, toc) -> List[DocumentMetadata]:
+def retrieve_securities_financial_section_metadata_from_toc(toc_page, toc) -> List[DocumentSectionMetadata]:
     results = []
     for content in toc:
         section_name = content.get("section_name")
@@ -117,7 +144,7 @@ def retrieve_securities_financial_metadata_from_toc(toc_page, toc) -> List[Docum
                 from_page=toc_page + content.get("from_page"),
                 to_page=toc_page + content.get("to_page"),
             )
-            document_metadata = DocumentMetadata(
+            document_metadata = DocumentSectionMetadata(
                 component_type="financial_statement", page_info=page_range
             )
             results.append(document_metadata)
@@ -126,21 +153,22 @@ def retrieve_securities_financial_metadata_from_toc(toc_page, toc) -> List[Docum
                 from_page=toc_page + content.get("from_page"),
                 to_page=toc_page + content.get("to_page"),
             )
-            document_metadata = DocumentMetadata(
+            document_metadata = DocumentSectionMetadata(
                 component_type="income_statement", page_info=page_range
             )
             results.append(document_metadata)
     return results
 
 
-def retrieve_securities_financial_metadata_from_raw(raw_inputs: List[ExecutionOutput]) -> List[DocumentMetadata]:
+def retrieve_securities_financial_section_metadata_from_raw(raw_inputs: List[ExecutionOutput]) -> List[
+    DocumentSectionMetadata]:
     for raw_input in raw_inputs:
         if "KPMG" in raw_input.output_content.get("raw_content", ""):
             return retrieve_kpmg_securities_financial_metadata(raw_inputs)
     return []
 
 
-def retrieve_kpmg_securities_financial_metadata(raw_inputs: List[ExecutionOutput]) -> List[DocumentMetadata]:
+def retrieve_kpmg_securities_financial_metadata(raw_inputs: List[ExecutionOutput]) -> List[DocumentSectionMetadata]:
     financial_statement_page = []
     for raw_input in raw_inputs:
         if "Báo cáo tình hình tài chính" in raw_input.output_content.get("raw_content", ""):
@@ -152,12 +180,12 @@ def retrieve_kpmg_securities_financial_metadata(raw_inputs: List[ExecutionOutput
     to_page_of_income_statement = from_page_of_income_statement + KPMG_SECURITIES_FINANCIAL_METADATA[
         1].page_info.page_length - 1
     return [
-        DocumentMetadata(
+        DocumentSectionMetadata(
             component_type="financial_statement",
             page_info=DocumentMetadataPageInfo(from_page=from_page_of_financial_statement,
                                                to_page=to_page_of_financial_statement)
         ),
-        DocumentMetadata(
+        DocumentSectionMetadata(
             component_type="income_statement",
             page_info=DocumentMetadataPageInfo(from_page=from_page_of_income_statement,
                                                to_page=to_page_of_income_statement)
@@ -179,7 +207,7 @@ def get_table_of_contents(raw_page_contents: List[ExecutionOutput]):
 class DocumentationMetadataRetriever(ABC):
 
     @abstractmethod
-    def retrieve(self, path: str) -> DocumentMetadata:
+    async def retrieve(self, path: str) -> DocumentMetadata:
         pass
 
 
@@ -188,20 +216,21 @@ class LocalDocumentationMetadataRetriever(DocumentationMetadataRetriever):
     def __init__(self, execution_dispatcher: ExecutionDispatcher):
         self.execution_dispatcher = execution_dispatcher
 
-    async def retrieve(self, path: str) -> List[DocumentMetadata]:
-        if "dkdn" in path:
-            return [DocumentMetadata(component_type=DocumentType.BUSINESS_REGISTRATION.value)]
-        elif "dl" in path:
-            return [DocumentMetadata(component_type=DocumentType.COMPANY_CHARTER.value)]
-        elif "bctc" in path:
-            return await retrieve_securities_financial_report(self.execution_dispatcher, path)
+    async def retrieve(self, path: str) -> DocumentMetadata:
+        python_path = Path(path)
+        if "dkdn" in python_path.name:
+            return DocumentMetadata(document_type=DocumentType.BUSINESS_REGISTRATION.value, document_path=python_path)
+        elif "dl" in python_path.name:
+            return DocumentMetadata(document_type=DocumentType.COMPANY_CHARTER.value, document_path=python_path)
+        elif "bctc" in python_path.name:
+            return await retrieve_securities_financial_report(self.execution_dispatcher, python_path)
         else:
             raise ValueError(f"path: {path} is invalid type")
 
 
-# if __name__ == "__main__":
+# # if __name__ == "__main__":
 #     input_path = (
-#         "/Users/binhnt8/Desktop/work/learning/code/y3a/documentations/bctc_dnse_2022.pdf"
+#         "/Users/binhnt8/Desktop/work/learning/code/y3a/documentations/bctc_2023.pdf"
 #     )
 #     execution_dispatcher = (
 #         ExecutionDispatcherBuilder().set_dispatcher(
@@ -214,3 +243,8 @@ class LocalDocumentationMetadataRetriever(DocumentationMetadataRetriever):
 #     )
 #     doc_metadata = asyncio.run(metadata_retriever.retrieve(path=input_path))
 #     print(doc_metadata)
+# input_path = (
+#     "/Users/binhnt8/Desktop/work/learning/code/y3a/documentations/bctc_dnse_q12022.pdf"
+# )
+# report_date = get_report_date(Path(input_path).name)
+# print(report_date)
