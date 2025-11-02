@@ -39,16 +39,16 @@ def execute(file_path, email_input):
 
 
 async def handle_heavy_tasks(files: List[str]):
-    doc_identifiers = []
+    financial_documents = []
     identifier_retriever = NameBasedIdentifierRetriever()
-    execution_dispatcher = (
+    financial_execution_dispatcher = (
         ExecutionDispatcherBuilder().set_dispatcher(
             name="extract_single_page_metadata",
             handler=extract_single_securities_report_page_raw_metadata,
         ).build()
     )
     financial_metadata_retriever = SecuritiesFinancialReportMetadataRetriever(
-        execution_dispatcher=execution_dispatcher
+        execution_dispatcher=financial_execution_dispatcher
     )
     business_registration_metadata_retriever = BusinessRegistrationMetadataRetriever()
     company_charter_metadata_retriever = CompanyCharterMetadataRetriever()
@@ -65,9 +65,19 @@ async def handle_heavy_tasks(files: List[str]):
         if identifier.file_type == 'dkkd':
             business_registration_metadata = await business_registration_metadata_retriever.retrieve(path=file_path, document_identifier=identifier)
             business_registration_data = business_registration_data_retriever.retrieve(business_registration_metadata)
+        if identifier.file_type == 'bctc':
+            financial_metadata = await financial_metadata_retriever.retrieve(path=file_path, document_identifier=identifier)
+            financial_data = financial_data_retriever.retrieve(financial_metadata)
+            financial_documents.append(financial_data)
+
+
+    # handle on parallel
+    
+
     raw_data = {"business_registration_cert": business_registration_data, "company_charter": company_charter_data}
     # validate_results = validate_with_database(raw_data)
-    return raw_data
+
+    return financial_documents
 
 
 async def heavy_tasks(file_path, email_input):
@@ -295,7 +305,7 @@ def _cut_pdf(input_pdf, output_pdf, start_page, end_page):
 
 
 if __name__ == '__main__':
-    list_files = ['/Users/binhnt8/Desktop/work/learning/code/y3a/documentations/dnse-pl-dkkd.pdf',
-                  '/Users/binhnt8/Desktop/work/learning/code/y3a/documentations/dnse-pl-dl.pdf']
+    list_files = ['/Users/binhnt8/Desktop/work/learning/code/y3a/documentations/ssi-tc-bctc-2023.pdf',
+                  '/Users/binhnt8/Desktop/work/learning/code/y3a/documentations/ssi-tc-bctc-2024.pdf']
     result = asyncio.run(handle_heavy_tasks(list_files))
     print(result)
