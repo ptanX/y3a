@@ -19,8 +19,8 @@ def get_role_badge(role):
 
 
 def authenticated_menu():
-    st.sidebar.title("Navigation")
-    st.sidebar.write(f"Hello **{st.session_state.full_name}**")
+    st.sidebar.title("RawIQ")
+    st.sidebar.write(f"Xin chào **{st.session_state.full_name}**")
 
     st.sidebar.divider()
 
@@ -31,7 +31,7 @@ def authenticated_menu():
 
     # Details page (all roles)
     if has_permission("details"):
-        if st.sidebar.button("📋 Details", use_container_width=True, key="nav_details"):
+        if st.sidebar.button("📋 Chi tiết", use_container_width=True, key="nav_details"):
             st.switch_page("pages/detail.py")
 
     # Users page (managers and admins)
@@ -46,7 +46,7 @@ def authenticated_menu():
 
     st.sidebar.divider()
 
-    if st.sidebar.button("🚪 Logout", use_container_width=True, key="nav_logout"):
+    if st.sidebar.button("🚪 Đăng xuất", use_container_width=True, key="nav_logout"):
         st.session_state.logged_in = False
         st.session_state.username = ""
         st.session_state.role = ""

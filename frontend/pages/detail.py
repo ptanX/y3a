@@ -7,7 +7,7 @@ menu_with_redirect()
 
 # Streamlit App
 st.set_page_config(page_title="Bảng Kiểm Tra Dữ Liệu", layout="wide")
-st.title("📊 Bảng Kiểm Tra Dữ Liệu Công Ty")
+st.title("📊 Kết Quả Bóc Tách Chi Tiết")
 
 document_id = st.session_state.document_id
 if st.session_state.document_id:
@@ -447,45 +447,53 @@ if "my_data" not in st.session_state:
     df = json_to_dataframe(data)
     st.session_state.my_data = df
 
+
+def handle_data_change():
+    edited_rows = st.session_state.my_editor["edited_rows"]
+    for index, values in edited_rows.items():
+        print(index, "->", values)
+        st.session_state.my_data.at[index, "user_input"] = values["user_input"]
+
+
+# Display the styled dataframe
+st.data_editor(
+    st.session_state.my_data.style.apply(highlight_rows, axis=1),
+    column_config=get_column_config(),
+    use_container_width=True,
+    key="my_editor",
+    on_change=handle_data_change,
+    height=400
+)
+
+# Display legend
+st.markdown("### 📌 Chú thích:")
+col1, col2 = st.columns(2)
+with col1:
+    st.markdown("🟨 Trường thông tin cần kiểm tra")
+with col2:
+    st.markdown("🟥 Trường thông tin không bóc tách được")
+st.markdown("---")
+
 with st.form("detail_form"):
-    # def handle_data_change():
-    #     st.write("Data in editor has changed!")
-    #     # You can access the edited data and changes via st.session_state
-    #     # For example, if your data editor has key="my_editor":
-    #     # edited_rows = st.session_state.my_editor["edited_rows"]
-    #     # inserted_rows = st.session_state.my_editor["inserted_rows"]
-    #     # deleted_rows = st.session_state.my_editor["deleted_rows"]
-    #     # Process these changes as needed (e.g., update a database)
-    #     print(st.session_state.my_editor)
+    st.markdown("### Thông tin QTTD")
 
-
-    st.markdown("### Thông tin QHTD")
-
-    recipient_name = st.text_input("Name QHTD")
-    recipient_email = st.text_input("Email QHTD")
-
-    # Display the styled dataframe
-    st.data_editor(
-        st.session_state.my_data.style.apply(highlight_rows, axis=1),
-        column_config=get_column_config(),
-        use_container_width=True,
-        key="my_editor",
-        # on_change=handle_data_change,
-        height=400
-    )
-
-    # Display legend
-    st.markdown("### 📌 Chú thích:")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("🟨 Trường thông tin cần kiểm tra")
-    with col2:
-        st.markdown("🟥 Trường thông tin không bóc tách được")
-    st.markdown("---")
+    recipient_name = st.text_input("Tên QTTD", placeholder="Tên QTTD")
+    recipient_email = st.text_input("Email QTTD", placeholder="Email QTTD")
 
     submitted = st.form_submit_button("Submit", use_container_width=True, type="primary")
 
     if submitted:
-        print(dict(zip(st.session_state.my_data["field"], st.session_state.my_data["user_input"])))
-        st.success("✅ Data submitted successfully!")
-        st.balloons()
+        if not recipient_name:
+            st.error("Vui lòng nhập Tên QTTD")
+        elif not recipient_email:
+            st.error("Vui lòng nhập Email QTTD")
+        else:
+            customer_info_result = dict(zip(st.session_state.my_data["field"], st.session_state.my_data["user_input"]))
+            request_body = {
+                "recipient_name": recipient_name,
+                "recipient_email": recipient_email,
+                "customer_info_result": customer_info_result
+            }
+            print(request_body)
+            # TODO call send email
+            st.success("✅ Data submitted successfully!")

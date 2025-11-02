@@ -10,8 +10,7 @@ from src.bidv import e2e_usecases
 menu_with_redirect()
 
 # UPLOAD PAGE
-st.title("📤 Upload Form")
-st.write(f"Logged in as: **{st.session_state.full_name}** ({get_role_badge(st.session_state.role)})")
+st.title("📤 Upload Tài liệu Thủ Tục Vay Vốn")
 st.divider()
 
 
