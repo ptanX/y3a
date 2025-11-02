@@ -8,10 +8,11 @@ from google.genai import types
 
 from src.dispatcher.executions_dispatcher import ExecutionDispatcherBuilder
 from src.ocr.data.data_prompt_registry import get_data_prompt_by_section
+from src.ocr.data.pdf_text_extractor import DocumentAIExtractor
 from src.ocr.metadata.identifier_retriever import NameBasedIdentifierRetriever
 from src.ocr.metadata.metadata_retriever import (
     extract_single_securities_report_page_raw_metadata,
-    SecuritiesFinancialReportMetadataRetriever,
+    SecuritiesFinancialReportMetadataRetriever, BusinessRegistrationMetadataRetriever,
 )
 from src.ocr.ocr_model import DocumentMetadata
 from src.ocr.utils import cut_pdf_to_bytes
@@ -79,6 +80,11 @@ FIELD_MAPPING = {
     "profit_after_tax": "net_profit_after_tax",
 }
 
+PROJECT_ID = "387819483924"
+LOCATION = "us"
+business_registration_processor_id = "5110722c3ac24f03"
+company_character_processor_id = "12676ebbd1c0ed5"
+
 
 class DocumentDataRetriever(ABC):
 
@@ -89,12 +95,11 @@ class DocumentDataRetriever(ABC):
 
 class FinancialSecuritiesReportDataRetriever(DocumentDataRetriever):
     def retrieve(self, doc_metadata: DocumentMetadata):
-        doc_path = doc_metadata.document_path
         client = genai.Client()
         reports = []
         for section in doc_metadata.sections:
             page_content_in_bytes = cut_pdf_to_bytes(
-                input_pdf=str(doc_path),
+                input_pdf=doc_metadata.document_path,
                 start_page=section.page_info.from_page,
                 end_page=section.page_info.to_page,
             )
@@ -112,7 +117,6 @@ class FinancialSecuritiesReportDataRetriever(DocumentDataRetriever):
                     prompt,
                 ],
             )
-            print(response.text)
             response_json = json.loads(
                 response.text.replace("```json", "").replace("```", "").strip()
             )
@@ -148,9 +152,26 @@ class FinancialSecuritiesReportDataRetriever(DocumentDataRetriever):
         return result
 
 
+class BusinessRegistrationDataRetriever(DocumentDataRetriever):
+
+    def retrieve(self, doc_metadata: DocumentMetadata):
+        content_in_bytes = cut_pdf_to_bytes(
+            input_pdf=doc_metadata.document_path,
+            start_page=doc_metadata.sections[0].page_info.from_page,
+            end_page=doc_metadata.sections[0].page_info.to_page,
+        )
+        business_regis_extractor = DocumentAIExtractor(project_id=PROJECT_ID,
+                                                       location=LOCATION,
+                                                       processor_id=business_registration_processor_id,
+                                                       )
+        business_regis_cert = business_regis_extractor.extract_normalized_text(file_content=content_in_bytes)
+        return business_regis_cert
+
+
 if __name__ == '__main__':
+    load_dotenv()
     input_path = (
-        "C:\\Users\\ADMIN\\Desktop\\working\\code\\y3s\\documentations\\ssi-tc-bctc-2023.pdf"
+        "C:\\Users\\ADMIN\\Desktop\\working\\code\\y3s\\documentations\\dnse-pl-dkkd.pdf"
     )
     execution_dispatcher = (
         ExecutionDispatcherBuilder().set_dispatcher(
@@ -161,11 +182,9 @@ if __name__ == '__main__':
     identifier_retriever = NameBasedIdentifierRetriever()
     doc_identifier_metadata = identifier_retriever.retrieve(path=input_path)
     # print(doc_identifier_metadata)
-    metadata_retriever = SecuritiesFinancialReportMetadataRetriever(
-        execution_dispatcher=execution_dispatcher
-    )
+    metadata_retriever = BusinessRegistrationMetadataRetriever()
     doc_metadata = asyncio.run(
         metadata_retriever.retrieve(path=input_path, document_identifier=doc_identifier_metadata))
     print(doc_metadata)
-    actual_data = FinancialSecuritiesReportDataRetriever().retrieve(doc_metadata)
+    actual_data = BusinessRegistrationDataRetriever().retrieve(doc_metadata)
     print(actual_data)

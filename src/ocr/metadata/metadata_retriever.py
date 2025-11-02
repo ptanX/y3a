@@ -13,8 +13,9 @@ from src.dispatcher.executions_dispatcher import (
     ExecutionOutput,
     ExecutionDispatcher, ExecutionDispatcherBuilder,
 )
-from src.ocr.metadata.financial_report_metadata import (
-    KPMG_SECURITIES_FINANCIAL_SECTION_METADATA,
+from src.ocr.metadata.doc_section_metadata import (
+    KPMG_SECURITIES_FINANCIAL_SECTION_METADATA, DNSE_BUSINESS_REGISTRATION, SSI_BUSINESS_REGISTRATION,
+    DNSE_COMPANY_CHARTER, SSI_COMPANY_CHARTER,
 )
 from src.ocr.metadata.identifier_retriever import NameBasedIdentifierRetriever
 from src.ocr.ocr_model import (
@@ -259,6 +260,48 @@ class SecuritiesFinancialReportMetadataRetriever(DocumentationMetadataRetriever)
         return {"is_table_of_contents": False}
 
 
+class BusinessRegistrationMetadataRetriever(DocumentationMetadataRetriever):
+
+    async def retrieve(self, path: str, document_identifier: DocumentIdentifierMetadata) -> DocumentMetadata:
+        if document_identifier.company.lower() == 'dnse':
+            return DocumentMetadata(
+                document_type=DocumentType.BUSINESS_REGISTRATION.value,
+                document_identifier=document_identifier,
+                document_path=path,
+                sections=DNSE_BUSINESS_REGISTRATION,
+            )
+        elif document_identifier.company.lower() == 'ssi':
+            return DocumentMetadata(
+                document_type=DocumentType.BUSINESS_REGISTRATION.value,
+                document_identifier=document_identifier,
+                document_path=path,
+                sections=SSI_BUSINESS_REGISTRATION,
+            )
+        else:
+            raise ValueError(f"company: {document_identifier.company} is invalid type")
+
+
+class CompanyCharterMetadataRetriever(DocumentationMetadataRetriever):
+
+    async def retrieve(self, path: str, document_identifier: DocumentIdentifierMetadata) -> DocumentMetadata:
+        if document_identifier.company.lower() == 'dnse':
+            return DocumentMetadata(
+                document_type=DocumentType.COMPANY_CHARTER.value,
+                document_identifier=document_identifier,
+                document_path=path,
+                sections=DNSE_COMPANY_CHARTER,
+            )
+        elif document_identifier.company.lower() == 'ssi':
+            return DocumentMetadata(
+                document_type=DocumentType.COMPANY_CHARTER.value,
+                document_identifier=document_identifier,
+                document_path=path,
+                sections=SSI_COMPANY_CHARTER,
+            )
+        else:
+            raise ValueError(f"company: {document_identifier.company} is invalid type")
+
+
 # class LocalDocumentationMetadataRetriever(DocumentationMetadataRetriever):
 #
 #     def __init__(self, execution_dispatcher: ExecutionDispatcher):
@@ -299,7 +342,8 @@ if __name__ == "__main__":
     metadata_retriever = SecuritiesFinancialReportMetadataRetriever(
         execution_dispatcher=execution_dispatcher
     )
-    doc_metadata = asyncio.run(metadata_retriever.retrieve(path=input_path, document_identifier=doc_identifier_metadata))
+    doc_metadata = asyncio.run(
+        metadata_retriever.retrieve(path=input_path, document_identifier=doc_identifier_metadata))
     print(doc_metadata)
     # input_path = (
     # "/Users/binhnt8/Desktop/work/learning/code/y3a/documentations/bctc_dnse_q12022.pdf"
