@@ -229,15 +229,15 @@ def calculate_financial_metrics(data):
                             return field["value"]
             return None
 
-        # Lấy các giá trị từ balance_sheet
-        total_assets = get_value("balance_sheet", "total_assets")
-        total_liabilities = get_value("balance_sheet", "liabilities")
-        short_term_liabilities = get_value("balance_sheet", "short_term_liabilities")
-        long_term_liabilities = get_value("balance_sheet", "long_term_liabilities")
-        owners_equity = get_value("balance_sheet", "owners_equity")
-        receivables = get_value("balance_sheet", "receivables")
-        current_assets = get_value("balance_sheet", "short_term_assets")
-        cash_and_equivalents = get_value("balance_sheet", "cash_and_cash_equivalents")
+        # Lấy các giá trị từ financial_statement
+        total_assets = get_value("financial_statement", "total_assets")
+        total_liabilities = get_value("financial_statement", "liabilities")
+        short_term_liabilities = get_value("financial_statement", "short_term_liabilities")
+        long_term_liabilities = get_value("financial_statement", "long_term_liabilities")
+        owners_equity = get_value("financial_statement", "owners_equity")
+        receivables = get_value("financial_statement", "receivables")
+        current_assets = get_value("financial_statement", "short_term_assets")
+        cash_and_equivalents = get_value("financial_statement", "cash_and_cash_equivalents")
 
         # Lấy các giá trị từ income_statement
         total_operating_revenue = get_value(
@@ -343,8 +343,8 @@ def calculate_financial_metrics(data):
         net_profit_after_tax = get_value("income_statement", "net_profit_after_tax")
 
         # Lấy giá trị năm trước để tính growth và ratios
-        prev_total_assets = get_prev_value("balance_sheet", "total_assets")
-        prev_owners_equity = get_prev_value("balance_sheet", "owners_equity")
+        prev_total_assets = get_prev_value("financial_statement", "total_assets")
+        prev_owners_equity = get_prev_value("financial_statement", "owners_equity")
         prev_net_profit = get_prev_value("income_statement", "net_profit_after_tax")
 
         # Tính toán các chỉ số

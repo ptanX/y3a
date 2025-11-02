@@ -1,7 +1,5 @@
-import asyncio
 import json
 from abc import ABC, abstractmethod
-from pathlib import Path
 from typing import List
 
 from dotenv import load_dotenv
@@ -11,13 +9,11 @@ from google.genai import types
 from src.dispatcher.executions_dispatcher import (
     ExecutionInput,
     ExecutionOutput,
-    ExecutionDispatcher, ExecutionDispatcherBuilder,
-)
+    ExecutionDispatcher, )
 from src.ocr.metadata.doc_section_metadata import (
     KPMG_SECURITIES_FINANCIAL_SECTION_METADATA, DNSE_BUSINESS_REGISTRATION, SSI_BUSINESS_REGISTRATION,
     DNSE_COMPANY_CHARTER, SSI_COMPANY_CHARTER,
 )
-from src.ocr.metadata.identifier_retriever import NameBasedIdentifierRetriever
 from src.ocr.ocr_model import (
     DocumentSectionMetadata,
     DocumentType,
@@ -301,52 +297,3 @@ class CompanyCharterMetadataRetriever(DocumentationMetadataRetriever):
         else:
             raise ValueError(f"company: {document_identifier.company} is invalid type")
 
-
-# class LocalDocumentationMetadataRetriever(DocumentationMetadataRetriever):
-#
-#     def __init__(self, execution_dispatcher: ExecutionDispatcher):
-#         self.execution_dispatcher = execution_dispatcher
-#
-#     async def retrieve(self, path: str) -> DocumentMetadata:
-#         python_path = Path(path)
-#         if "dkdn" in python_path.name:
-#             return DocumentMetadata(
-#                 document_identifier=DocumentType.BUSINESS_REGISTRATION.value,
-#                 document_path=python_path,
-#             )
-#         elif "dl" in python_path.name:
-#             return DocumentMetadata(
-#                 document_identifier=DocumentType.COMPANY_CHARTER.value,
-#                 document_path=python_path,
-#             )
-#         elif "bctc" in python_path.name:
-#             return await retrieve_securities_financial_report(
-#                 self.execution_dispatcher, python_path
-#             )
-#         else:
-#             raise ValueError(f"path: {path} is invalid type")
-
-if __name__ == "__main__":
-    input_path = (
-        "C:\\Users\\ADMIN\\Desktop\\working\\code\\y3s\\documentations\\ssi-tc-bctc-2023.pdf"
-    )
-    execution_dispatcher = (
-        ExecutionDispatcherBuilder().set_dispatcher(
-            name="extract_single_page_metadata",
-            handler=extract_single_securities_report_page_raw_metadata,
-        ).build()
-    )
-    identifier_retriever = NameBasedIdentifierRetriever()
-    doc_identifier_metadata = identifier_retriever.retrieve(path=input_path)
-    # print(doc_identifier_metadata)
-    metadata_retriever = SecuritiesFinancialReportMetadataRetriever(
-        execution_dispatcher=execution_dispatcher
-    )
-    doc_metadata = asyncio.run(
-        metadata_retriever.retrieve(path=input_path, document_identifier=doc_identifier_metadata))
-    print(doc_metadata)
-    # input_path = (
-    # "/Users/binhnt8/Desktop/work/learning/code/y3a/documentations/bctc_dnse_q12022.pdf"
-    # )
-    # report_date = get_report_date(Path(input_path).name)
-    # print(report_date)

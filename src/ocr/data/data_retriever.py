@@ -12,7 +12,7 @@ from src.ocr.data.pdf_text_extractor import DocumentAIExtractor
 from src.ocr.metadata.identifier_retriever import NameBasedIdentifierRetriever
 from src.ocr.metadata.metadata_retriever import (
     extract_single_securities_report_page_raw_metadata,
-    SecuritiesFinancialReportMetadataRetriever, BusinessRegistrationMetadataRetriever,
+    SecuritiesFinancialReportMetadataRetriever, BusinessRegistrationMetadataRetriever, CompanyCharterMetadataRetriever,
 )
 from src.ocr.ocr_model import DocumentMetadata
 from src.ocr.utils import cut_pdf_to_bytes
@@ -129,7 +129,7 @@ class FinancialSecuritiesReportDataRetriever(DocumentDataRetriever):
             }
             reports.append(report)
         return {
-            "company": "",
+            "company": doc_metadata.document_identifier.company,
             "report_date": doc_metadata.other_info.get("report_date"),
             "currency": "VND",
             "reports": reports,
@@ -168,10 +168,26 @@ class BusinessRegistrationDataRetriever(DocumentDataRetriever):
         return business_regis_cert
 
 
+class CompanyCharterDataRetriever(DocumentDataRetriever):
+
+    def retrieve(self, doc_metadata: DocumentMetadata):
+        content_in_bytes = cut_pdf_to_bytes(
+            input_pdf=doc_metadata.document_path,
+            start_page=doc_metadata.sections[0].page_info.from_page,
+            end_page=doc_metadata.sections[0].page_info.to_page,
+        )
+        company_charter_extractor = DocumentAIExtractor(project_id=PROJECT_ID,
+                                                        location=LOCATION,
+                                                        processor_id=company_character_processor_id,
+                                                        )
+        business_regis_cert = company_charter_extractor.extract_normalized_text(file_content=content_in_bytes)
+        return business_regis_cert
+
+
 if __name__ == '__main__':
     load_dotenv()
     input_path = (
-        "C:\\Users\\ADMIN\\Desktop\\working\\code\\y3s\\documentations\\dnse-pl-dkkd.pdf"
+        "/Users/binhnt8/Desktop/work/learning/code/y3a/documentations/ssi-pl-dl.pdf"
     )
     execution_dispatcher = (
         ExecutionDispatcherBuilder().set_dispatcher(
@@ -180,11 +196,23 @@ if __name__ == '__main__':
         ).build()
     )
     identifier_retriever = NameBasedIdentifierRetriever()
-    doc_identifier_metadata = identifier_retriever.retrieve(path=input_path)
-    # print(doc_identifier_metadata)
-    metadata_retriever = BusinessRegistrationMetadataRetriever()
-    doc_metadata = asyncio.run(
-        metadata_retriever.retrieve(path=input_path, document_identifier=doc_identifier_metadata))
-    print(doc_metadata)
-    actual_data = BusinessRegistrationDataRetriever().retrieve(doc_metadata)
-    print(actual_data)
+    doc_identifier = identifier_retriever.retrieve(path=input_path)
+    data = None
+    if doc_identifier.file_type == 'dkkd':
+        metadata = asyncio.run(BusinessRegistrationMetadataRetriever().retrieve(path=input_path, document_identifier=doc_identifier))
+        data = BusinessRegistrationDataRetriever().retrieve(doc_metadata=metadata)
+    if doc_identifier.file_type == 'dl':
+        metadata = asyncio.run(CompanyCharterMetadataRetriever().retrieve(path=input_path, document_identifier=doc_identifier))
+        data = CompanyCharterDataRetriever().retrieve(doc_metadata=metadata)
+    if doc_identifier.file_type == 'bctc':
+        execution_dispatcher = (
+            ExecutionDispatcherBuilder().set_dispatcher(
+                name="extract_single_page_metadata",
+                handler=extract_single_securities_report_page_raw_metadata,
+            ).build()
+        )
+        metadata = asyncio.run(SecuritiesFinancialReportMetadataRetriever(
+            execution_dispatcher=execution_dispatcher
+        ).retrieve(path=input_path, document_identifier=doc_identifier))
+        data = FinancialSecuritiesReportDataRetriever().retrieve(doc_metadata=metadata)
+    print(data)
