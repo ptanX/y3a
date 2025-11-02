@@ -371,9 +371,17 @@ OUTPUT: CHỈ JSON array như ví dụ, KHÔNG có text khác.
 
 
 def get_data_prompt_by_section(document_type: str, section_type: str) -> str:
-    if document_type == 'securities_financial_report' and section_type == 'financial_statement':
+    if (
+        document_type == "securities_financial_report"
+        and section_type == "financial_statement"
+    ):
         return SECURITIES_FINANCIAL_STATEMENT_PROMPT
-    if document_type == 'securities_financial_report' and section_type == 'income_statement':
+    if (
+        document_type == "securities_financial_report"
+        and section_type == "income_statement"
+    ):
         return SECURITIES_FINANCIAL_STATEMENT_PROMPT
     else:
-        raise ValueError(f"could not find prompt for {document_type} and {section_type}")
+        raise ValueError(
+            f"could not find prompt for {document_type} and {section_type}"
+        )
