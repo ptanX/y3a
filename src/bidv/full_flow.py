@@ -6,6 +6,7 @@ import threading
 import unicodedata
 import uuid
 from datetime import datetime
+from typing import List
 
 from PyPDF2 import PdfReader, PdfWriter
 from dotenv import load_dotenv
@@ -18,6 +19,12 @@ from src.bidv.pdf_text_extractor import DocumentAIExtractor
 from src.bidv.services.data_validator_service import DataValidatorService
 from src.bidv.startup.environment_initialization import DATABASE_PATH
 from src.bidv.table_parsing import extract_information
+from src.dispatcher.executions_dispatcher import ExecutionDispatcherBuilder
+from src.ocr.data.data_retriever import FinancialSecuritiesReportDataRetriever, BusinessRegistrationDataRetriever, \
+    CompanyCharterDataRetriever
+from src.ocr.metadata.identifier_retriever import NameBasedIdentifierRetriever
+from src.ocr.metadata.metadata_retriever import extract_single_securities_report_page_raw_metadata, \
+    SecuritiesFinancialReportMetadataRetriever, BusinessRegistrationMetadataRetriever, CompanyCharterMetadataRetriever
 
 load_dotenv()
 
@@ -29,6 +36,38 @@ def execute(file_path, email_input):
         daemon=True
     ).start()
     return {"status": "success"}
+
+
+async def handle_heavy_tasks(files: List[str]):
+    doc_identifiers = []
+    identifier_retriever = NameBasedIdentifierRetriever()
+    execution_dispatcher = (
+        ExecutionDispatcherBuilder().set_dispatcher(
+            name="extract_single_page_metadata",
+            handler=extract_single_securities_report_page_raw_metadata,
+        ).build()
+    )
+    financial_metadata_retriever = SecuritiesFinancialReportMetadataRetriever(
+        execution_dispatcher=execution_dispatcher
+    )
+    business_registration_metadata_retriever = BusinessRegistrationMetadataRetriever()
+    company_charter_metadata_retriever = CompanyCharterMetadataRetriever()
+    financial_data_retriever = FinancialSecuritiesReportDataRetriever()
+    business_registration_data_retriever = BusinessRegistrationDataRetriever()
+    company_charter_data_retriever = CompanyCharterDataRetriever()
+    company_charter_data = {}
+    business_registration_data = {}
+    for file_path in files:
+        identifier = identifier_retriever.retrieve(path=file_path)
+        if identifier.file_type == 'dl':
+            company_charter_metadata = await company_charter_metadata_retriever.retrieve(path=file_path, document_identifier=identifier)
+            company_charter_data = company_charter_data_retriever.retrieve(doc_metadata=company_charter_metadata)
+        if identifier.file_type == 'dkkd':
+            business_registration_metadata = await business_registration_metadata_retriever.retrieve(path=file_path, document_identifier=identifier)
+            business_registration_data = business_registration_data_retriever.retrieve(business_registration_metadata)
+    raw_data = {"business_registration_cert": business_registration_data, "company_charter": company_charter_data}
+    # validate_results = validate_with_database(raw_data)
+    return raw_data
 
 
 async def heavy_tasks(file_path, email_input):
@@ -253,3 +292,10 @@ def _cut_pdf(input_pdf, output_pdf, start_page, end_page):
 
     with open(output_pdf, "wb") as f_out:
         writer.write(f_out)
+
+
+if __name__ == '__main__':
+    list_files = ['/Users/binhnt8/Desktop/work/learning/code/y3a/documentations/dnse-pl-dkkd.pdf',
+                  '/Users/binhnt8/Desktop/work/learning/code/y3a/documentations/dnse-pl-dl.pdf']
+    result = asyncio.run(handle_heavy_tasks(list_files))
+    print(result)
