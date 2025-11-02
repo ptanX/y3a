@@ -1,4 +1,5 @@
 import datetime
+import json
 import os
 
 from src.bidv import email_handling
@@ -14,7 +15,6 @@ def execute(content):
 
         with open(temp_file_path, "wb") as temp_file:
             temp_file.write(uploaded_file.getbuffer())
-
 
     fake_content = fake_email_content()
     content = merge_first_not_none(content, fake_content)
@@ -87,3 +87,8 @@ def merge_first_not_none(dict1, dict2):
         for key in all_keys
         if dict1.get(key) is not None or dict2.get(key) is not None
     }
+
+def fake_raw_data():
+    with open("final_result.json", 'r') as f:
+        sample_data = json.load(f)
+    return sample_data

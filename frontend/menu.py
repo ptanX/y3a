@@ -24,17 +24,18 @@ def authenticated_menu():
 
     st.sidebar.divider()
 
-    # Upload page (users, managers, admins)
     if has_permission("upload"):
         if st.sidebar.button("📤 Upload", use_container_width=True, key="nav_upload"):
             st.switch_page("pages/upload.py")
 
-    # Details page (all roles)
     if has_permission("details"):
         if st.sidebar.button("📋 Chi tiết", use_container_width=True, key="nav_details"):
             st.switch_page("pages/detail.py")
 
-    # Users page (managers and admins)
+    if has_permission("chat_agent"):
+        if st.sidebar.button("👥 Chat Agentic", use_container_width=True, key="nav_chat_agent"):
+            st.switch_page("pages/chat_agent.py")
+
     if has_permission("users"):
         if st.sidebar.button("👥 Users", use_container_width=True, key="nav_users"):
             st.switch_page("pages/user.py")

@@ -42,7 +42,7 @@ with col2:
     st.markdown("""
         | Username | Password | Role | Access |
         |----------|----------|------|--------|
-        | `admin` | `admin123` | 🔴 Admin | Full access |
-        | `manager` | `manager123` | 🟡 Manager | Upload, Details, Users |
-        | `user` | `user123` | 🟢 User | Upload, Details |
+        | `admin` | `1` | 🔴 Admin | Full access |
+        | `manager` | `1` | 🟡 Manager | Upload, Details, Users |
+        | `user` | `1` | 🟢 User | Upload, Details |
         """)
