@@ -66,6 +66,8 @@ def menu_with_redirect():
     if query_params is not None:
         if query_params.get("document_id"):
             st.session_state.document_id = query_params.get("document_id")
+        if query_params.get("financial_document_id"):
+            st.session_state.financial_document_id = query_params.get("financial_document_id")
     # Check if logged in and has permission
     if "logged_in" not in st.session_state:
         st.warning("⚠️ Please login first")

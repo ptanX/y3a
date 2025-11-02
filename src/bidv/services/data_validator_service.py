@@ -68,7 +68,8 @@ class DataValidatorService:
         id_number = unified_data.get('legal_rep_info', {}).get('id_number')
 
         if not business_code:
-            raise ValueError("business_code not found in unified data")
+            print("business_code not found in unified data")
+            # raise ValueError("business_code not found in unified data")
         if not id_number:
             print("id_number not found in unified data")
 

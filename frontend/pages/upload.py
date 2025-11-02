@@ -1,10 +1,9 @@
-import os
 import uuid
 from datetime import datetime
 
 import streamlit as st
 
-from frontend.menu import menu_with_redirect, get_role_badge
+from frontend.menu import menu_with_redirect
 from src.bidv import e2e_usecases
 
 menu_with_redirect()
@@ -14,8 +13,19 @@ st.title("📤 Upload Tài liệu Thủ Tục Vay Vốn")
 st.divider()
 
 
-def submit(upload_record):
-    e2e_usecases.execute(upload_record)
+def submit():
+    document_id = str(uuid.uuid4())
+    upload_record = {
+        'document_id': document_id,
+        'recipient_name': recipient_name,
+        'recipient_email': recipient_email,
+        'files': uploaded_files,
+        'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        'uploaded_by': st.session_state.username,
+        'uploaded_by_name': st.session_state.full_name,
+    }
+
+    e2e_usecases.execute_upload_document(upload_record)
 
     st.success("✅ Đã tiếp nhận yêu cầu thành công. Vui lòng đợi kết quả gửi vào hòm mail!")
     st.write(f"**Mã yêu cầu:** {document_id}")
@@ -59,18 +69,9 @@ with st.form("upload_form"):
         elif not uploaded_files:
             st.error("Vui lòng chọn file để upload")
         else:
-            # Store uploaded data
-            base_url = os.environ.get("BASE_URL", "http://localhost:8501")
-            document_id = str(uuid.uuid4())
-            upload_record = {
-                'document_id': document_id,
-                'recipient_name': recipient_name,
-                'recipient_email': recipient_email,
-                "detail_url": f"{base_url}/detail?document_id={document_id}",
-                'files': uploaded_files,
-                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                'uploaded_by': st.session_state.username,
-                'uploaded_by_name': st.session_state.full_name,
-            }
-
-            submit(upload_record)
+            with st.spinner("🔄 Processing document..."):
+                try:
+                    # Store uploaded data
+                    submit()
+                except Exception as e:
+                    st.error(f"❌Lỗi xử lý yêu cầu: {e}")

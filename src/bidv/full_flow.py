@@ -77,7 +77,7 @@ async def handle_heavy_tasks(files: List[str]):
     raw_data = {"business_registration_cert": business_registration_data, "company_charter": company_charter_data}
     # validate_results = validate_with_database(raw_data)
 
-    return financial_documents
+    return raw_data, financial_documents
 
 
 async def heavy_tasks(file_path, email_input):

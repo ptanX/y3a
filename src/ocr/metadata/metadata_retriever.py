@@ -110,7 +110,7 @@ class SecuritiesFinancialReportMetadataRetriever(DocumentationMetadataRetriever)
         list_inputs = []
         report_date = self.get_report_date(document_identifier.time)
         other_info = {"report_date": report_date}
-        for i in range(1, 7):
+        for i in range(1, 10):
             execution_input = ExecutionInput(
                 handler_name="extract_single_page_metadata",
                 execution_id=i,

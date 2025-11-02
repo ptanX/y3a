@@ -455,6 +455,39 @@ def build_lending_content(**kwargs):
     return html_content
 
 
+def _build_verified_lending_content(**kwargs):
+    qttd_name = kwargs.get("recipient_name")
+    qhkh_name = kwargs.get("qhkh_name")
+    customer_name = kwargs.get("customer_name")
+    document_type = kwargs.get("document_type")
+    loan_purpose = kwargs.get("loan_purpose")
+    loan_amount = kwargs.get("loan_amount")
+    loan_term = kwargs.get("loan_term")
+    verification_time = kwargs.get("verification_time")
+    document_classification = kwargs.get("document_classification")
+    required_fields = kwargs.get("required_fields")
+    detail_url = kwargs.get("detail_url")
+
+    content = f"""
+    Kính gửi anh/chị {qttd_name}.
+    Bộ hồ sơ vay vốn của {customer_name} đã được cán bộ QHKH {qhkh_name} xác minh thông qua hệ thống AgentDocCheck.
+    Dưới đây là tóm tắt kết quả kiểm tra và đường dẫn truy cập hồ sơ:
+    1. Thông tin hồ sơ:
+       - Khách hàng: {customer_name}
+       - Loại hồ sơ: {document_type}
+       - Mục đích vay: {loan_purpose}
+       - Số tiền đề nghị vay: {loan_amount}
+       - Kỳ hạn vay: {loan_term}
+       - Ngày kiểm tra: {verification_time}
+       - Người phụ trách: {qhkh_name}
+    2. Tóm tắt kết quả kiểm tra:
+       - {document_classification}
+       - {required_fields}
+    Anh/chị vui lòng truy cập đường dẫn bên dưới để ra soát và hoàn thiện thông tin phân tích tín dụng.
+    Link truy cập hồ sơ: {detail_url}"""
+    return content
+
+
 def send_lending_email(**kwargs):
     sender_email = os.getenv("SENDER_EMAIL")
     sender_password = os.getenv("SENDER_PASSWORD")
@@ -463,6 +496,16 @@ def send_lending_email(**kwargs):
     body = build_lending_content(**kwargs)
 
     _send_email(sender_email, sender_password, recipient_email, subject, body)
+
+
+def send_verified_lending_email(**kwargs):
+    sender_email = os.getenv("SENDER_EMAIL")
+    sender_password = os.getenv("SENDER_PASSWORD")
+    recipient_email = kwargs["recipient_email"]
+    subject = "[RAWIQ] Tóm tắt bộ hồ sơ của khách hành xin vay vốn"
+    body = _build_verified_lending_content(**kwargs)
+
+    _send_email(sender_email, sender_password, recipient_email, subject, body, "plain")
 
 
 def _send_email(sender_email, sender_pw, recipient_email, subject, body, subtype="html"):

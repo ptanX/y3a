@@ -1,7 +1,15 @@
+import json
+import os
+
 import pandas as pd
 import streamlit as st
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 from frontend.menu import menu_with_redirect
+from src.bidv import e2e_usecases
+from src.bidv.db.bidv_entity import DocumentationInformation
+from src.bidv.startup.environment_initialization import DATABASE_PATH
 
 menu_with_redirect()
 
@@ -10,355 +18,21 @@ st.set_page_config(page_title="Bảng Kiểm Tra Dữ Liệu", layout="wide")
 st.title("📊 Kết Quả Bóc Tách Chi Tiết")
 
 document_id = st.session_state.document_id
-if st.session_state.document_id:
-    st.query_params.document_id = document_id
+if not document_id:
+    st.write("Không tìm thấy mã tài liệu")
+    st.stop()
 
-# Sample data
-data = [
-    {
-        "field_name": "company_name_vn",
-        "origin_docs": [
-            {
-                "name": "business_registration_cert",
-                "value": "CÔNG TY CỔ PHẦN CHỨNG KHOÁN DNSE"
-            },
-            {
-                "name": "company_charter",
-                "value": "Công ty Cổ phần Chứng khoán DNSE"
-            }
-        ],
-        "database_value": "Công ty Cổ phần Chứng khoán DNSE",
-        "validation_result": {
-            "is_consistent_across_doc": False,
-            "is_match_database": True
-        }
-    },
-    {
-        "field_name": "company_name_en",
-        "origin_docs": [
-            {
-                "name": "business_registration_cert",
-                "value": "DNSE SECURITIES JOINT STOCK COMPANY"
-            },
-            {
-                "name": "company_charter",
-                "value": "DNSE Securities Joint Stock Company"
-            }
-        ],
-        "database_value": "DNSE SECURITIES JOINT STOCK COMPANY",
-        "validation_result": {
-            "is_consistent_across_doc": False,
-            "is_match_database": True
-        }
-    },
-    {
-        "field_name": "company_abbr",
-        "origin_docs": [
-            {
-                "name": "business_registration_cert",
-                "value": "DNSE JSC"
-            },
-            {
-                "name": "company_charter",
-                "value": "DNSE Jsc"
-            }
-        ],
-        "database_value": "DNSE JSC",
-        "validation_result": {
-            "is_consistent_across_doc": False,
-            "is_match_database": True
-        }
-    },
-    {
-        "field_name": "office_address",
-        "origin_docs": [
-            {
-                "name": "company_charter",
-                "value": "Tầng 6, Tòa nhà Pax Sky, số 63-65 Ngô Thì Nhậm, Phường Phạm Đình Hổ, Quận Hai Bà Trưng, Thành phố Hà Nội"
-            }
-        ],
-        "database_value": "Tầng 6 tòa nhà Pax Sky, 63-65 Ngô Thì Nhậm, Phường Phạm Đình Hổ, Quận Hai Bà Trưng, Thành phố Hà Nội, Việt Nam",
-        "validation_result": {
-            "is_consistent_across_doc": True,
-            "is_match_database": False
-        }
-    },
-    {
-        "field_name": "phone",
-        "origin_docs": [
-            {
-                "name": "business_registration_cert",
-                "value": "024.7108.9234"
-            },
-            {
-                "name": "company_charter",
-                "value": "(84-24) 710 89234"
-            }
-        ],
-        "database_value": "024 7108 9234",
-        "validation_result": {
-            "is_consistent_across_doc": False,
-            "is_match_database": False
-        }
-    },
-    {
-        "field_name": "email",
-        "origin_docs": [
-            {
-                "name": "business_registration_cert",
-                "value": "info@dnse.com.vn"
-            },
-            {
-                "name": "company_charter",
-                "value": "info@dnse.com.vn"
-            }
-        ],
-        "database_value": "info@dnse.com.vn",
-        "validation_result": {
-            "is_consistent_across_doc": True,
-            "is_match_database": True
-        }
-    },
-    {
-        "field_name": "charter_capital",
-        "origin_docs": [
-            {
-                "name": "business_registration_cert",
-                "value": "3.300.000.000.000 đồng"
-            },
-            {
-                "name": "company_charter",
-                "value": "3.300.000.000.000 đồng (Ba nghìn ba trăm tỷ đồng)"
-            }
-        ],
-        "database_value": "3,300,000,000,000",
-        "validation_result": {
-            "is_consistent_across_doc": False,
-            "is_match_database": False
-        }
-    },
-    {
-        "field_name": "par_value",
-        "origin_docs": [
-            {
-                "name": "business_registration_cert",
-                "value": "10.000 đồng"
-            },
-            {
-                "name": "company_charter",
-                "value": "10.000 đồng/cổ phần"
-            }
-        ],
-        "database_value": "10,000",
-        "validation_result": {
-            "is_consistent_across_doc": False,
-            "is_match_database": False
-        }
-    },
-    {
-        "field_name": "total_shares",
-        "origin_docs": [
-            {
-                "name": "business_registration_cert",
-                "value": "330.000.000"
-            }
-        ],
-        "database_value": "330,000,000",
-        "validation_result": {
-            "is_consistent_across_doc": True,
-            "is_match_database": False
-        }
-    },
-    {
-        "field_name": "business_code",
-        "origin_docs": [
-            {
-                "name": "business_registration_cert",
-                "value": "0102459106"
-            }
-        ],
-        "database_value": "0102459106",
-        "validation_result": {
-            "is_consistent_across_doc": True,
-            "is_match_database": True
-        }
-    },
-    {
-        "field_name": "legal_rep",
-        "origin_docs": [],
-        "database_value": None,
-        "validation_result": {
-            "is_consistent_across_doc": True,
-            "is_match_database": False
-        }
-    },
-    {
-        "field_name": "full_name",
-        "origin_docs": [
-            {
-                "name": "business_registration_cert",
-                "value": "PHẠM THỊ THANH HOA"
-            }
-        ],
-        "database_value": None,
-        "validation_result": {
-            "is_consistent_across_doc": True,
-            "is_match_database": False
-        }
-    },
-    {
-        "field_name": "gender",
-        "origin_docs": [
-            {
-                "name": "business_registration_cert",
-                "value": "Nữ"
-            }
-        ],
-        "database_value": None,
-        "validation_result": {
-            "is_consistent_across_doc": True,
-            "is_match_database": False
-        }
-    },
-    {
-        "field_name": "position",
-        "origin_docs": [
-            {
-                "name": "business_registration_cert",
-                "value": "Tổng giám đốc"
-            },
-            {
-                "name": "company_charter",
-                "value": "Tổng giám đốc Công ty"
-            }
-        ],
-        "database_value": None,
-        "validation_result": {
-            "is_consistent_across_doc": False,
-            "is_match_database": False
-        }
-    },
-    {
-        "field_name": "birth_date",
-        "origin_docs": [
-            {
-                "name": "business_registration_cert",
-                "value": "17/11/1985"
-            }
-        ],
-        "database_value": None,
-        "validation_result": {
-            "is_consistent_across_doc": True,
-            "is_match_database": False
-        }
-    },
-    {
-        "field_name": "ethnicity",
-        "origin_docs": [
-            {
-                "name": "business_registration_cert",
-                "value": "Kinh"
-            }
-        ],
-        "database_value": None,
-        "validation_result": {
-            "is_consistent_across_doc": True,
-            "is_match_database": False
-        }
-    },
-    {
-        "field_name": "nationality",
-        "origin_docs": [
-            {
-                "name": "business_registration_cert",
-                "value": "Việt Nam"
-            }
-        ],
-        "database_value": None,
-        "validation_result": {
-            "is_consistent_across_doc": True,
-            "is_match_database": False
-        }
-    },
-    {
-        "field_name": "id_type",
-        "origin_docs": [
-            {
-                "name": "business_registration_cert",
-                "value": "Thẻ căn cước công dân"
-            }
-        ],
-        "database_value": None,
-        "validation_result": {
-            "is_consistent_across_doc": True,
-            "is_match_database": False
-        }
-    },
-    {
-        "field_name": "id_number",
-        "origin_docs": [],
-        "database_value": None,
-        "validation_result": {
-            "is_consistent_across_doc": True,
-            "is_match_database": False
-        }
-    },
-    {
-        "field_name": "issue_date",
-        "origin_docs": [
-            {
-                "name": "business_registration_cert",
-                "value": "19/11/2014"
-            }
-        ],
-        "database_value": None,
-        "validation_result": {
-            "is_consistent_across_doc": True,
-            "is_match_database": False
-        }
-    },
-    {
-        "field_name": "issue_place",
-        "origin_docs": [
-            {
-                "name": "business_registration_cert",
-                "value": "CỤC CẢNH SÁT DKQL CƯ TRÚ VÀ DLQG VỀ DÂN CƯ"
-            }
-        ],
-        "database_value": None,
-        "validation_result": {
-            "is_consistent_across_doc": True,
-            "is_match_database": False
-        }
-    },
-    {
-        "field_name": "expiry_date",
-        "origin_docs": [],
-        "database_value": None,
-        "validation_result": {
-            "is_consistent_across_doc": True,
-            "is_match_database": False
-        }
-    },
-    {
-        "field_name": "permanent_address",
-        "origin_docs": [],
-        "database_value": None,
-        "validation_result": {
-            "is_consistent_across_doc": True,
-            "is_match_database": False
-        }
-    },
-    {
-        "field_name": "contact_address",
-        "origin_docs": [],
-        "database_value": None,
-        "validation_result": {
-            "is_consistent_across_doc": True,
-            "is_match_database": False
-        }
-    }
-]
+st.query_params.document_id = document_id
+
+engine = create_engine(f"sqlite:///{DATABASE_PATH}")
+session = sessionmaker(bind=engine)()
+document_entity = session.get(DocumentationInformation, document_id)
+if not document_entity:
+    st.write(f"Không tìm thấy tài liệu với mã {document_id}")
+    st.stop()
+
+document_data = json.loads(document_entity.data)
+data = document_data["validation_results"]
 
 # Field labels mapping
 field_labels_mapping = {
@@ -440,9 +114,6 @@ def get_column_config():
     return column_config
 
 
-# Callback function to handle changes
-
-
 if "my_data" not in st.session_state:
     df = json_to_dataframe(data)
     st.session_state.my_data = df
@@ -451,7 +122,6 @@ if "my_data" not in st.session_state:
 def handle_data_change():
     edited_rows = st.session_state.my_editor["edited_rows"]
     for index, values in edited_rows.items():
-        print(index, "->", values)
         st.session_state.my_data.at[index, "user_input"] = values["user_input"]
 
 
@@ -464,6 +134,29 @@ st.data_editor(
     on_change=handle_data_change,
     height=400
 )
+
+
+def submit():
+    customer_info_result = dict(
+        zip(st.session_state.my_data["field"], st.session_state.my_data["user_input"]))
+
+    financial_document_id = document_data["financial_document_id"]
+    base_url = os.environ.get("BASE_URL", "http://localhost:8501")
+    detail_url = f"{base_url}/chat_agent?financial_document_id={financial_document_id}"
+
+    request_body = {
+        "recipient_name": recipient_name,
+        "recipient_email": recipient_email,
+        "verification_time": document_data["verification_time"],
+        "qhkh_name": document_data["recipient_name"],
+        "customer_info_result": customer_info_result,
+        "detail_url": detail_url
+    }
+    print(request_body)
+    e2e_usecases.execute_submit_document(request_body)
+    st.success(
+        f"✅ Đã tiếp nhận yêu cầu thành công. Vui lòng đợi kết quả gửi vào hòm mail {recipient_email}")
+
 
 # Display legend
 st.markdown("### 📌 Chú thích:")
@@ -488,12 +181,8 @@ with st.form("detail_form"):
         elif not recipient_email:
             st.error("Vui lòng nhập Email QTTD")
         else:
-            customer_info_result = dict(zip(st.session_state.my_data["field"], st.session_state.my_data["user_input"]))
-            request_body = {
-                "recipient_name": recipient_name,
-                "recipient_email": recipient_email,
-                "customer_info_result": customer_info_result
-            }
-            print(request_body)
-            # TODO call send email
-            st.success("✅ Data submitted successfully!")
+            with st.spinner("🔄 Processing document..."):
+                try:
+                    submit()
+                except Exception as e:
+                    st.error(f"❌Lỗi xử lý yêu cầu: {e}")

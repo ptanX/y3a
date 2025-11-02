@@ -1,12 +1,19 @@
 import streamlit as st
 
-from frontend.menu import menu_with_redirect, has_permission, get_role_badge
+from frontend.menu import has_permission
 from frontend.role_controller import USERS
 
 # LOGIN PAGE
 st.title("🔐 Login")
 
 col1, col2, col3 = st.columns([1, 2, 1])
+
+query_params = st.query_params
+if query_params is not None:
+    if query_params.get("document_id"):
+        st.session_state.document_id = query_params.get("document_id")
+    if query_params.get("financial_document_id"):
+        st.session_state.financial_document_id = query_params.get("financial_document_id")
 
 with col2:
     st.markdown("### Please login to continue")
@@ -30,8 +37,10 @@ with col2:
                     # Navigate to first available page
                     if has_permission("upload"):
                         st.switch_page("pages/upload.py")
-                    else:
+                    elif has_permission("details") and "document_id" in st.session_state:
                         st.switch_page("pages/detail.py")
+                    else:
+                        st.switch_page("pages/chat_agent.py")
                 else:
                     st.error("Invalid credentials")
             else:
@@ -43,6 +52,6 @@ with col2:
         | Username | Password | Role | Access |
         |----------|----------|------|--------|
         | `admin` | `1` | 🔴 Admin | Full access |
-        | `manager` | `1` | 🟡 Manager | Upload, Details, Users |
+        | `manager` | `1` | 🟡 Manager | Details, Chat Agent, User |
         | `user` | `1` | 🟢 User | Upload, Details |
         """)
