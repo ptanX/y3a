@@ -1,5 +1,7 @@
+import email
 import os
 import smtplib
+from email.message import EmailMessage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -313,3 +315,227 @@ def execute(document_id, validation_data, email_input=None):
         recipient_email=RECIPIENT_EMAIL,
         validation_data=validation_data
     )
+
+
+def build_lending_content(**kwargs):
+    recipient_name = kwargs.get("recipient_name")
+    company_name = kwargs.get("company_name")
+    document_id = kwargs.get("document_id")
+    verification_time = kwargs.get("verification_time")
+    total_fields = kwargs.get("total_fields")
+    document_status = kwargs.get("document_status")
+    document_categories = kwargs.get("document_categories")
+    detail_url = kwargs.get("detail_url")
+
+    categories_html = ""
+    for category in document_categories:
+        documents = category.get('documents', '')
+
+        # Build documents list
+        document_type_name = category.get('document_type_name', '')
+        document_html = ""
+        for doc in documents:
+            name = doc.get('name', '')
+            quantity = doc.get('quantity', '')
+            document_html += f"""
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd;">{name}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">{quantity}</td>
+                    </tr>
+                """
+
+        if document_html:
+            categories_html += f"""
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd; vertical-align: top; font-weight: bold;" rowspan="{len(documents)}">{document_type_name}</td>
+                        {document_html.split('</tr>', 1)[0].replace('<tr>', '')}
+                    </tr>
+                """
+            # Add remaining rows
+            remaining_rows = document_html.split('</tr>')[1:]
+            for row in remaining_rows:
+                if row.strip():
+                    categories_html += row + "</tr>"
+
+    html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                }}
+                .container {{
+                    max-width: 800px;
+                    margin: 0 auto;
+                    padding: 20px;
+                }}
+                table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 20px 0;
+                }}
+                th, td {{
+                    padding: 12px;
+                    border: 1px solid #ddd;
+                    text-align: left;
+                }}
+                th {{
+                    background-color: #f4f4f4;
+                    font-weight: bold;
+                }}
+                .header {{
+                    margin-bottom: 20px;
+                }}
+                .footer {{
+                    margin-top: 30px;
+                    padding-top: 20px;
+                    border-top: 1px solid #ddd;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <p>Kính gửi anh/chị <strong>{recipient_name}</strong></p>
+                </div>
+
+                <p>Hệ thống AgentDocCheck đã hoàn tất kiểm tra và đối chiếu hồ sơ doanh nghiệp <strong>{company_name}</strong></p>
+
+                <p>Dưới đây là thông tin tổng quan dữ liệu sau khi phân tích báo cáo của khách hàng xin vay vốn</p>
+
+                <h3>Thông tin tổng quan</h3>
+                <table>
+                    <tr>
+                        <td>Tên Khách hàng</td>
+                        <td>{company_name}</td>
+                    </tr>
+                    <tr>
+                        <td>Số Hồ Sơ Vay</td>
+                        <td>{document_id}</td>
+                    </tr>
+                    <tr>
+                        <td>Người phụ trách</td>
+                        <td>{recipient_name}</td>
+                    </tr>
+                    <tr>
+                        <td>Thời gian kiểm tra</td>
+                        <td>{verification_time}</td>
+                    </tr>
+                    <tr>
+                        <td>Tổng số trường bóc tách</td>
+                        <td>{total_fields}</td>
+                    </tr>
+                    <tr>
+                        <td>Trạng thái hồ sơ</td>
+                        <td>{document_status}</td>
+                    </tr>
+                </table>
+
+                <h3>Phân loại giấy tờ:</h3>
+                <table>
+                    <tr>
+                        <th style="width: 50%;">Loại hồ sơ</th>
+                        <th style="width: 35%;">Tài liệu thành phần</th>
+                        <th style="width: 15%; text-align: center;">Số lượng</th>
+                    </tr>
+                    {categories_html}
+                </table>
+
+                <div class="footer">
+                    <p>Bạn có thể vào liên kết sau để xem chi tiết và thực hiện các điều chỉnh cần thiết: <a href="{detail_url}">{detail_url}</a></p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+    return html_content
+
+
+def _build_verified_lending_content(**kwargs):
+    qttd_name = kwargs.get("recipient_name")
+    qhkh_name = kwargs.get("qhkh_name")
+    customer_name = kwargs.get("customer_name")
+    document_type = kwargs.get("document_type")
+    loan_purpose = kwargs.get("loan_purpose")
+    loan_amount = kwargs.get("loan_amount")
+    loan_term = kwargs.get("loan_term")
+    verification_time = kwargs.get("verification_time")
+    document_classification = kwargs.get("document_classification")
+    required_fields = kwargs.get("required_fields")
+    detail_url = kwargs.get("detail_url")
+
+    content = f"""
+    Kính gửi anh/chị {qttd_name}.
+    Bộ hồ sơ vay vốn của {customer_name} đã được cán bộ QHKH {qhkh_name} xác minh thông qua hệ thống AgentDocCheck.
+    Dưới đây là tóm tắt kết quả kiểm tra và đường dẫn truy cập hồ sơ:
+    1. Thông tin hồ sơ:
+       - Khách hàng: {customer_name}
+       - Loại hồ sơ: {document_type}
+       - Mục đích vay: {loan_purpose}
+       - Số tiền đề nghị vay: {loan_amount}
+       - Kỳ hạn vay: {loan_term}
+       - Ngày kiểm tra: {verification_time}
+       - Người phụ trách: {qhkh_name}
+    2. Tóm tắt kết quả kiểm tra:
+       - {document_classification}
+       - {required_fields}
+    Anh/chị vui lòng truy cập đường dẫn bên dưới để ra soát và hoàn thiện thông tin phân tích tín dụng.
+    Link truy cập hồ sơ: {detail_url}"""
+    return content
+
+
+def send_lending_email(**kwargs):
+    sender_email = os.getenv("SENDER_EMAIL")
+    sender_password = os.getenv("SENDER_PASSWORD")
+    recipient_email = kwargs["recipient_email"]
+    subject = "[RAWIQ] Tổng quan báo cáo của khách hành xin vay vốn"
+    body = build_lending_content(**kwargs)
+
+    _send_email(sender_email, sender_password, recipient_email, subject, body)
+
+
+def send_verified_lending_email(**kwargs):
+    sender_email = os.getenv("SENDER_EMAIL")
+    sender_password = os.getenv("SENDER_PASSWORD")
+    recipient_email = kwargs["recipient_email"]
+    subject = "[RAWIQ] Tóm tắt bộ hồ sơ của khách hành xin vay vốn"
+    body = _build_verified_lending_content(**kwargs)
+
+    _send_email(sender_email, sender_password, recipient_email, subject, body, "plain")
+
+
+def _send_email(sender_email, sender_pw, recipient_email, subject, body, subtype="html"):
+    if not isinstance(sender_email, str):
+        sender_email = ", ".join(sender_email)
+    if not isinstance(recipient_email, str):
+        recipient_email = ", ".join(recipient_email)
+
+    # msg = EmailMessage(policy=email.policy.SMTP)
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = subject
+    msg['From'] = sender_email
+    msg['To'] = recipient_email
+
+    plain_payload = MIMEText("plain_body", 'plain')
+    payload = MIMEText(body, subtype)
+    msg.attach(plain_payload)
+    msg.attach(payload)
+
+    # Send email
+    try:
+        # For Gmail (change for other providers)
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(sender_email, sender_pw)
+
+        server.send_message(msg)
+        server.quit()
+        print("✓ Validation email sent successfully!")
+        return True
+    except Exception as e:
+        print(f"✗ Error sending email: {e}")
+        return False
