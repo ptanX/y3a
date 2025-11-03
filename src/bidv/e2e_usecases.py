@@ -40,12 +40,18 @@ def execute_upload_document(content):
     save_document(financial_document_id, financial_documents)
 
     fake_content = fake_email_content()
-    content = merge_first_not_none(content, fake_content)
-    email_handling.send_lending_email(**content)
+    email_content = merge_first_not_none(document_data, fake_content)
+    email_handling.send_lending_email(**email_content)
 
 
 def execute_submit_document(content):
-    email_handling.send_verified_lending_email(**content)
+    document_id = content["document_id"]
+    engine = create_engine(f"sqlite:///{DATABASE_PATH}")
+    session = sessionmaker(bind=engine)()
+    document_entity = session.get(DocumentationInformation, document_id)
+    document_data = json.loads(document_entity.data)
+    email_content = merge_first_not_none(content, document_data)
+    email_handling.send_verified_lending_email(**email_content)
 
 
 def _build_document_data(content, extracted_data):
@@ -58,7 +64,7 @@ def _build_document_data(content, extracted_data):
     none_count = sum(1 for r in validate_results if len(r.origin_docs) == 0 and not r.database_value)
     document_status = [f"{consistent_count} trường thông tin cần kiểm tra", f"{none_count} trường thông tin bị thiếu"]
     base_url = os.environ.get("BASE_URL", "http://localhost:8501")
-    detail_url = f"https://{base_url}/detail?document_id={document_id}"
+    detail_url = f"{base_url}/detail?document_id={document_id}"
 
     document_data = {
         **content,

@@ -145,6 +145,8 @@ def submit():
     detail_url = f"{base_url}/chat_agent?financial_document_id={financial_document_id}"
 
     request_body = {
+        "document_id": document_data["document_id"],
+        "financial_document_id": financial_document_id,
         "recipient_name": recipient_name,
         "recipient_email": recipient_email,
         "verification_time": document_data["verification_time"],
