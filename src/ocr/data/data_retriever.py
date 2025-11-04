@@ -11,8 +11,10 @@ from src.ocr.data.data_prompt_registry import get_data_prompt_by_section
 from src.ocr.data.pdf_text_extractor import DocumentAIExtractor
 from src.ocr.metadata.identifier_retriever import NameBasedIdentifierRetriever
 from src.ocr.metadata.metadata_retriever import (
-    extract_single_securities_report_page_raw_metadata,
+    extract_single_securities_raw_metadata_report_page,
     SecuritiesFinancialReportMetadataRetriever, BusinessRegistrationMetadataRetriever, CompanyCharterMetadataRetriever,
+    SECURITIES_FINANCIAL_REPORT_SINGLE_METADATA_PAGE_EXTRACTION, BUSINESS_REGISTRATION_SINGLE_METADATA_PAGE_EXTRACTION,
+    extract_single_business_registration_raw_metadata_page,
 )
 from src.ocr.ocr_model import DocumentMetadata
 from src.ocr.utils import cut_pdf_to_bytes
@@ -99,7 +101,7 @@ class FinancialSecuritiesReportDataRetriever(DocumentDataRetriever):
         reports = []
         for section in doc_metadata.sections:
             page_content_in_bytes = cut_pdf_to_bytes(
-                input_pdf=doc_metadata.document_path,
+                input_path=doc_metadata.document_path,
                 start_page=section.page_info.from_page,
                 end_page=section.page_info.to_page,
             )
@@ -156,7 +158,7 @@ class BusinessRegistrationDataRetriever(DocumentDataRetriever):
 
     def retrieve(self, doc_metadata: DocumentMetadata):
         content_in_bytes = cut_pdf_to_bytes(
-            input_pdf=doc_metadata.document_path,
+            input_path=doc_metadata.document_path,
             start_page=doc_metadata.sections[0].page_info.from_page,
             end_page=doc_metadata.sections[0].page_info.to_page,
         )
@@ -172,7 +174,7 @@ class CompanyCharterDataRetriever(DocumentDataRetriever):
 
     def retrieve(self, doc_metadata: DocumentMetadata):
         content_in_bytes = cut_pdf_to_bytes(
-            input_pdf=doc_metadata.document_path,
+            input_path=doc_metadata.document_path,
             start_page=doc_metadata.sections[0].page_info.from_page,
             end_page=doc_metadata.sections[0].page_info.to_page,
         )
@@ -187,32 +189,42 @@ class CompanyCharterDataRetriever(DocumentDataRetriever):
 if __name__ == '__main__':
     load_dotenv()
     input_path = (
-        "/Users/binhnt8/Desktop/work/learning/code/y3a/documentations/ssi-pl-dl.pdf"
+        "C:\\Users\\ADMIN\\Desktop\\working\\code\\y3s\\documentations\\ssi-pl-dkkd.pdf"
     )
-    execution_dispatcher = (
+    financial_execution_dispatcher = (
         ExecutionDispatcherBuilder().set_dispatcher(
-            name="extract_single_page_metadata",
-            handler=extract_single_securities_report_page_raw_metadata,
+            name=SECURITIES_FINANCIAL_REPORT_SINGLE_METADATA_PAGE_EXTRACTION,
+            handler=extract_single_securities_raw_metadata_report_page
         ).build()
     )
+    business_registration_execution_dispatcher = (
+        ExecutionDispatcherBuilder().set_dispatcher(
+            name=BUSINESS_REGISTRATION_SINGLE_METADATA_PAGE_EXTRACTION,
+            handler=extract_single_business_registration_raw_metadata_page
+        )
+    ).build()
     identifier_retriever = NameBasedIdentifierRetriever()
     doc_identifier = identifier_retriever.retrieve(path=input_path)
     data = None
     if doc_identifier.file_type == 'dkkd':
-        metadata = asyncio.run(BusinessRegistrationMetadataRetriever().retrieve(path=input_path, document_identifier=doc_identifier))
+        metadata = asyncio.run(
+            BusinessRegistrationMetadataRetriever(
+                execution_dispatcher=business_registration_execution_dispatcher
+            ).retrieve(path=input_path, document_identifier=doc_identifier)
+        )
         data = BusinessRegistrationDataRetriever().retrieve(doc_metadata=metadata)
     if doc_identifier.file_type == 'dl':
         metadata = asyncio.run(CompanyCharterMetadataRetriever().retrieve(path=input_path, document_identifier=doc_identifier))
         data = CompanyCharterDataRetriever().retrieve(doc_metadata=metadata)
     if doc_identifier.file_type == 'bctc':
-        execution_dispatcher = (
+        financial_execution_dispatcher = (
             ExecutionDispatcherBuilder().set_dispatcher(
                 name="extract_single_page_metadata",
-                handler=extract_single_securities_report_page_raw_metadata,
+                handler=extract_single_securities_raw_metadata_report_page,
             ).build()
         )
         metadata = asyncio.run(SecuritiesFinancialReportMetadataRetriever(
-            execution_dispatcher=execution_dispatcher
+            execution_dispatcher=financial_execution_dispatcher
         ).retrieve(path=input_path, document_identifier=doc_identifier))
         data = FinancialSecuritiesReportDataRetriever().retrieve(doc_metadata=metadata)
     print(data)

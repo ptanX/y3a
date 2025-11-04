@@ -23,7 +23,7 @@ from src.dispatcher.executions_dispatcher import ExecutionDispatcherBuilder
 from src.ocr.data.data_retriever import FinancialSecuritiesReportDataRetriever, BusinessRegistrationDataRetriever, \
     CompanyCharterDataRetriever
 from src.ocr.metadata.identifier_retriever import NameBasedIdentifierRetriever
-from src.ocr.metadata.metadata_retriever import extract_single_securities_report_page_raw_metadata, \
+from src.ocr.metadata.metadata_retriever import extract_single_securities_raw_metadata_report_page, \
     SecuritiesFinancialReportMetadataRetriever, BusinessRegistrationMetadataRetriever, CompanyCharterMetadataRetriever
 
 load_dotenv()
@@ -44,7 +44,7 @@ async def handle_heavy_tasks(files: List[str]):
     financial_execution_dispatcher = (
         ExecutionDispatcherBuilder().set_dispatcher(
             name="extract_single_page_metadata",
-            handler=extract_single_securities_report_page_raw_metadata,
+            handler=extract_single_securities_raw_metadata_report_page,
         ).build()
     )
     financial_metadata_retriever = SecuritiesFinancialReportMetadataRetriever(
