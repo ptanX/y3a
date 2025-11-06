@@ -42,7 +42,7 @@ BUSINESS_REGISTRATION_METADATA_RETRIEVER = BusinessRegistrationMetadataRetriever
     ExecutionDispatcherBuilder().set_dispatcher(
         name=BUSINESS_REGISTRATION_SINGLE_METADATA_PAGE_EXTRACTION,
         handler=extract_single_business_registration_raw_metadata_page
-    )
+    ).build()
 )
 COMPANY_CHARTER_METADATA_RETRIEVER = CompanyCharterMetadataRetriever()
 FINANCIAL_DATA_RETRIEVER = FinancialSecuritiesReportDataRetriever()
@@ -105,7 +105,7 @@ async def handle_heavy_tasks(files: List[str]):
             company_charter_data = execution_output.output_content
         elif execution_output.handler_name == "handle_business_registration":
             business_registration_data = execution_output.output_content
-        elif execution_output.output_content == "handle_securities_financial_report":
+        elif execution_output.handler_name == "handle_securities_financial_report":
             financial_data.append(execution_output.output_content)
 
     raw_data = {"business_registration_cert": business_registration_data, "company_charter": company_charter_data}
@@ -378,8 +378,9 @@ def _cut_pdf(input_pdf, output_pdf, start_page, end_page):
 
 
 if __name__ == '__main__':
-    list_files = ['C:\\Users\\ADMIN\\Desktop\\working\\code\\y3s\\documentations\\ssi-tc-bctc-2023.pdf',
-                  'C:\\Users\\ADMIN\\Desktop\\working\\code\\y3s\\documentations\\ssi-pl-dl.pdf',
-                  'C:\\Users\\ADMIN\\Desktop\\working\\code\\y3s\\documentations\\ssi-pl-dkkd.pdf']
+    list_files = ['/Desktop/work/learning/code/y3a/documentations/ssi-pl-dl.pdf',
+                  '/Desktop/work/learning/code/y3a/documentations/ssi-pl-dkkd.pdf',
+                  '/Desktop/work/learning/code/y3a/documentations/ssi-tc-bctc-2023.pdf',
+                  '/Desktop/work/learning/code/y3a/documentations/ssi-tc-bctc-2024.pdf']
     result = asyncio.run(handle_heavy_tasks(list_files))
     print(result)
