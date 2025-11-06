@@ -186,45 +186,45 @@ class CompanyCharterDataRetriever(DocumentDataRetriever):
         return business_regis_cert
 
 
-if __name__ == '__main__':
-    load_dotenv()
-    input_path = (
-        "C:\\Users\\ADMIN\\Desktop\\working\\code\\y3s\\documentations\\ssi-pl-dkkd.pdf"
-    )
-    financial_execution_dispatcher = (
-        ExecutionDispatcherBuilder().set_dispatcher(
-            name=SECURITIES_FINANCIAL_REPORT_SINGLE_METADATA_PAGE_EXTRACTION,
-            handler=extract_single_securities_raw_metadata_report_page
-        ).build()
-    )
-    business_registration_execution_dispatcher = (
-        ExecutionDispatcherBuilder().set_dispatcher(
-            name=BUSINESS_REGISTRATION_SINGLE_METADATA_PAGE_EXTRACTION,
-            handler=extract_single_business_registration_raw_metadata_page
-        )
-    ).build()
-    identifier_retriever = NameBasedIdentifierRetriever()
-    doc_identifier = identifier_retriever.retrieve(path=input_path)
-    data = None
-    if doc_identifier.file_type == 'dkkd':
-        metadata = asyncio.run(
-            BusinessRegistrationMetadataRetriever(
-                execution_dispatcher=business_registration_execution_dispatcher
-            ).retrieve(path=input_path, document_identifier=doc_identifier)
-        )
-        data = BusinessRegistrationDataRetriever().retrieve(doc_metadata=metadata)
-    if doc_identifier.file_type == 'dl':
-        metadata = asyncio.run(CompanyCharterMetadataRetriever().retrieve(path=input_path, document_identifier=doc_identifier))
-        data = CompanyCharterDataRetriever().retrieve(doc_metadata=metadata)
-    if doc_identifier.file_type == 'bctc':
-        financial_execution_dispatcher = (
-            ExecutionDispatcherBuilder().set_dispatcher(
-                name="extract_single_page_metadata",
-                handler=extract_single_securities_raw_metadata_report_page,
-            ).build()
-        )
-        metadata = asyncio.run(SecuritiesFinancialReportMetadataRetriever(
-            execution_dispatcher=financial_execution_dispatcher
-        ).retrieve(path=input_path, document_identifier=doc_identifier))
-        data = FinancialSecuritiesReportDataRetriever().retrieve(doc_metadata=metadata)
-    print(data)
+# if __name__ == '__main__':
+#     load_dotenv()
+#     input_path = (
+#         "C:\\Users\\ADMIN\\Desktop\\working\\code\\y3s\\documentations\\ssi-pl-dkkd.pdf"
+#     )
+#     financial_execution_dispatcher = (
+#         ExecutionDispatcherBuilder().set_dispatcher(
+#             name=SECURITIES_FINANCIAL_REPORT_SINGLE_METADATA_PAGE_EXTRACTION,
+#             handler=extract_single_securities_raw_metadata_report_page
+#         ).build()
+#     )
+#     business_registration_execution_dispatcher = (
+#         ExecutionDispatcherBuilder().set_dispatcher(
+#             name=BUSINESS_REGISTRATION_SINGLE_METADATA_PAGE_EXTRACTION,
+#             handler=extract_single_business_registration_raw_metadata_page
+#         )
+#     ).build()
+#     identifier_retriever = NameBasedIdentifierRetriever()
+#     doc_identifier = identifier_retriever.retrieve(path=input_path)
+#     data = None
+#     if doc_identifier.file_type == 'dkkd':
+#         metadata = asyncio.run(
+#             BusinessRegistrationMetadataRetriever(
+#                 execution_dispatcher=business_registration_execution_dispatcher
+#             ).retrieve(path=input_path, document_identifier=doc_identifier)
+#         )
+#         data = BusinessRegistrationDataRetriever().retrieve(doc_metadata=metadata)
+#     if doc_identifier.file_type == 'dl':
+#         metadata = asyncio.run(CompanyCharterMetadataRetriever().retrieve(path=input_path, document_identifier=doc_identifier))
+#         data = CompanyCharterDataRetriever().retrieve(doc_metadata=metadata)
+#     if doc_identifier.file_type == 'bctc':
+#         financial_execution_dispatcher = (
+#             ExecutionDispatcherBuilder().set_dispatcher(
+#                 name="extract_single_page_metadata",
+#                 handler=extract_single_securities_raw_metadata_report_page,
+#             ).build()
+#         )
+#         metadata = asyncio.run(SecuritiesFinancialReportMetadataRetriever(
+#             execution_dispatcher=financial_execution_dispatcher
+#         ).retrieve(path=input_path, document_identifier=doc_identifier))
+#         data = FinancialSecuritiesReportDataRetriever().retrieve(doc_metadata=metadata)
+#     print(data)

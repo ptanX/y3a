@@ -1,32 +1,53 @@
 import asyncio
 import json
 import os
-import pathlib
 import threading
-import unicodedata
 import uuid
 from datetime import datetime
 from typing import List
 
+import unicodedata
 from PyPDF2 import PdfReader, PdfWriter
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from src.bidv import email_handling
-from src.bidv.db.bidv_entity import Base, DocumentationInformation
+from src.bidv.db.bidv_entity import DocumentationInformation
 from src.bidv.pdf_text_extractor import DocumentAIExtractor
 from src.bidv.services.data_validator_service import DataValidatorService
 from src.bidv.startup.environment_initialization import DATABASE_PATH
 from src.bidv.table_parsing import extract_information
-from src.dispatcher.executions_dispatcher import ExecutionDispatcherBuilder
+from src.dispatcher.executions_dispatcher import ExecutionDispatcherBuilder, ExecutionInput, ExecutionOutput
 from src.ocr.data.data_retriever import FinancialSecuritiesReportDataRetriever, BusinessRegistrationDataRetriever, \
     CompanyCharterDataRetriever
 from src.ocr.metadata.identifier_retriever import NameBasedIdentifierRetriever
 from src.ocr.metadata.metadata_retriever import extract_single_securities_raw_metadata_report_page, \
-    SecuritiesFinancialReportMetadataRetriever, BusinessRegistrationMetadataRetriever, CompanyCharterMetadataRetriever
+    SecuritiesFinancialReportMetadataRetriever, BusinessRegistrationMetadataRetriever, CompanyCharterMetadataRetriever, \
+    BUSINESS_REGISTRATION_SINGLE_METADATA_PAGE_EXTRACTION, extract_single_business_registration_raw_metadata_page, \
+    SECURITIES_FINANCIAL_REPORT_SINGLE_METADATA_PAGE_EXTRACTION
 
 load_dotenv()
+
+FINANCIAL_EXECUTION_DISPATCHER = (
+    ExecutionDispatcherBuilder().set_dispatcher(
+        name=SECURITIES_FINANCIAL_REPORT_SINGLE_METADATA_PAGE_EXTRACTION,
+        handler=extract_single_securities_raw_metadata_report_page,
+    ).build()
+)
+FINANCIAL_METADATA_RETRIEVER = SecuritiesFinancialReportMetadataRetriever(
+    execution_dispatcher=FINANCIAL_EXECUTION_DISPATCHER
+)
+BUSINESS_REGISTRATION_METADATA_RETRIEVER = BusinessRegistrationMetadataRetriever(
+    ExecutionDispatcherBuilder().set_dispatcher(
+        name=BUSINESS_REGISTRATION_SINGLE_METADATA_PAGE_EXTRACTION,
+        handler=extract_single_business_registration_raw_metadata_page
+    )
+)
+COMPANY_CHARTER_METADATA_RETRIEVER = CompanyCharterMetadataRetriever()
+FINANCIAL_DATA_RETRIEVER = FinancialSecuritiesReportDataRetriever()
+BUSINESS_REGISTRATION_DATA_RETRIEVER = BusinessRegistrationDataRetriever()
+COMPANY_CHARTER_DATA_RETRIEVER = CompanyCharterDataRetriever()
 
 
 def execute(file_path, email_input):
@@ -39,45 +60,97 @@ def execute(file_path, email_input):
 
 
 async def handle_heavy_tasks(files: List[str]):
-    financial_documents = []
     identifier_retriever = NameBasedIdentifierRetriever()
-    financial_execution_dispatcher = (
-        ExecutionDispatcherBuilder().set_dispatcher(
-            name="extract_single_page_metadata",
-            handler=extract_single_securities_raw_metadata_report_page,
-        ).build()
-    )
-    financial_metadata_retriever = SecuritiesFinancialReportMetadataRetriever(
-        execution_dispatcher=financial_execution_dispatcher
-    )
-    business_registration_metadata_retriever = BusinessRegistrationMetadataRetriever()
-    company_charter_metadata_retriever = CompanyCharterMetadataRetriever()
-    financial_data_retriever = FinancialSecuritiesReportDataRetriever()
-    business_registration_data_retriever = BusinessRegistrationDataRetriever()
-    company_charter_data_retriever = CompanyCharterDataRetriever()
+    heavy_task_execution_handler = ExecutionDispatcherBuilder().set_dispatcher(
+       name="handle_business_registration",
+       handler=handle_business_registration
+    ).set_dispatcher(
+        name="handle_company_charter",
+        handler=handle_company_charter
+    ).set_dispatcher(
+        name="handle_securities_financial_report",
+        handler=handle_securities_financial_report
+    ).build()
+    execution_items = []
+    financial_data = []
     company_charter_data = {}
     business_registration_data = {}
     for file_path in files:
         identifier = identifier_retriever.retrieve(path=file_path)
         if identifier.file_type == 'dl':
-            company_charter_metadata = await company_charter_metadata_retriever.retrieve(path=file_path, document_identifier=identifier)
-            company_charter_data = company_charter_data_retriever.retrieve(doc_metadata=company_charter_metadata)
+            execution_input = ExecutionInput(
+                handler_name="handle_company_charter",
+                execution_id="dl",
+                input_content={"file_path": file_path, "identifier": identifier}
+            )
+            execution_items.append(execution_input)
         if identifier.file_type == 'dkkd':
-            business_registration_metadata = await business_registration_metadata_retriever.retrieve(path=file_path, document_identifier=identifier)
-            business_registration_data = business_registration_data_retriever.retrieve(business_registration_metadata)
+            execution_input = ExecutionInput(
+                handler_name="handle_business_registration",
+                execution_id=f"dkkd",
+                input_content={"file_path": file_path, "identifier": identifier}
+            )
+            execution_items.append(execution_input)
         if identifier.file_type == 'bctc':
-            financial_metadata = await financial_metadata_retriever.retrieve(path=file_path, document_identifier=identifier)
-            financial_data = financial_data_retriever.retrieve(financial_metadata)
-            financial_documents.append(financial_data)
-
-
+            execution_input = ExecutionInput(
+                handler_name="handle_securities_financial_report",
+                execution_id=f"bctc_{identifier.time}",
+                input_content={"file_path": file_path, "identifier": identifier}
+            )
+            execution_items.append(execution_input)
+    execution_outputs = await heavy_task_execution_handler.dispatch(execution_items)
     # handle on parallel
-    
+    for execution_output in execution_outputs:
+        if execution_output.handler_name == "handle_company_charter":
+            company_charter_data = execution_output.output_content
+        elif execution_output.handler_name == "handle_business_registration":
+            business_registration_data = execution_output.output_content
+        elif execution_output.output_content == "handle_securities_financial_report":
+            financial_data.append(execution_output.output_content)
 
     raw_data = {"business_registration_cert": business_registration_data, "company_charter": company_charter_data}
     # validate_results = validate_with_database(raw_data)
 
-    return raw_data, financial_documents
+    return raw_data, financial_data
+
+
+async def handle_business_registration(execution_input: ExecutionInput) -> ExecutionOutput:
+    file_path = execution_input.input_content.get("file_path")
+    identifier = execution_input.input_content.get("identifier")
+    business_registration_metadata = await BUSINESS_REGISTRATION_METADATA_RETRIEVER.retrieve(path=file_path,
+                                                                                             document_identifier=identifier)
+    business_registration_data = BUSINESS_REGISTRATION_DATA_RETRIEVER.retrieve(business_registration_metadata)
+    return ExecutionOutput(
+        handler_name=execution_input.handler_name,
+        execution_id=execution_input.execution_id,
+        output_content=business_registration_data
+    )
+
+
+async def handle_company_charter(execution_input: ExecutionInput) -> ExecutionOutput:
+    file_path = execution_input.input_content.get("file_path")
+    identifier = execution_input.input_content.get("identifier")
+    company_charter_metadata = await COMPANY_CHARTER_METADATA_RETRIEVER.retrieve(path=file_path,
+                                                                                 document_identifier=identifier)
+    company_charter_data = COMPANY_CHARTER_DATA_RETRIEVER.retrieve(doc_metadata=company_charter_metadata)
+    return ExecutionOutput(
+        handler_name=execution_input.handler_name,
+        execution_id=execution_input.execution_id,
+        output_content=company_charter_data
+    )
+
+
+async def handle_securities_financial_report(execution_input: ExecutionInput) -> ExecutionOutput:
+    file_path = execution_input.input_content.get("file_path")
+    identifier = execution_input.input_content.get("identifier")
+    financial_metadata = await FINANCIAL_METADATA_RETRIEVER.retrieve(path=file_path,
+                                                                     document_identifier=identifier)
+    financial_data = FINANCIAL_DATA_RETRIEVER.retrieve(financial_metadata)
+    return ExecutionOutput(
+        handler_name=execution_input.handler_name,
+        execution_id=execution_input.execution_id,
+        output_content=financial_data
+    )
 
 
 async def heavy_tasks(file_path, email_input):
@@ -305,7 +378,8 @@ def _cut_pdf(input_pdf, output_pdf, start_page, end_page):
 
 
 if __name__ == '__main__':
-    list_files = ['/Users/binhnt8/Desktop/work/learning/code/y3a/documentations/ssi-tc-bctc-2023.pdf',
-                  '/Users/binhnt8/Desktop/work/learning/code/y3a/documentations/ssi-tc-bctc-2024.pdf']
+    list_files = ['C:\\Users\\ADMIN\\Desktop\\working\\code\\y3s\\documentations\\ssi-tc-bctc-2023.pdf',
+                  'C:\\Users\\ADMIN\\Desktop\\working\\code\\y3s\\documentations\\ssi-pl-dl.pdf',
+                  'C:\\Users\\ADMIN\\Desktop\\working\\code\\y3s\\documentations\\ssi-pl-dkkd.pdf']
     result = asyncio.run(handle_heavy_tasks(list_files))
     print(result)
