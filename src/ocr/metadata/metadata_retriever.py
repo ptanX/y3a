@@ -11,8 +11,7 @@ from src.dispatcher.executions_dispatcher import (
     ExecutionOutput,
     ExecutionDispatcher, )
 from src.ocr.metadata.doc_section_metadata import (
-    KPMG_SECURITIES_FINANCIAL_SECTION_METADATA, DNSE_BUSINESS_REGISTRATION, SSI_BUSINESS_REGISTRATION,
-    DNSE_COMPANY_CHARTER, SSI_COMPANY_CHARTER,
+    KPMG_SECURITIES_FINANCIAL_SECTION_METADATA, DNSE_COMPANY_CHARTER, SSI_COMPANY_CHARTER,
 )
 from src.ocr.ocr_model import (
     DocumentSectionMetadata,
@@ -21,17 +20,21 @@ from src.ocr.ocr_model import (
     DocumentPageInfoMetadata,
     DocumentMetadata, DocumentIdentifierMetadata,
 )
-from src.ocr.utils import cut_pdf_to_bytes
+from src.ocr.utils import cut_pdf_to_bytes, get_total_page
 
 load_dotenv()
 
+SECURITIES_FINANCIAL_REPORT_SINGLE_METADATA_PAGE_EXTRACTION = "securities_financial_report_single_page_metadata_extraction"
+BUSINESS_REGISTRATION_SINGLE_METADATA_PAGE_EXTRACTION = "business_registration_single_metadata_page_extraction"
+COMPANY_CHARTER_SINGLE_METADATA_PAGE_EXTRACTION = "company_charter_single_metadata_page_extraction"
 
-async def extract_single_securities_report_page_raw_metadata(execution_input: ExecutionInput,
+
+async def extract_single_securities_raw_metadata_report_page(execution_input: ExecutionInput,
                                                              ) -> ExecutionOutput:
     page_number = execution_input.execution_id
     path = execution_input.input_content
     page_content_in_bytes = cut_pdf_to_bytes(
-        input_pdf=path, start_page=page_number, end_page=page_number
+        input_path=path, start_page=page_number, end_page=page_number
     )
     prompt = """
             Phân tích trang PDF và trả về JSON:
@@ -85,6 +88,35 @@ async def extract_single_securities_report_page_raw_metadata(execution_input: Ex
     )
 
 
+async def extract_single_business_registration_raw_metadata_page(execution_input: ExecutionInput,
+                                                                 ) -> ExecutionOutput:
+    page_number = execution_input.execution_id
+    path = execution_input.input_content
+    page_content_in_bytes = cut_pdf_to_bytes(
+        input_path=path, start_page=page_number, end_page=page_number
+    )
+    prompt = """
+            "Extract all text from this image. Return only the text content, no explanation
+            """
+
+    client = genai.Client()
+    response = client.models.generate_content(
+        model="gemini-2.0-flash-lite",
+        contents=[
+            types.Part.from_bytes(
+                data=page_content_in_bytes,
+                mime_type="application/pdf",
+            ),
+            prompt,
+        ],
+    )
+    return ExecutionOutput(
+        handler_name=execution_input.handler_name,
+        execution_id=execution_input.execution_id,
+        output_content=response.text,
+    )
+
+
 class DocumentationMetadataRetriever(ABC):
 
     @abstractmethod
@@ -112,7 +144,7 @@ class SecuritiesFinancialReportMetadataRetriever(DocumentationMetadataRetriever)
         other_info = {"report_date": report_date}
         for i in range(1, 10):
             execution_input = ExecutionInput(
-                handler_name="extract_single_page_metadata",
+                handler_name=SECURITIES_FINANCIAL_REPORT_SINGLE_METADATA_PAGE_EXTRACTION,
                 execution_id=i,
                 input_content=path,
             )
@@ -258,23 +290,49 @@ class SecuritiesFinancialReportMetadataRetriever(DocumentationMetadataRetriever)
 
 class BusinessRegistrationMetadataRetriever(DocumentationMetadataRetriever):
 
+    def __init__(self, execution_dispatcher: ExecutionDispatcher):
+        self.execution_dispatcher = execution_dispatcher
+
     async def retrieve(self, path: str, document_identifier: DocumentIdentifierMetadata) -> DocumentMetadata:
-        if document_identifier.company.lower() == 'dnse':
-            return DocumentMetadata(
-                document_type=DocumentType.BUSINESS_REGISTRATION.value,
-                document_identifier=document_identifier,
-                document_path=path,
-                sections=DNSE_BUSINESS_REGISTRATION,
-            )
-        elif document_identifier.company.lower() == 'ssi':
-            return DocumentMetadata(
-                document_type=DocumentType.BUSINESS_REGISTRATION.value,
-                document_identifier=document_identifier,
-                document_path=path,
-                sections=SSI_BUSINESS_REGISTRATION,
-            )
+        total_page = get_total_page(path)
+        if total_page > 5:
+            max_checked_metadata_page = 5
         else:
-            raise ValueError(f"company: {document_identifier.company} is invalid type")
+            max_checked_metadata_page = total_page
+        list_execution_inputs = []
+        for page_number in range(1, max_checked_metadata_page + 1):
+            execution_input = ExecutionInput(
+                handler_name=BUSINESS_REGISTRATION_SINGLE_METADATA_PAGE_EXTRACTION,
+                execution_id=page_number,
+                input_content=path
+            )
+            list_execution_inputs.append(execution_input)
+        raw_metadata = await self.execution_dispatcher.dispatch(list_execution_inputs)
+        for metadata in raw_metadata:
+            if self.is_business_registration_page(metadata.output_content):
+                sections = [
+                    DocumentSectionMetadata(
+                        component_type="business_registration",
+                        page_info=DocumentPageInfoMetadata(from_page=metadata.execution_id,
+                                                           to_page=metadata.execution_id),
+                    ),
+                ]
+                return DocumentMetadata(
+                    document_type=DocumentType.BUSINESS_REGISTRATION.value,
+                    document_identifier=document_identifier,
+                    document_path=path,
+                    sections=sections,
+                )
+        raise ValueError(f"document does no comply the business registration format")
+
+    def is_business_registration_page(self, page_content: str):
+        return (
+                "GIẤY CHỨNG NHẬN ĐĂNG KÝ DOANH NGHIỆP" in page_content
+                and "CÔNG TY" in page_content
+                and "Mã số doanh nghiệp" in page_content
+                and "Đăng ký lần đầu" in page_content
+                and "Đăng ký thay đổi lần thứ" in page_content
+        )
 
 
 class CompanyCharterMetadataRetriever(DocumentationMetadataRetriever):
@@ -296,4 +354,3 @@ class CompanyCharterMetadataRetriever(DocumentationMetadataRetriever):
             )
         else:
             raise ValueError(f"company: {document_identifier.company} is invalid type")
-
