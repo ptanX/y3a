@@ -58,6 +58,11 @@ def _build_document_data(content, extracted_data):
     document_id = content["document_id"]
     financial_document_id = str(uuid.uuid4())
     validate_results = validate_with_database(extracted_data)
+    customer_name = next(
+        (doc.value for r in validate_results if r.field_name == "company_name_vn"
+         for doc in r.origin_docs if doc.value is not None),
+        None
+    )
 
     total_fields = f"{len(validate_results)}/72 (theo bộ tiêu chuẩn hồ sơ vay DN chuẩn hóa)"
     consistent_count = sum(1 for r in validate_results if r.validation_result.is_consistent_across_doc)
@@ -70,6 +75,7 @@ def _build_document_data(content, extracted_data):
         **content,
         "financial_document_id": financial_document_id,
         "verification_time": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+        "customer_name": customer_name,
         "total_fields": total_fields,
         "document_status": document_status,
         "detail_url": detail_url,
@@ -96,17 +102,9 @@ def save_document(document_id, data):
 
 
 def fake_email_content():
-    document_type = "Doanh nghiệp"
     loan_purpose = "Bổ sung vốn lưu động kinh doanh chứng khoán"
     loan_term = "12 tháng"
     loan_amount = "7.000.000.000 VND"
-    recipient_email = "vanhci52@gmail.com"
-    recipient_name = "Tên QHKH"
-    company_name = "Công ty cổ phần chứng khoán DNSE"
-    verification_time = datetime.now()
-    total_fields = "60/72 (theo bộ tiêu chuẩn hồ sơ vay DN chuẩn hóa)"
-    document_id = "1111"
-    document_status = "- 3 trường thông tin cần kiểm tra\n- 12 trường thông tin bị thiếu"
 
     document_categories = [
         {
@@ -142,17 +140,9 @@ def fake_email_content():
     ]
 
     return {
-        "recipient_email": recipient_email,
-        "recipient_name": recipient_name,
-        "document_type": document_type,
         "loan_purpose": loan_purpose,
         "loan_term": loan_term,
         "loan_amount": loan_amount,
-        "company_name": company_name,
-        "document_id": document_id,
-        "verification_time": verification_time,
-        "total_fields": total_fields,
-        "document_status": document_status,
         "document_categories": document_categories,
     }
 

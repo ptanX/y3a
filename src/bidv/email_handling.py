@@ -319,7 +319,7 @@ def execute(document_id, validation_data, email_input=None):
 
 def build_lending_content(**kwargs):
     recipient_name = kwargs.get("recipient_name")
-    company_name = kwargs.get("company_name")
+    customer_name = kwargs.get("customer_name")
     document_id = kwargs.get("document_id")
     verification_time = kwargs.get("verification_time")
     total_fields = kwargs.get("total_fields")
@@ -403,7 +403,7 @@ def build_lending_content(**kwargs):
                     <p>Kính gửi anh/chị <strong>{recipient_name}</strong></p>
                 </div>
 
-                <p>Hệ thống AgentDocCheck đã hoàn tất kiểm tra và đối chiếu hồ sơ doanh nghiệp <strong>{company_name}</strong></p>
+                <p>Hệ thống AgentDocCheck đã hoàn tất kiểm tra và đối chiếu hồ sơ doanh nghiệp <strong>{customer_name}</strong></p>
 
                 <p>Dưới đây là thông tin tổng quan dữ liệu sau khi phân tích báo cáo của khách hàng xin vay vốn</p>
 
@@ -411,7 +411,7 @@ def build_lending_content(**kwargs):
                 <table>
                     <tr>
                         <td>Tên Khách hàng</td>
-                        <td>{company_name}</td>
+                        <td>{customer_name}</td>
                     </tr>
                     <tr>
                         <td>Số Hồ Sơ Vay</td>
@@ -492,7 +492,7 @@ def send_lending_email(**kwargs):
     sender_email = os.getenv("SENDER_EMAIL")
     sender_password = os.getenv("SENDER_PASSWORD")
     recipient_email = kwargs["recipient_email"]
-    subject = "[RAWIQ] Tổng quan báo cáo của khách hành xin vay vốn"
+    subject = "[RAWIQ] Tổng quan báo cáo của khách hàng xin vay vốn"
     body = build_lending_content(**kwargs)
 
     _send_email(sender_email, sender_password, recipient_email, subject, body)
@@ -502,7 +502,7 @@ def send_verified_lending_email(**kwargs):
     sender_email = os.getenv("SENDER_EMAIL")
     sender_password = os.getenv("SENDER_PASSWORD")
     recipient_email = kwargs["recipient_email"]
-    subject = "[RAWIQ] Tóm tắt bộ hồ sơ của khách hành xin vay vốn"
+    subject = "[RAWIQ] Tóm tắt bộ hồ sơ của khách hàng xin vay vốn"
     body = _build_verified_lending_content(**kwargs)
 
     _send_email(sender_email, sender_password, recipient_email, subject, body, "plain")
