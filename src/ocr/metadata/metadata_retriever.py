@@ -12,6 +12,7 @@ from src.dispatcher.executions_dispatcher import (
     ExecutionDispatcher, )
 from src.ocr.metadata.doc_section_metadata import (
     KPMG_SECURITIES_FINANCIAL_SECTION_METADATA, DNSE_COMPANY_CHARTER, SSI_COMPANY_CHARTER,
+    EY_SECURITIES_FINANCIAL_SECTION_METADATA,
 )
 from src.ocr.ocr_model import (
     DocumentSectionMetadata,
@@ -142,7 +143,7 @@ class SecuritiesFinancialReportMetadataRetriever(DocumentationMetadataRetriever)
         list_inputs = []
         report_date = self.get_report_date(document_identifier.time)
         other_info = {"report_date": report_date}
-        for i in range(1, 10):
+        for i in range(1, 11):
             execution_input = ExecutionInput(
                 handler_name=SECURITIES_FINANCIAL_REPORT_SINGLE_METADATA_PAGE_EXTRACTION,
                 execution_id=i,
@@ -232,6 +233,8 @@ class SecuritiesFinancialReportMetadataRetriever(DocumentationMetadataRetriever)
         for raw_input in raw_inputs:
             if "KPMG" in raw_input.output_content.get("raw_content", ""):
                 return self.retrieve_kpmg_securities_financial_metadata(raw_inputs)
+            elif "EY" in raw_input.output_content.get("raw_content", ""):
+                return self.retrieve_ey_securities_financial_metadata(raw_inputs)
         return []
 
     def retrieve_kpmg_securities_financial_metadata(self,
@@ -253,6 +256,44 @@ class SecuritiesFinancialReportMetadataRetriever(DocumentationMetadataRetriever)
         to_page_of_income_statement = (
                 from_page_of_income_statement
                 + KPMG_SECURITIES_FINANCIAL_SECTION_METADATA[1].page_info.page_length
+                - 1
+        )
+        return [
+            DocumentSectionMetadata(
+                component_type="financial_statement",
+                page_info=DocumentPageInfoMetadata(
+                    from_page=from_page_of_financial_statement,
+                    to_page=to_page_of_financial_statement,
+                ),
+            ),
+            DocumentSectionMetadata(
+                component_type="income_statement",
+                page_info=DocumentPageInfoMetadata(
+                    from_page=from_page_of_income_statement,
+                    to_page=to_page_of_income_statement,
+                ),
+            ),
+        ]
+
+    def retrieve_ey_securities_financial_metadata(self,
+                                                  raw_inputs: List[ExecutionOutput],
+                                                  ) -> List[DocumentSectionMetadata]:
+        financial_statement_page = []
+        for raw_input in raw_inputs:
+            if "Báo cáo tình hình tài chính" in raw_input.output_content.get(
+                    "raw_content", ""
+            ):
+                financial_statement_page.append(raw_input.execution_id)
+        from_page_of_financial_statement = min(financial_statement_page)
+        to_page_of_financial_statement = (
+                from_page_of_financial_statement
+                + EY_SECURITIES_FINANCIAL_SECTION_METADATA[0].page_info.page_length
+                - 1
+        )
+        from_page_of_income_statement = to_page_of_financial_statement + 1
+        to_page_of_income_statement = (
+                from_page_of_income_statement
+                + EY_SECURITIES_FINANCIAL_SECTION_METADATA[1].page_info.page_length
                 - 1
         )
         return [
