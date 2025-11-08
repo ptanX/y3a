@@ -1,6 +1,5 @@
 import asyncio
-import time
-from typing import Dict, List, Callable, Awaitable
+from typing import Dict, List, Callable
 
 
 class ExecutionInput:
@@ -18,7 +17,7 @@ class ExecutionOutput:
         self.output_content = output_content
 
 
-ExecutionHandler = Callable[[ExecutionInput], Awaitable[ExecutionOutput]]
+ExecutionHandler = Callable[[ExecutionInput], ExecutionOutput]
 
 
 class ExecutionDispatcherBuilder:
@@ -34,6 +33,17 @@ class ExecutionDispatcherBuilder:
         return self.execution_dispatcher
 
 
+async def async_wrapper(func, *args, **kwargs):
+    """Async wrapper for the extraction_numbers function"""
+    loop = asyncio.get_event_loop()
+    # Run the blocking function in a thread pool
+    return await loop.run_in_executor(
+        None,
+        func,
+        *args
+    )
+
+
 async def handle_simple_execution(execution_input: ExecutionInput) -> ExecutionOutput:
     return ExecutionOutput(
         handler_name=execution_input.handler_name,
@@ -47,7 +57,7 @@ class ExecutionDispatcher:
         self.dispatchers: Dict[str, ExecutionHandler] = {}
 
     async def dispatch(
-        self, list_inputs: List[ExecutionInput]
+            self, list_inputs: List[ExecutionInput]
     ) -> List[ExecutionOutput]:
         """
         Returns list of results of execution input.
@@ -69,9 +79,7 @@ class ExecutionDispatcher:
         handler = self.dispatchers.get(execution_input.handler_name)
         if not handler:
             raise ValueError(f"No handler found for '{execution_input.handler_name}'")
-        # time.sleep(20)
-        result = await handler(execution_input)
+        result = await async_wrapper(handler, execution_input)
         if isinstance(result, ExecutionOutput):
             return result
         raise ValueError(f"output error for '{execution_input.handler_name}'")
-    

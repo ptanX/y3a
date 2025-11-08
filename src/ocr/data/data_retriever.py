@@ -1,4 +1,3 @@
-import asyncio
 import json
 from abc import abstractmethod, ABC
 
@@ -6,16 +5,9 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
-from src.dispatcher.executions_dispatcher import ExecutionDispatcherBuilder
+from src.dispatcher.executions_dispatcher import async_wrapper
 from src.ocr.data.data_prompt_registry import get_data_prompt_by_section
 from src.ocr.data.pdf_text_extractor import DocumentAIExtractor
-from src.ocr.metadata.identifier_retriever import NameBasedIdentifierRetriever
-from src.ocr.metadata.metadata_retriever import (
-    extract_single_securities_raw_metadata_report_page,
-    SecuritiesFinancialReportMetadataRetriever, BusinessRegistrationMetadataRetriever, CompanyCharterMetadataRetriever,
-    SECURITIES_FINANCIAL_REPORT_SINGLE_METADATA_PAGE_EXTRACTION, BUSINESS_REGISTRATION_SINGLE_METADATA_PAGE_EXTRACTION,
-    extract_single_business_registration_raw_metadata_page,
-)
 from src.ocr.ocr_model import DocumentMetadata
 from src.ocr.utils import cut_pdf_to_bytes
 
@@ -91,12 +83,15 @@ company_character_processor_id = "12676ebbd1c0ed5"
 class DocumentDataRetriever(ABC):
 
     @abstractmethod
-    def retrieve(self, doc_metadata: DocumentMetadata):
+    async def retrieve(self, doc_metadata: DocumentMetadata):
         pass
 
 
 class FinancialSecuritiesReportDataRetriever(DocumentDataRetriever):
-    def retrieve(self, doc_metadata: DocumentMetadata):
+    async def retrieve(self, doc_metadata: DocumentMetadata):
+        return await async_wrapper(self.sync_retrieve, doc_metadata)
+
+    def sync_retrieve(self, doc_metadata: DocumentMetadata):
         client = genai.Client()
         reports = []
         for section in doc_metadata.sections:
@@ -156,7 +151,10 @@ class FinancialSecuritiesReportDataRetriever(DocumentDataRetriever):
 
 class BusinessRegistrationDataRetriever(DocumentDataRetriever):
 
-    def retrieve(self, doc_metadata: DocumentMetadata):
+    async def retrieve(self, doc_metadata: DocumentMetadata):
+        return await async_wrapper(self.sync_retrieve, doc_metadata)
+
+    def sync_retrieve(self, doc_metadata: DocumentMetadata):
         content_in_bytes = cut_pdf_to_bytes(
             input_path=doc_metadata.document_path,
             start_page=doc_metadata.sections[0].page_info.from_page,
@@ -172,7 +170,10 @@ class BusinessRegistrationDataRetriever(DocumentDataRetriever):
 
 class CompanyCharterDataRetriever(DocumentDataRetriever):
 
-    def retrieve(self, doc_metadata: DocumentMetadata):
+    async def retrieve(self, doc_metadata: DocumentMetadata):
+        return await async_wrapper(self.sync_retrieve, doc_metadata)
+
+    def sync_retrieve(self, doc_metadata: DocumentMetadata):
         content_in_bytes = cut_pdf_to_bytes(
             input_path=doc_metadata.document_path,
             start_page=doc_metadata.sections[0].page_info.from_page,
@@ -185,46 +186,3 @@ class CompanyCharterDataRetriever(DocumentDataRetriever):
         business_regis_cert = company_charter_extractor.extract_normalized_text(file_content=content_in_bytes)
         return business_regis_cert
 
-
-# if __name__ == '__main__':
-#     load_dotenv()
-#     input_path = (
-#         "C:\\Users\\ADMIN\\Desktop\\working\\code\\y3s\\documentations\\ssi-pl-dkkd.pdf"
-#     )
-#     financial_execution_dispatcher = (
-#         ExecutionDispatcherBuilder().set_dispatcher(
-#             name=SECURITIES_FINANCIAL_REPORT_SINGLE_METADATA_PAGE_EXTRACTION,
-#             handler=extract_single_securities_raw_metadata_report_page
-#         ).build()
-#     )
-#     business_registration_execution_dispatcher = (
-#         ExecutionDispatcherBuilder().set_dispatcher(
-#             name=BUSINESS_REGISTRATION_SINGLE_METADATA_PAGE_EXTRACTION,
-#             handler=extract_single_business_registration_raw_metadata_page
-#         )
-#     ).build()
-#     identifier_retriever = NameBasedIdentifierRetriever()
-#     doc_identifier = identifier_retriever.retrieve(path=input_path)
-#     data = None
-#     if doc_identifier.file_type == 'dkkd':
-#         metadata = asyncio.run(
-#             BusinessRegistrationMetadataRetriever(
-#                 execution_dispatcher=business_registration_execution_dispatcher
-#             ).retrieve(path=input_path, document_identifier=doc_identifier)
-#         )
-#         data = BusinessRegistrationDataRetriever().retrieve(doc_metadata=metadata)
-#     if doc_identifier.file_type == 'dl':
-#         metadata = asyncio.run(CompanyCharterMetadataRetriever().retrieve(path=input_path, document_identifier=doc_identifier))
-#         data = CompanyCharterDataRetriever().retrieve(doc_metadata=metadata)
-#     if doc_identifier.file_type == 'bctc':
-#         financial_execution_dispatcher = (
-#             ExecutionDispatcherBuilder().set_dispatcher(
-#                 name="extract_single_page_metadata",
-#                 handler=extract_single_securities_raw_metadata_report_page,
-#             ).build()
-#         )
-#         metadata = asyncio.run(SecuritiesFinancialReportMetadataRetriever(
-#             execution_dispatcher=financial_execution_dispatcher
-#         ).retrieve(path=input_path, document_identifier=doc_identifier))
-#         data = FinancialSecuritiesReportDataRetriever().retrieve(doc_metadata=metadata)
-#     print(data)

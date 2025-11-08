@@ -29,8 +29,8 @@ BUSINESS_REGISTRATION_SINGLE_METADATA_PAGE_EXTRACTION = "business_registration_s
 COMPANY_CHARTER_SINGLE_METADATA_PAGE_EXTRACTION = "company_charter_single_metadata_page_extraction"
 
 
-async def extract_single_securities_raw_metadata_report_page(execution_input: ExecutionInput,
-                                                             ) -> ExecutionOutput:
+def extract_single_securities_raw_metadata_report_page(execution_input: ExecutionInput,
+                                                       ) -> ExecutionOutput:
     page_number = execution_input.execution_id
     path = execution_input.input_content
     page_content_in_bytes = cut_pdf_to_bytes(
@@ -88,8 +88,8 @@ async def extract_single_securities_raw_metadata_report_page(execution_input: Ex
     )
 
 
-async def extract_single_business_registration_raw_metadata_page(execution_input: ExecutionInput,
-                                                                 ) -> ExecutionOutput:
+def extract_single_business_registration_raw_metadata_page(execution_input: ExecutionInput,
+                                                           ) -> ExecutionOutput:
     page_number = execution_input.execution_id
     path = execution_input.input_content
     page_content_in_bytes = cut_pdf_to_bytes(

@@ -114,12 +114,12 @@ async def handle_heavy_tasks(files: List[str]):
     return raw_data, financial_data
 
 
-async def handle_business_registration(execution_input: ExecutionInput) -> ExecutionOutput:
+def handle_business_registration(execution_input: ExecutionInput) -> ExecutionOutput:
     file_path = execution_input.input_content.get("file_path")
     identifier = execution_input.input_content.get("identifier")
-    business_registration_metadata = await BUSINESS_REGISTRATION_METADATA_RETRIEVER.retrieve(path=file_path,
-                                                                                             document_identifier=identifier)
-    business_registration_data = BUSINESS_REGISTRATION_DATA_RETRIEVER.retrieve(business_registration_metadata)
+    business_registration_metadata = asyncio.run(BUSINESS_REGISTRATION_METADATA_RETRIEVER.retrieve(path=file_path,
+                                                                                             document_identifier=identifier))
+    business_registration_data =asyncio.run(BUSINESS_REGISTRATION_DATA_RETRIEVER.retrieve(business_registration_metadata))
     return ExecutionOutput(
         handler_name=execution_input.handler_name,
         execution_id=execution_input.execution_id,
@@ -127,12 +127,12 @@ async def handle_business_registration(execution_input: ExecutionInput) -> Execu
     )
 
 
-async def handle_company_charter(execution_input: ExecutionInput) -> ExecutionOutput:
+def handle_company_charter(execution_input: ExecutionInput) -> ExecutionOutput:
     file_path = execution_input.input_content.get("file_path")
     identifier = execution_input.input_content.get("identifier")
-    company_charter_metadata = await COMPANY_CHARTER_METADATA_RETRIEVER.retrieve(path=file_path,
-                                                                                 document_identifier=identifier)
-    company_charter_data = COMPANY_CHARTER_DATA_RETRIEVER.retrieve(doc_metadata=company_charter_metadata)
+    company_charter_metadata = asyncio.run(COMPANY_CHARTER_METADATA_RETRIEVER.retrieve(path=file_path,
+                                                                                 document_identifier=identifier))
+    company_charter_data = asyncio.run(COMPANY_CHARTER_DATA_RETRIEVER.retrieve(doc_metadata=company_charter_metadata))
     return ExecutionOutput(
         handler_name=execution_input.handler_name,
         execution_id=execution_input.execution_id,
@@ -140,12 +140,12 @@ async def handle_company_charter(execution_input: ExecutionInput) -> ExecutionOu
     )
 
 
-async def handle_securities_financial_report(execution_input: ExecutionInput) -> ExecutionOutput:
+def handle_securities_financial_report(execution_input: ExecutionInput) -> ExecutionOutput:
     file_path = execution_input.input_content.get("file_path")
     identifier = execution_input.input_content.get("identifier")
-    financial_metadata = await FINANCIAL_METADATA_RETRIEVER.retrieve(path=file_path,
-                                                                     document_identifier=identifier)
-    financial_data = FINANCIAL_DATA_RETRIEVER.retrieve(financial_metadata)
+    financial_metadata = asyncio.run(FINANCIAL_METADATA_RETRIEVER.retrieve(path=file_path,
+                                                                     document_identifier=identifier))
+    financial_data = asyncio.run(FINANCIAL_DATA_RETRIEVER.retrieve(financial_metadata))
     return ExecutionOutput(
         handler_name=execution_input.handler_name,
         execution_id=execution_input.execution_id,
@@ -377,10 +377,8 @@ def _cut_pdf(input_pdf, output_pdf, start_page, end_page):
         writer.write(f_out)
 
 
-if __name__ == '__main__':
-    list_files = ['/Desktop/work/learning/code/y3a/documentations/ssi-pl-dl.pdf',
-                  '/Desktop/work/learning/code/y3a/documentations/ssi-pl-dkkd.pdf',
-                  '/Desktop/work/learning/code/y3a/documentations/ssi-tc-bctc-2023.pdf',
-                  '/Desktop/work/learning/code/y3a/documentations/ssi-tc-bctc-2024.pdf']
-    result = asyncio.run(handle_heavy_tasks(list_files))
-    print(result)
+# if __name__ == '__main__':
+#
+#     list_files = []
+#     result = asyncio.run(handle_heavy_tasks(list_files))
+#     print(result)
