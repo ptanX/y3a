@@ -1,100 +1,702 @@
 SECURITIES_FINANCIAL_STATEMENT_PROMPT = """
-Từ file PDF báo cáo tình hình tài chính đã gửi lên, trong đó các trang là bộ phận hợp thành của một bảng báo cáo tài chính lớn duy nhất, hãy trích xuất dữ liệu của bảng đó thành định dạng JSON.
+Từ nội dung PDF báo cáo tình hình tài chính hợp nhất của công ty chứng khoán, hãy trích xuất dữ liệu thành định dạng JSON theo BẢNG ÁNH XẠ và VÍ DỤ CHUẨN bên dưới.
 
 YÊU CẦU CẤU TRÚC JSON:
-1. Sử dụng giá trị tại ngày cuối kỳ (ngày có giá trị lớn nhất, thường là 31/12/YYYY hoặc Số cuối năm/Số đầu năm).
-2. Chuyển đổi tất cả các giá trị số sang dạng số nguyên (integer/number), loại bỏ dấu phân cách hàng nghìn. Giá trị của toàn bộ ô trong ngoặc "()" được chuyển thành số âm. Giá trị của toàn bộ ô là "-" được chuyển thành null.
-3. Mỗi đối tượng JSON (object) phải có 3 attributes:
-   - "description": Tên mục tiếng Việt nguyên bản từ cột CHỈ TIÊU/Danh mục, loại bỏ hoàn toàn phần công thức tính toán (ví dụ: "(100=110+130)", "(200=210+220+250)", "(400=410)", v.v.).
-   - "name": Tên tiếng Anh chuẩn hóa theo BẢNG ÁNH XẠ bên dưới (sử dụng snake_case).
-   - "value": Giá trị số cuối cùng đã được chuyển đổi tại ngày cuối kỳ (integer hoặc null).
-4. Câu trả lời CHỈ TRẢ VỀ JSON HỢP LỆ dưới dạng array of objects, KHÔNG CÓ giải thích, markdown, hoặc text nào khác.
+1. Sử dụng giá trị tại ngày cuối kỳ báo cáo (cột có năm lớn nhất - thường là "Số cuối năm" hoặc cột năm gần nhất như 31/12/2024)
+2. Chuyển đổi số: loại bỏ dấu phân cách (dấu chấm hoặc dấu phẩy), "()" = số âm, "-" = null
+3. Mỗi object có 3 attributes theo ĐÚNG THỨ TỰ NÀY:
+   - "description": Tên tiếng Việt CHÍNH XÁC như trong PDF (giữ nguyên chữ hoa/thường, loại bỏ phần công thức tính như "(100=110+130)")
+   - "name": Tên tiếng Anh (snake_case) - PHẢI KHỚP CHÍNH XÁC với bảng ánh xạ
+   - "value": Giá trị số (integer hoặc null)
+4. CHỈ TRẢ VỀ JSON ARRAY: [{"description":"...","name":"...","value":123},...]
+5. KHÔNG có text giải thích thêm
 
-BẢNG ÁNH XẠ TÊN THUỘC TÍNH (name):
-Ánh xạ các tên tiếng Việt từ báo cáo (có thể khác nhau giữa các đơn vị kiểm toán) sang tên chuẩn tiếng Anh. Áp dụng nguyên tắc: nếu gặp các biến thể từ ngữ có cùng ngữ nghĩa, hãy sử dụng tên chuẩn tương ứng.
+NGUYÊN TẮC QUAN TRỌNG NHẤT:
+⚠️ SỬ DỤNG CHÍNH XÁC TÊN THUỘC TÍNH TRONG BẢNG - KHÔNG ĐƯỢC THAY ĐỔI hoặc SÁNG TẠO TÊN MỚI
+⚠️ Description phải lấy CHÍNH XÁC tên tiếng Việt từ PDF - không được diễn giải, rút gọn hoặc thay đổi
+⚠️ Loại bỏ hoàn toàn phần công thức tính toán trong ngoặc đơn ví dụ: "(100=110+130)", "(200=210+220+250)", "(270=100+200)"
+⚠️ Chỉ trích xuất các trường có giá trị số cụ thể
+⚠️ BỎ QUA hoàn toàn phần "CÁC CHỈ TIÊU NGOÀI BÁO CÁO TÌNH HÌNH TÀI CHÍNH HỢP NHẤT"
+⚠️ Nếu không tìm thấy mục trong PDF → BỎ QUA, không tạo giá trị giả
+⚠️ Nếu không chắc chắn về mapping → BỎ QUA thay vì dùng tên sai
 
-TÀI SẢN NGẮN HẠN:
-- "Tài sản ngắn hạn" / "TÀI SẢN NGẮN HẠN" / "A. TÀI SẢN NGẮN HẠN" → short_term_assets
-- "Tài sản tài chính" / "Tài sản tài chính ngắn hạn" / "I. Tài sản tài chính" → current_financial_assets
-- "Tiền và các khoản tương đương tiền" → cash_and_cash_equivalents
-- "Tiền" → cash
-- "Các khoản tương đương tiền" → cash_equivalents
-- "Các tài sản tài chính ghi nhận thông qua lãi/lỗ (FVTPL)" / "Các tài sản tài chính ('TSTC') ghi nhận thông qua lãi/lỗ" / "Các khoản đầu tư nắm giữ đến ngày đáo hạn (HTM)" khi nằm trong FVTPL → financial_assets_recognized_through_p_and_l_at_fvtpl
-- "Các khoản đầu tư nắm giữ đến ngày đáo hạn (HTM)" / "Các khoản đầu tư nắm giữ đến ngày đáo hạn" → held_to_maturity_investment_securities
-- "Các khoản cho vay" / "Cho vay" → loans
-- "Dự phòng suy giảm giá trị các tài sản tài chính và tài sản thế chấp" / "Dự phòng suy giảm giá trị các TSTC và tài sản thế chấp" → provision_for_impairment_of_financial_assets_and_pledged_assets
-- "Các khoản phải thu" / "Phải thu" → receivables
-- "Phải thu và dự thu cổ tức, tiền lãi các tài sản tài chính" / "Phải thu lãi và dự thu có ứớc, tiền lãi các tài sản tài chính" → interest_and_fee_receivables
-- "Phải thu có ứớc, tiền lãi đến ngày nhận" / "Dự thu có ứớc, lãi chưa đến ngày nhận" (khi đã đến hạn) → interest_and_fee_receivables_due
-- "Phải thu có ứớc, tiền lãi chưa đến ngày nhận" / "Dự thu có ứớc, lãi chưa đến ngày nhận" → interest_and_fee_receivables_not_yet_due
-- "Trả trước cho người bán" / "Tạm ứng" → advances_to_vendors
-- "Phải thu các dịch vụ công ty chứng khoán cung cấp" → service_fee_receivables_from_companies_and_securities_clearing
-- "Các khoản phải thu khác" → other_receivables
-- "Tài sản ngắn hạn khác" / "II. Tài sản ngắn hạn khác" → other_short_term_assets
-- "Chi phí trả trước ngắn hạn" / "Chi phí trả trước" → prepaid_expenses
-- "Chi phí trả trước ngắn hạn" (khi tách riêng) → short_term_prepaid_expenses
-- "Cầm cố, thế chấp, ký quỹ, ký cược ngắn hạn" / "Vật tư văn phòng, công cụ, dụng cụ" → short_term_deposits_pledges_and_guarantees
+ĐẶC ĐIỂM NHẬN DẠNG BÁO CÁO TÌNH HÌNH TÀI CHÍNH HỢP NHẤT:
+- Có cột "Mã số", "CHỈ TIÊU" hoặc "Thuyết minh"
+- Cấu trúc: A. TÀI SẢN NGẮN HẠN, B. TÀI SẢN DÀI HẠN, C. NỢ PHẢI TRẢ, D. VỐN CHỦ SỞ HỮU
+- Dùng ký hiệu mã số: 100, 110, 111, 111.1, 111.2... hoặc A., I., 1., 1.1., 1.2...
+- Có thể dùng từ viết tắt: TSTC (Tài sản tài chính), FVTPL, HTM, AFS, TSCĐ (Tài sản cố định)
+- Số âm được biểu diễn bằng dấu ngoặc đơn: (39.586.100.297)
+- Dấu phân cách nghìn là dấu chấm: 70.932.391.912.367
+- Đơn vị tính: VND hoặc đồng
 
-TÀI SẢN DÀI HẠN:
-- "Tài sản dài hạn" / "TÀI SẢN DÀI HẠN" / "B. TÀI SẢN DÀI HẠN" → long_term_assets
-- "Tài sản tài chính dài hạn" / "I. Tài sản tài chính dài hạn" → long_term_financial_assets
-- "Các khoản đầu tư" / "Đầu tư vào công ty liên doanh, liên kết" → investments
-- "Các khoản đầu tư nắm giữ đến ngày đáo hạn" (trong phần dài hạn) → held_to_maturity_investments
-- "Tài sản cố định" / "II. Tài sản cố định" → fixed_assets
-- "Tài sản cố định hữu hình" / "Nguyên giá" (TSCĐ hữu hình) → tangible_fixed_assets
-- "Nguyên giá" (của TSCĐ hữu hình) → tangible_fixed_assets_cost
-- "Giá trị hao mòn lũy kế" (của TSCĐ hữu hình) → tangible_fixed_assets_accumulated_depreciation
-- "Tài sản cố định vô hình" / "Nguyên giá" (TSCĐ vô hình) → intangible_fixed_assets
-- "Nguyên giá" (của TSCĐ vô hình) → intangible_fixed_assets_cost
-- "Giá trị hao mòn lũy kế" (của TSCĐ vô hình) → intangible_fixed_assets_accumulated_amortization
-- "Tài sản dài hạn khác" / "V. Tài sản dài hạn khác" → other_long_term_assets
-- "Cầm cố, thế chấp, ký quỹ, ký cược dài hạn" → long_term_deposits_pledges_and_guarantees
-- "Chi phí trả trước dài hạn" → long_term_prepaid_expenses
-- "Thuế thu nhập hoãn lại phải thu" / "Tài sản thuế thu nhập hoãn lại" → deferred_tax_assets
-- "Tiền nộp Quỹ Hỗ trợ thanh toán" → support_fund_contribution
+BẢNG ÁNH XẠ CHI TIẾT - 130 TRƯỜNG CHUẨN:
 
-TỔNG TÀI SẢN:
-- "Tổng cộng tài sản" / "TỔNG TÀI SẢN" / "TỔNG CỘNG TÀI SẢN" → total_assets
+**I. TÀI SẢN NGẮN HẠN (36 trường)**
 
-NỢ PHẢI TRẢ:
-- "Nợ phải trả" / "NỢ PHẢI TRẢ" / "C. NỢ PHẢI TRẢ" → liabilities
-- "Nợ phải trả ngắn hạn" / "I. Nợ phải trả ngắn hạn" → short_term_liabilities
-- "Vay và nợ thuê tài sản tài chính ngắn hạn" / "Vay ngắn hạn" / "Vay và nợ thuê TSTC ngắn hạn" → short_term_borrowings_and_financial_lease_liabilities
-- "Vay ngắn hạn" (riêng) → short_term_borrowings
-- "Trái phiếu phát hành ngắn hạn" → bonds_issued
-- "Phải trả hoạt động giao dịch chứng khoán" → payables_for_securities_trading_activities
-- "Phải trả người bán ngắn hạn" → payables_for_securities_purchases
-- "Người mua trả tiền trước ngắn hạn" → advances_from_customers
-- "Thuế và các khoản phải nộp Nhà nước" → tax_and_other_payables_to_state_budget
-- "Phải trả người lao động" / "Người mua trả tiền trước ngắn hạn" → employee_benefits_payable
-- "Chi phí phải trả ngắn hạn" (tổng hợp) → accrued_expenses
-- "Chi phí phải trả ngắn hạn" (tiền lãi) → short_term_interest_payable
-- "Các khoản phải trả, phải nộp khác ngắn hạn" / "Các khoản trích nộp phúc lợi nhân viên" → other_short_term_payables
-- "Quỹ khen thưởng, phúc lợi" → bonus_and_welfare_fund
-- "Nợ phải trả dài hạn" / "II. Nợ phải trả dài hạn" → long_term_liabilities
-- "Thuế thu nhập hoãn lại phải trả" / "Doanh thu chưa thực hiện dài hạn" → deferred_income_tax_payable
+1. Tìm trong PDF các biến thể:
+   - "TÀI SẢN NGẮN HẠN" / "A. TÀI SẢN NGẮN HẠN" / "Tài sản ngắn hạn"
+   Tên chuẩn: **short_term_assets**
 
-VỐN CHỦ SỞ HỮU:
-- "Vốn chủ sở hữu" / "VỐN CHỦ SỞ HỮU" / "D. VỐN CHỦ SỞ HỮU" → owners_equity
-- "Vốn chủ sở hữu" (chi tiết) / "Vốn đầu tư của chủ sở hữu" / "I. Vốn chủ sở hữu" → owners_capital
-- "Vốn góp của chủ sở hữu" / "Cổ phiếu phổ thông có quyền biểu quyết" → contributed_capital
-- "Cổ phiếu phổ thông cổ quyền biểu quyết" / "Cổ phiếu dạng lưu hành (số lượng)" → ordinary_share_capital_authorized_and_issued
-- "Thặng dư vốn cổ phần" → share_premium
-- "Quỹ dự trữ bổ sung vốn điều lệ" / "Cổ phiếu quỹ (số lượng)" → treasury_stock
-- "Quỹ dự phòng tài chính và rủi ro nghiệp vụ" → financial_and_operating_risk_reserve
-- "Lợi nhuận chưa phân phối" → undistributed_earnings
-- "Lợi nhuận đã thực hiện" → retained_earnings_realized
-- "Lợi nhuận chưa thực hiện" → retained_earnings_unrealized
+2. Tìm trong PDF:
+   - "Tài sản tài chính" / "I. Tài sản tài chính"
+   Tên chuẩn: **financial_assets**
 
-TỔNG NỢ VÀ VỐN:
-- "Tổng cộng nợ phải trả và vốn chủ sở hữu" / "TỔNG NỢ VÀ VỐN CHỦ SỞ HỮU" → total_liabilities_and_owners_equity
+3. Tìm trong PDF:
+   - "Tiền và các khoản tương đương tiền"
+   Tên chuẩn: **cash_and_cash_equivalents**
 
-LƯU Ý QUAN TRỌNG:
-- Bỏ qua tất cả các mục trong phần "CÁC CHỈ TIÊU NGOÀI BÁO CÁO TÌNH HÌNH TÀI CHÍNH HỢP NHẤT"
-- Nếu gặp tên tiếng Việt không có trong BẢNG ÁNH XẠ nhưng có ngữ nghĩa tương tự, hãy ánh xạ sang tên chuẩn gần nhất
-- Chỉ trích xuất các mục có giá trị số cụ thể, không trích xuất các tiêu đề tổng hợp không có giá trị
+4. Tìm trong PDF:
+   - "Tiền"
+   Tên chuẩn: **cash**
 
-OUTPUT: Trả về JSON array hợp lệ, không có text nào khác.
+5. Tìm trong PDF:
+   - "Các khoản tương đương tiền"
+   Tên chuẩn: **cash_equivalents**
+
+6. Tìm trong PDF các biến thể:
+   - "Các tài sản tài chính ghi nhận thông qua lãi/lỗ (FVTPL)"
+   - "Các tài sản tài chính (TSTC) ghi nhận thông qua lãi/lỗ"
+   - "Các TSTC ghi nhận thông qua lãi/lỗ (FVTPL)"
+   Tên chuẩn: **financial_assets_at_fair_value_through_profit_or_loss**
+
+7. Tìm trong PDF các biến thể:
+   - "Các khoản đầu tư nắm giữ đến ngày đáo hạn (HTM)"
+   - "Các khoản đầu tư nắm giữ đến ngày đáo hạn"
+   Tên chuẩn: **held_to_maturity_investments**
+
+8. Tìm trong PDF:
+   - "Các khoản cho vay" / "Cho vay"
+   Tên chuẩn: **loans**
+
+9. Tìm trong PDF:
+   - "Tài sản tài chính sẵn sàng để bán (AFS)"
+   Tên chuẩn: **available_for_sale_financial_assets**
+
+10. Tìm trong PDF các biến thể:
+    - "Dự phòng suy giảm giá trị các tài sản tài chính và tài sản thế chấp"
+    - "Dự phòng suy giảm giá trị các TSTC và tài sản thế chấp"
+    Tên chuẩn: **provision_for_impairment_of_financial_assets_and_collateral**
+
+11. Tìm trong PDF:
+    - "Các khoản phải thu" / "Phải thu"
+    Tên chuẩn: **receivables**
+
+12. Tìm trong PDF:
+    - "Phải thu bán các tài sản tài chính"
+    Tên chuẩn: **receivables_from_sale_of_financial_assets**
+
+13. Tìm trong PDF các biến thể:
+    - "Phải thu và dự thu cổ tức, tiền lãi các tài sản tài chính"
+    - "Phải thu và dự thu cổ tức, tiền lãi các TSTC"
+    Tên chuẩn: **dividends_and_interest_receivable**
+
+14. Tìm trong PDF:
+    - "Phải thu cổ tức, tiền lãi đến ngày nhận"
+    Tên chuẩn: **dividends_and_interest_receivable_due**
+
+15. Tìm trong PDF:
+    - "Dự thu cổ tức, tiền lãi chưa đến ngày nhận"
+    Tên chuẩn: **accrued_dividends_and_interest_receivable**
+
+16. Tìm trong PDF:
+    - "Trả trước cho người bán"
+    Tên chuẩn: **prepayments_to_suppliers**
+
+17. Tìm trong PDF các biến thể:
+    - "Phải thu các dịch vụ CTCK cung cấp"
+    - "Phải thu các dịch vụ công ty chứng khoán cung cấp"
+    Tên chuẩn: **receivables_from_securities_services**
+
+18. Tìm trong PDF:
+    - "Phải thu nội bộ"
+    Tên chuẩn: **internal_receivables**
+
+19. Tìm trong PDF:
+    - "Phải thu về lỗi giao dịch chứng khoán"
+    Tên chuẩn: **receivables_from_securities_trading_errors**
+
+20. Tìm trong PDF:
+    - "Các khoản phải thu khác"
+    Tên chuẩn: **other_receivables**
+
+21. Tìm trong PDF:
+    - "Dự phòng suy giảm giá trị các khoản phải thu"
+    Tên chuẩn: **provision_for_doubtful_debts**
+
+22. Tìm trong PDF:
+    - "Tài sản ngắn hạn khác" / "II. Tài sản ngắn hạn khác"
+    Tên chuẩn: **other_short_term_assets**
+
+23. Tìm trong PDF:
+    - "Tạm ứng"
+    Tên chuẩn: **advances**
+
+24. Tìm trong PDF:
+    - "Vật tư văn phòng, công cụ, dụng cụ"
+    Tên chuẩn: **office_supplies_and_tools**
+
+25. Tìm trong PDF:
+    - "Chi phí trả trước ngắn hạn"
+    Tên chuẩn: **short_term_prepaid_expenses**
+
+26. Tìm trong PDF:
+    - "Cầm cố, thế chấp, ký quỹ, ký cược ngắn hạn"
+    Tên chuẩn: **short_term_collateral_and_deposits**
+
+27. Tìm trong PDF:
+    - "Thuế giá trị gia tăng được khấu trừ"
+    Tên chuẩn: **deductible_value_added_tax**
+
+28. Tìm trong PDF:
+    - "Thuế và các khoản khác phải thu Nhà nước"
+    Tên chuẩn: **taxes_and_other_receivables_from_the_state**
+
+29. Tìm trong PDF:
+    - "Tài sản ngắn hạn khác" (mục chi tiết, khác với mục tổng II.)
+    Tên chuẩn: **other_current_assets**
+
+30. Tìm trong PDF:
+    - "Giao dịch mua bán lại trái phiếu Chính phủ" (trong TÀI SẢN)
+    Tên chuẩn: **repurchase_agreements_for_government_bonds**
+
+31. Tìm trong PDF:
+    - "Dự phòng suy giảm giá trị tài sản ngắn hạn khác"
+    Tên chuẩn: **provision_for_impairment_of_other_short_term_assets**
+
+**II. TÀI SẢN DÀI HẠN (30 trường)**
+
+32. Tìm trong PDF:
+    - "TÀI SẢN DÀI HẠN" / "B. TÀI SẢN DÀI HẠN" / "Tài sản dài hạn"
+    Tên chuẩn: **long_term_assets**
+
+33. Tìm trong PDF:
+    - "Tài sản tài chính dài hạn" / "I. Tài sản tài chính dài hạn"
+    Tên chuẩn: **long_term_financial_assets**
+
+34. Tìm trong PDF:
+    - "Các khoản phải thu dài hạn"
+    Tên chuẩn: **long_term_receivables**
+
+35. Tìm trong PDF:
+    - "Các khoản đầu tư" (trong phần dài hạn)
+    Tên chuẩn: **investments**
+
+36. Tìm trong PDF:
+    - "Các khoản đầu tư nắm giữ đến ngày đáo hạn" (trong phần dài hạn, mục 2.1)
+    Tên chuẩn: **long_term_held_to_maturity_investments**
+
+37. Tìm trong PDF:
+    - "Đầu tư vào công ty con"
+    Tên chuẩn: **investments_in_subsidiaries**
+
+38. Tìm trong PDF:
+    - "Đầu tư vào công ty liên doanh, liên kết"
+    Tên chuẩn: **investments_in_joint_ventures_and_associates**
+
+39. Tìm trong PDF:
+    - "Đầu tư dài hạn khác"
+    Tên chuẩn: **other_long_term_investments**
+
+40. Tìm trong PDF:
+    - "Dự phòng suy giảm tài sản tài chính dài hạn"
+    Tên chuẩn: **provision_for_impairment_of_long_term_financial_assets**
+
+41. Tìm trong PDF:
+    - "Tài sản cố định" / "II. Tài sản cố định"
+    Tên chuẩn: **fixed_assets**
+
+42. Tìm trong PDF:
+    - "Tài sản cố định hữu hình" (giá trị ròng)
+    Tên chuẩn: **tangible_fixed_assets**
+
+43. Tìm trong PDF:
+    - "Nguyên giá" (của TSCĐ hữu hình)
+    Tên chuẩn: **tangible_fixed_assets_cost**
+
+44. Tìm trong PDF:
+    - "Giá trị hao mòn lũy kế" (của TSCĐ hữu hình)
+    Tên chuẩn: **accumulated_depreciation_of_tangible_fixed_assets**
+
+45. Tìm trong PDF:
+    - "Đánh giá TSCĐHH theo giá trị hợp lý"
+    Tên chuẩn: **fair_value_adjustment_of_tangible_fixed_assets**
+
+46. Tìm trong PDF:
+    - "Tài sản cố định thuê tài chính" (giá trị ròng)
+    Tên chuẩn: **finance_lease_fixed_assets**
+
+47. Tìm trong PDF:
+    - "Nguyên giá" (của TSCĐ thuê tài chính)
+    Tên chuẩn: **finance_lease_fixed_assets_cost**
+
+48. Tìm trong PDF:
+    - "Giá trị hao mòn lũy kế" (của TSCĐ thuê tài chính)
+    Tên chuẩn: **accumulated_depreciation_of_finance_lease_fixed_assets**
+
+49. Tìm trong PDF:
+    - "Đánh giá TSCĐTTC theo giá trị hợp lý"
+    Tên chuẩn: **fair_value_adjustment_of_finance_lease_fixed_assets**
+
+50. Tìm trong PDF:
+    - "Tài sản cố định vô hình" (giá trị ròng)
+    Tên chuẩn: **intangible_fixed_assets**
+
+51. Tìm trong PDF:
+    - "Nguyên giá" (của TSCĐ vô hình)
+    Tên chuẩn: **intangible_fixed_assets_cost**
+
+52. Tìm trong PDF:
+    - "Giá trị hao mòn lũy kế" (của TSCĐ vô hình)
+    Tên chuẩn: **accumulated_amortization_of_intangible_fixed_assets**
+
+53. Tìm trong PDF:
+    - "Đánh giá TSCĐVH theo giá trị hợp lý"
+    Tên chuẩn: **fair_value_adjustment_of_intangible_fixed_assets**
+
+54. Tìm trong PDF:
+    - "Bất động sản đầu tư" / "III. Bất động sản đầu tư" (giá trị ròng)
+    Tên chuẩn: **investment_property**
+
+55. Tìm trong PDF:
+    - "Nguyên giá" (của BĐS đầu tư)
+    Tên chuẩn: **investment_property_cost**
+
+56. Tìm trong PDF:
+    - "Giá trị hao mòn lũy kế" (của BĐS đầu tư)
+    Tên chuẩn: **accumulated_depreciation_of_investment_property**
+
+57. Tìm trong PDF:
+    - "Đánh giá BĐSĐT theo giá trị hợp lý"
+    Tên chuẩn: **fair_value_adjustment_of_investment_property**
+
+58. Tìm trong PDF:
+    - "Chi phí xây dựng cơ bản dở dang" / "IV. Chi phí xây dựng cơ bản dở dang"
+    Tên chuẩn: **construction_in_progress**
+
+59. Tìm trong PDF:
+    - "Tài sản dài hạn khác" / "V. Tài sản dài hạn khác"
+    Tên chuẩn: **other_long_term_assets**
+
+60. Tìm trong PDF:
+    - "Cầm cố, thế chấp, ký quỹ, ký cược dài hạn"
+    Tên chuẩn: **long_term_collateral_and_deposits**
+
+61. Tìm trong PDF:
+    - "Chi phí trả trước dài hạn"
+    Tên chuẩn: **long_term_prepaid_expenses**
+
+62. Tìm trong PDF:
+    - "Tài sản thuế thu nhập hoãn lại"
+    Tên chuẩn: **deferred_tax_assets**
+
+63. Tìm trong PDF:
+    - "Tiền nộp Quỹ Hỗ trợ thanh toán"
+    Tên chuẩn: **deposits_to_clearing_support_fund**
+
+64. Tìm trong PDF:
+    - "Tài sản dài hạn khác" (mục chi tiết, khác với mục tổng V.)
+    Tên chuẩn: **other_non_current_assets**
+
+65. Tìm trong PDF:
+    - "Dự phòng suy giảm giá trị tài sản dài hạn" / "VI. Dự phòng suy giảm giá trị tài sản dài hạn"
+    Tên chuẩn: **provision_for_impairment_of_long_term_assets**
+
+**III. TỔNG TÀI SẢN (1 trường)**
+
+66. Tìm trong PDF:
+    - "TỔNG CỘNG TÀI SẢN" / "TỔNG TÀI SẢN" / "Tổng cộng tài sản"
+    Tên chuẩn: **total_assets**
+
+**IV. NỢ PHẢI TRẢ NGẮN HẠN (20 trường)**
+
+67. Tìm trong PDF:
+    - "NỢ PHẢI TRẢ" / "C. NỢ PHẢI TRẢ" / "Nợ phải trả"
+    Tên chuẩn: **liabilities**
+
+68. Tìm trong PDF:
+    - "Nợ phải trả ngắn hạn" / "I. Nợ phải trả ngắn hạn"
+    Tên chuẩn: **short_term_liabilities**
+
+69. Tìm trong PDF các biến thể:
+    - "Vay và nợ thuê tài chính ngắn hạn"
+    - "Vay và nợ thuê tài sản tài chính ngắn hạn"
+    - "Vay và nợ thuê TSTC ngắn hạn"
+    Tên chuẩn: **short_term_borrowings_and_finance_lease_liabilities**
+
+70. Tìm trong PDF:
+    - "Vay ngắn hạn" (mục chi tiết)
+    Tên chuẩn: **short_term_borrowings**
+
+71. Tìm trong PDF:
+    - "Nợ thuê tài chính ngắn hạn"
+    Tên chuẩn: **short_term_finance_lease_liabilities**
+
+72. Tìm trong PDF:
+    - "Vay tài sản tài chính ngắn hạn"
+    Tên chuẩn: **short_term_borrowings_of_financial_assets**
+
+73. Tìm trong PDF:
+    - "Trái phiếu chuyển đổi ngắn hạn - Cấu phần nợ"
+    Tên chuẩn: **short_term_convertible_bonds_debt_component**
+
+74. Tìm trong PDF:
+    - "Trái phiếu phát hành ngắn hạn"
+    Tên chuẩn: **short_term_bonds_issued**
+
+75. Tìm trong PDF:
+    - "Vay Quỹ Hỗ trợ thanh toán"
+    Tên chuẩn: **borrowings_from_clearing_support_fund**
+
+76. Tìm trong PDF:
+    - "Phải trả hoạt động giao dịch chứng khoán"
+    Tên chuẩn: **payables_from_securities_trading_activities**
+
+77. Tìm trong PDF:
+    - "Phải trả về lỗi giao dịch các tài sản tài chính"
+    Tên chuẩn: **payables_for_securities_trading_errors**
+
+78. Tìm trong PDF:
+    - "Phải trả người bán ngắn hạn"
+    Tên chuẩn: **short_term_trade_payables**
+
+79. Tìm trong PDF:
+    - "Người mua trả tiền trước ngắn hạn"
+    Tên chuẩn: **short_term_advances_from_customers**
+
+80. Tìm trong PDF:
+    - "Thuế và các khoản phải nộp Nhà nước"
+    Tên chuẩn: **taxes_and_other_payables_to_the_state**
+
+81. Tìm trong PDF:
+    - "Phải trả người lao động"
+    Tên chuẩn: **payables_to_employees**
+
+82. Tìm trong PDF:
+    - "Các khoản trích nộp phúc lợi nhân viên"
+    Tên chuẩn: **accrued_employee_benefits**
+
+83. Tìm trong PDF:
+    - "Chi phí phải trả ngắn hạn"
+    Tên chuẩn: **short_term_accrued_expenses**
+
+84. Tìm trong PDF:
+    - "Phải trả nội bộ ngắn hạn"
+    Tên chuẩn: **short_term_internal_payables**
+
+85. Tìm trong PDF:
+    - "Doanh thu chưa thực hiện ngắn hạn"
+    Tên chuẩn: **short_term_unearned_revenue**
+
+86. Tìm trong PDF:
+    - "Nhận ký quỹ, ký cược ngắn hạn"
+    Tên chuẩn: **short_term_deposits_received**
+
+87. Tìm trong PDF:
+    - "Các khoản phải trả, phải nộp khác ngắn hạn"
+    Tên chuẩn: **other_short_term_payables**
+
+88. Tìm trong PDF:
+    - "Dự phòng phải trả ngắn hạn"
+    Tên chuẩn: **short_term_provisions**
+
+89. Tìm trong PDF:
+    - "Quỹ khen thưởng, phúc lợi"
+    Tên chuẩn: **bonus_and_welfare_fund**
+
+90. Tìm trong PDF:
+    - "Giao dịch mua bán lại trái phiếu Chính phủ" (trong NỢ PHẢI TRẢ)
+    Tên chuẩn: **repurchase_agreements_for_government_bonds_liabilities**
+
+**V. NỢ PHẢI TRẢ DÀI HẠN (15 trường)**
+
+91. Tìm trong PDF:
+    - "Nợ phải trả dài hạn" / "II. Nợ phải trả dài hạn"
+    Tên chuẩn: **long_term_liabilities**
+
+92. Tìm trong PDF:
+    - "Vay và nợ thuê tài chính dài hạn"
+    Tên chuẩn: **long_term_borrowings_and_finance_lease_liabilities**
+
+93. Tìm trong PDF:
+    - "Vay dài hạn" (mục chi tiết)
+    Tên chuẩn: **long_term_borrowings**
+
+94. Tìm trong PDF:
+    - "Nợ thuê tài chính dài hạn"
+    Tên chuẩn: **long_term_finance_lease_liabilities**
+
+95. Tìm trong PDF:
+    - "Vay tài sản tài chính dài hạn"
+    Tên chuẩn: **long_term_borrowings_of_financial_assets**
+
+96. Tìm trong PDF:
+    - "Trái phiếu chuyển đổi dài hạn - Cấu phần nợ"
+    Tên chuẩn: **long_term_convertible_bonds_debt_component**
+
+97. Tìm trong PDF:
+    - "Trái phiếu phát hành dài hạn"
+    Tên chuẩn: **long_term_bonds_issued**
+
+98. Tìm trong PDF:
+    - "Phải trả người bán dài hạn"
+    Tên chuẩn: **long_term_trade_payables**
+
+99. Tìm trong PDF:
+    - "Người mua trả tiền trước dài hạn"
+    Tên chuẩn: **long_term_advances_from_customers**
+
+100. Tìm trong PDF:
+     - "Chi phí phải trả dài hạn"
+     Tên chuẩn: **long_term_accrued_expenses**
+
+101. Tìm trong PDF:
+     - "Phải trả nội bộ dài hạn"
+     Tên chuẩn: **long_term_internal_payables**
+
+102. Tìm trong PDF:
+     - "Doanh thu chưa thực hiện dài hạn"
+     Tên chuẩn: **long_term_unearned_revenue**
+
+103. Tìm trong PDF:
+     - "Nhận ký quỹ, ký cược dài hạn"
+     Tên chuẩn: **long_term_deposits_received**
+
+104. Tìm trong PDF:
+     - "Các khoản phải trả, phải nộp khác dài hạn"
+     Tên chuẩn: **other_long_term_payables**
+
+105. Tìm trong PDF:
+     - "Dự phòng phải trả dài hạn"
+     Tên chuẩn: **long_term_provisions**
+
+106. Tìm trong PDF:
+     - "Quỹ bảo vệ Nhà đầu tư"
+     Tên chuẩn: **investor_protection_fund**
+
+107. Tìm trong PDF:
+     - "Thuế thu nhập hoãn lại phải trả"
+     Tên chuẩn: **deferred_tax_liabilities**
+
+108. Tìm trong PDF:
+     - "Quỹ phát triển khoa học và công nghệ"
+     Tên chuẩn: **science_and_technology_development_fund**
+
+**VI. VỐN CHỦ SỞ HỮU (18 trường)**
+
+109. Tìm trong PDF:
+     - "VỐN CHỦ SỞ HỮU" / "D. VỐN CHỦ SỞ HỮU" / "Vốn chủ sở hữu" (tổng)
+     Tên chuẩn: **owners_equity**
+
+110. Tìm trong PDF:
+     - "Vốn chủ sở hữu" / "I. Vốn chủ sở hữu" (chi tiết)
+     Tên chuẩn: **equity**
+
+111. Tìm trong PDF:
+     - "Vốn đầu tư của chủ sở hữu"
+     Tên chuẩn: **capital**
+
+112. Tìm trong PDF:
+     - "Vốn góp của chủ sở hữu" (tổng)
+     Tên chuẩn: **share_capital**
+
+113. Tìm trong PDF:
+     - "Cổ phiếu phổ thông có quyền biểu quyết"
+     Tên chuẩn: **ordinary_shares_with_voting_rights**
+
+114. Tìm trong PDF:
+     - "Cổ phiếu ưu đãi"
+     Tên chuẩn: **preferred_shares**
+
+115. Tìm trong PDF:
+     - "Thặng dư vốn cổ phần"
+     Tên chuẩn: **share_premium**
+
+116. Tìm trong PDF:
+     - "Quyền chọn chuyển đổi trái phiếu - Cấu phần vốn"
+     Tên chuẩn: **convertible_bonds_equity_component**
+
+117. Tìm trong PDF:
+     - "Vốn khác của chủ sở hữu"
+     Tên chuẩn: **other_capital**
+
+118. Tìm trong PDF:
+     - "Cổ phiếu quỹ"
+     Tên chuẩn: **treasury_shares**
+
+119. Tìm trong PDF:
+     - "Chênh lệch đánh giá tài sản theo giá trị hợp lý"
+     Tên chuẩn: **fair_value_adjustment_of_assets**
+
+120. Tìm trong PDF:
+     - "Chênh lệch tỷ giá hối đoái"
+     Tên chuẩn: **foreign_exchange_differences**
+
+121. Tìm trong PDF:
+     - "Quỹ dự trữ bổ sung vốn điều lệ"
+     Tên chuẩn: **supplementary_charter_capital_reserve**
+
+122. Tìm trong PDF:
+     - "Quỹ dự phòng tài chính và rủi ro nghiệp vụ"
+     Tên chuẩn: **financial_reserve_and_business_risk_fund**
+
+123. Tìm trong PDF:
+     - "Các Quỹ khác thuộc vốn chủ sở hữu"
+     Tên chuẩn: **other_funds_under_owners_equity**
+
+124. Tìm trong PDF:
+     - "Lợi nhuận chưa phân phối" (tổng)
+     Tên chuẩn: **retained_earnings**
+
+125. Tìm trong PDF:
+     - "Lợi nhuận sau thuế đã thực hiện"
+     Tên chuẩn: **realized_retained_earnings**
+
+126. Tìm trong PDF:
+     - "Lợi nhuận chưa thực hiện" (mục chi tiết trong Lợi nhuận chưa phân phối)
+     Tên chuẩn: **unrealized_retained_earnings**
+
+127. Tìm trong PDF:
+     - "Nguồn kinh phí và quỹ khác" / "II. Nguồn kinh phí và quỹ khác"
+     Tên chuẩn: **funding_and_other_funds**
+
+**VII. TỔNG NỢ VÀ VỐN (1 trường)**
+
+128. Tìm trong PDF:
+     - "TỔNG CỘNG NỢ VÀ VỐN CHỦ SỞ HỮU" / "TỔNG CỘNG NỢ PHẢI TRẢ VÀ VỐN CHỦ SỞ HỮU"
+     Tên chuẩn: **total_liabilities_and_owners_equity**
+
+VÍ DỤ INPUT-OUTPUT CHUẨN:
+
+**VÍ DỤ 1: Báo cáo EY - SSI 2024**
+INPUT (từ PDF):
+```
+Mã số 100 | A. TÀI SẢN NGẮN HẠN | 70.932.391.912.367
+Mã số 111 | Tiền và các khoản tương đương tiền | 239.000.238.200
+Mã số 111.1 | Tiền | 208.969.991.625
+Mã số 111.2 | Các khoản tương đương tiền | 30.030.246.575
+Mã số 112 | Các tài sản tài chính ghi nhận thông qua lãi/lỗ (FVTPL) | 42.438.121.481.401
+```
+
+OUTPUT ĐÚNG:
+```json
+[
+  {
+    "description": "A. TÀI SẢN NGẮN HẠN",
+    "name": "short_term_assets",
+    "value": 70932391912367
+  },
+  {
+    "description": "Tiền và các khoản tương đương tiền",
+    "name": "cash_and_cash_equivalents",
+    "value": 239000238200
+  },
+  {
+    "description": "Tiền",
+    "name": "cash",
+    "value": 208969991625
+  },
+  {
+    "description": "Các khoản tương đương tiền",
+    "name": "cash_equivalents",
+    "value": 30030246575
+  },
+  {
+    "description": "Các tài sản tài chính ghi nhận thông qua lãi/lỗ (FVTPL)",
+    "name": "financial_assets_at_fair_value_through_profit_or_loss",
+    "value": 42438121481401
+  }
+]
+```
+
+**VÍ DỤ 2: Báo cáo KPMG - DNSE 2022**
+INPUT (từ PDF):
+```
+Mã số 100 | TÀI SẢN NGẮN HẠN | 5.429.789.416.430
+Mã số 111 | Tiền và các khoản tương đương tiền | 431.936.111.485
+Mã số 111.1 | Tiền | 431.936.111.485
+Mã số 112 | Các tài sản tài chính ("TSTC") ghi nhận thông qua lãi/lỗ | 575.600.703.154
+Mã số 116 | Dự phòng suy giảm giá trị các TSTC và tài sản thế chấp | (39.586.100.297)
+```
+
+OUTPUT ĐÚNG:
+```json
+[
+  {
+    "description": "TÀI SẢN NGẮN HẠN",
+    "name": "short_term_assets",
+    "value": 5429789416430
+  },
+  {
+    "description": "Tiền và các khoản tương đương tiền",
+    "name": "cash_and_cash_equivalents",
+    "value": 431936111485
+  },
+  {
+    "description": "Tiền",
+    "name": "cash",
+    "value": 431936111485
+  },
+  {
+    "description": "Các tài sản tài chính (\"TSTC\") ghi nhận thông qua lãi/lỗ",
+    "name": "financial_assets_at_fair_value_through_profit_or_loss",
+    "value": 575600703154
+  },
+  {
+    "description": "Dự phòng suy giảm giá trị các TSTC và tài sản thế chấp",
+    "name": "provision_for_impairment_of_financial_assets_and_collateral",
+    "value": -39586100297
+  }
+]
+```
+
+**VÍ DỤ 3: Xử lý công thức**
+INPUT (từ PDF):
+```
+Mã số 100 | A. TÀI SẢN NGẮN HẠN (100 = 110 + 130) | 70.932.391.912.367
+Mã số 200 | B. TÀI SẢN DÀI HẠN (200 = 210 + 220 + 250) | 2.574.910.647.355
+Mã số 270 | TỔNG CỘNG TÀI SẢN (270 = 100 + 200) | 73.507.302.559.722
+```
+
+OUTPUT ĐÚNG:
+```json
+[
+  {
+    "description": "A. TÀI SẢN NGẮN HẠN",
+    "name": "short_term_assets",
+    "value": 70932391912367
+  },
+  {
+    "description": "B. TÀI SẢN DÀI HẠN",
+    "name": "long_term_assets",
+    "value": 2574910647355
+  },
+  {
+    "description": "TỔNG CỘNG TÀI SẢN",
+    "name": "total_assets",
+    "value": 73507302559722
+  }
+]
+```
+
+LƯU Ý ĐẶC BIỆT:
+- Trích xuất TẤT CẢ các trường có trong báo cáo khớp với 128 trường chuẩn
+- Description phải giữ NGUYÊN VĂN từ PDF: giữ cả từ viết tắt TSTC, FVTPL, HTM, AFS, TSCĐ
+- Loại bỏ hoàn toàn phần công thức trong ngoặc: "(100=110+130)" → chỉ giữ "A. TÀI SẢN NGẮN HẠN"
+- Số âm: (39.586.100.297) → -39586100297
+- Dấu gạch ngang "-" → null
+- Dấu phân cách nghìn: loại bỏ khi convert
+- BỎ QUA phần "CÁC CHỈ TIÊU NGOÀI BÁO CÁO TÌNH HÌNH TÀI CHÍNH HỢP NHẤT"
+
+HƯỚNG DẪN THỰC HIỆN:
+1. Đọc toàn bộ PDF, xác định các trang là phần chính của báo cáo (bỏ qua phần ngoài báo cáo)
+2. Với mỗi mục, tìm kiếm mô tả khớp trong bảng ánh xạ 128 trường
+3. Lấy CHÍNH XÁC tên tiếng Việt từ PDF làm "description", loại bỏ phần công thức
+4. Sử dụng CHÍNH XÁC tên thuộc tính chuẩn làm "name"
+5. Chuyển đổi giá trị: loại bỏ dấu phân cách, (số) → -số, "-" → null
+6. Sắp xếp theo thứ tự: description - name - value
+7. Trích xuất tất cả các trường có trong báo cáo
+
+OUTPUT: CHỈ JSON array như ví dụ, KHÔNG có text giải thích hay markdown.
 """
 SECURITIES_INCOME_STATEMENT_PROMPT = """
 Từ nội dung PDF báo cáo kết quả hoạt động kinh doanh của công ty chứng khoán, hãy trích xuất dữ liệu thành định dạng JSON theo BẢNG ÁNH XẠ và VÍ DỤ CHUẨN bên dưới.
