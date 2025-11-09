@@ -10,17 +10,17 @@ class Role(str, Enum):
 # User database with roles
 USERS = {
     "admin": {
-        "password": "1",
+        "password": "admin123",
         "role": "admin",
         "full_name": "Administrator"
     },
     "manager": {
-        "password": "1",
+        "password": "manager123",
         "role": "manager",
         "full_name": "Manager User"
     },
     "user": {
-        "password": "1",
+        "password": "user123",
         "role": "user",
         "full_name": "Regular User"
     },

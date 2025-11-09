@@ -2,6 +2,7 @@ import asyncio
 import datetime
 import json
 import os
+import threading
 import uuid
 from datetime import datetime
 
@@ -15,13 +16,21 @@ from src.bidv.services.data_validator_service import DataValidatorService
 from src.bidv.startup.environment_initialization import DATABASE_PATH
 
 
+def async_execute(content):
+    threading.Thread(
+        target=lambda: execute_upload_document(content),
+        daemon=True
+    ).start()
+
+
 def execute_upload_document(content):
+    document_id = content["document_id"]
     files = content["files"]
     file_paths = []
 
     # Save the uploaded file to a temporary path
     for uploaded_file in files:
-        temp_file_path = os.path.abspath(os.path.join("./temp", uploaded_file.name))
+        temp_file_path = os.path.abspath(os.path.join(f"./temp/{document_id}", uploaded_file.name))
         os.makedirs(os.path.dirname(temp_file_path), exist_ok=True)
 
         with open(temp_file_path, "wb") as temp_file:
@@ -33,7 +42,6 @@ def execute_upload_document(content):
     raw_data, financial_documents = asyncio.run(handle_heavy_tasks(file_paths))
     document_data = _build_document_data(content, raw_data)
 
-    document_id = content["document_id"]
     save_document(document_id, document_data)
 
     financial_document_id = document_data["financial_document_id"]

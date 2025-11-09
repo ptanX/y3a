@@ -22,6 +22,17 @@ if not financial_document_id:
 
 st.query_params.financial_document_id = financial_document_id
 
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+if "chat_input_disabled" not in st.session_state:
+    st.session_state.chat_input_disabled = False
+
+# Display chat messages from history on app rerun
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
 
 def submit(question):
     try:
@@ -56,6 +67,7 @@ def submit(question):
 
         response = requests.request("POST", url, headers=headers, data=json.dumps(message), timeout=300)
         return response.json().get("predictions").get("messages")[0].get("content")
+        # return "Hello"
     except EntityNotFound as e:
         return str(e)
     except Exception as e:
@@ -63,22 +75,23 @@ def submit(question):
         return "Error: Could not submit message. Please check your setup."
 
 
-query = st.text_area(
-    "💡 Enter your  question:",
-    placeholder="e.g., Tình hình tài chính của công ty cổ phần chứng khoán DNSE?",
-    height=150
-)
+def disable_chat_input():
+    st.session_state.chat_input_disabled = True
 
-_, right_col = st.columns([9, 3])
-with right_col:
-    submit_button = st.button("🚀 Submit Query", type="primary", width="stretch")
 
-if submit_button:
-    with st.spinner("🔄 Analyze document..."):
-        try:
-            result = submit(query)
-            st.success("✅ Response generated!")
-            st.markdown("### 📋 Answer:")
-            st.write(result)
-        except Exception as e:
-            st.error(f"❌ Error processing documents: {e}")
+if prompt := st.chat_input("How can I help you today?", disabled=st.session_state.chat_input_disabled,
+                           on_submit=disable_chat_input):
+    st.chat_message("user").markdown(prompt)
+    st.session_state.messages.append({"role": "user", "content": prompt})
+
+    with st.chat_message("assistant"):
+        with st.spinner("Đang tiến hành phân tích dữ liệu..."):
+            try:
+                response = submit(prompt)
+                st.markdown(response)
+                st.session_state.messages.append({"role": "assistant", "content": response})
+            except Exception as e:
+                st.error(f"❌ Error processing documents: {e}")
+
+    st.session_state.chat_input_disabled = False
+    st.rerun()

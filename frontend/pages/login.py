@@ -45,13 +45,3 @@ with col2:
                     st.error("Invalid credentials")
             else:
                 st.error("Please enter both username and password")
-
-    st.divider()
-    st.markdown("### 💡 Demo Accounts")
-    st.markdown("""
-        | Username | Password | Role | Access |
-        |----------|----------|------|--------|
-        | `admin` | `1` | 🔴 Admin | Full access |
-        | `manager` | `1` | 🟡 Manager | Details, Chat Agent, User |
-        | `user` | `1` | 🟢 User | Upload, Details |
-        """)

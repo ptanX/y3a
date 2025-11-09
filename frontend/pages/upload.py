@@ -1,3 +1,4 @@
+import time
 import uuid
 from datetime import datetime
 
@@ -25,9 +26,10 @@ def submit():
         'uploaded_by_name': st.session_state.full_name,
     }
 
-    e2e_usecases.execute_upload_document(upload_record)
+    e2e_usecases.async_execute(upload_record)
+    time.sleep(3)
 
-    st.success("✅ Đã tiếp nhận yêu cầu thành công. Vui lòng đợi kết quả gửi vào hòm mail!")
+    st.success(f"✅ Đã tiếp nhận yêu cầu thành công. Vui lòng đợi kết quả gửi vào hòm mail {recipient_email}")
     st.write(f"**Mã yêu cầu:** {document_id}")
     st.write(f"**Tên QHKH:** {recipient_name}")
     st.write(f"**Email QHKH:** {recipient_email}")
@@ -48,7 +50,7 @@ with st.form("upload_form"):
     uploaded_files = st.file_uploader(
         "Choose files",
         accept_multiple_files=True,
-        type=['pdf', 'doc', 'docx', 'txt'],
+        type=["pdf"],
         label_visibility="collapsed"
     )
 

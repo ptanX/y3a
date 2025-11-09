@@ -56,9 +56,7 @@ def authenticated_menu():
 
 
 def unauthenticated_menu():
-    st.sidebar.title("Please Login")
-    if st.sidebar.button("🔐 Go to Login", use_container_width=True, key="nav_login_sidebar"):
-        st.switch_page("pages/login.py")
+    st.switch_page("pages/login.py")
 
 
 def menu_with_redirect():
@@ -70,10 +68,7 @@ def menu_with_redirect():
             st.session_state.financial_document_id = query_params.get("financial_document_id")
     # Check if logged in and has permission
     if "logged_in" not in st.session_state:
-        st.warning("⚠️ Please login first")
-        if st.button("Go to Login"):
-            st.switch_page("pages/login.py")
-        st.stop()
+        st.switch_page("pages/login.py")
 
     menu()
 
