@@ -12,7 +12,7 @@ from mlflow.types.agent import ChatAgentMessage
 from pydantic import BaseModel, Field
 
 from src.agent.agent_application import AgentApplication
-from src.bidv.agent.documentation import TEST_QUESTION
+from src.bidv.agent.documentation import *
 from src.bidv.agent.lending_prompt import (
     INCOMING_QUESTION_ANALYSIS,
     OVERALL_ANALYSIS_PROMPT,
@@ -236,111 +236,75 @@ def calculate_financial_metrics(data):
         long_term_liabilities = get_value("financial_statement", "long_term_liabilities")
         owners_equity = get_value("financial_statement", "owners_equity")
         receivables = get_value("financial_statement", "receivables")
-        current_assets = get_value("financial_statement", "short_term_assets")
-        cash_and_equivalents = get_value("financial_statement", "cash_and_cash_equivalents")
+        short_term_assets = get_value("financial_statement", "short_term_assets")
+        cash_and_cash_equivalents = get_value("financial_statement", "cash_and_cash_equivalents")
 
         # Lấy các giá trị từ income_statement
-        total_operating_revenue = get_value(
-            "income_statement", "total_operating_revenue"
-        )
-        interest_and_fee_income = get_value(
-            "income_statement",
-            "interest_and_fee_income_from_financial_assets_recognized_through_p_and_l",
-        )
-        interest_income_from_fa = get_value(
-            "income_statement",
-            "interest_income_from_financial_assets_recognized_through_p_and_l",
-        )
-        dividend_and_interest = get_value(
-            "income_statement",
-            "dividend_and_interest_income_from_financial_assets_recognized_through_p_and_l",
-        )
-        interest_income_htm = get_value(
-            "income_statement", "interest_income_from_held_to_maturity_investments"
-        )
+        total_operating_revenue = get_value("income_statement", "total_operating_revenue")
+        interest_and_fee_income = get_value("income_statement", "interest_and_fee_income_from_financial_assets_recognized_through_p_and_l")
+        interest_income_from_fa = get_value("income_statement", "interest_income_from_financial_assets_recognized_through_p_and_l")
+        increase_decrease_fair_value_fa = get_value("income_statement", "increase_decrease_in_fair_value_of_financial_assets_recognized_through_p_and_l")
+        dividend_and_interest = get_value("income_statement", "dividend_and_interest_income_from_financial_assets_recognized_through_p_and_l")
+        decrease_fair_value_warrants = get_value("income_statement", "decrease_in_fair_value_of_outstanding_warrants")
+        interest_income_htm = get_value("income_statement", "interest_income_from_held_to_maturity_investments")
+        interest_income_loans = get_value("income_statement", "interest_income_from_loans_and_receivables")
+        interest_income_afs = get_value("income_statement", "interest_income_from_available_for_sale_financial_assets")
+        gain_hedging_derivatives = get_value("income_statement", "gain_from_hedging_derivatives")
         brokerage_revenue = get_value("income_statement", "brokerage_revenue")
         underwriting_revenue = get_value("income_statement", "underwriting_revenue")
-        investment_advisory_revenue = get_value(
-            "income_statement", "investment_advisory_revenue"
-        )
-        securities_custody_revenue = get_value(
-            "income_statement", "securities_custody_revenue"
-        )
-        financial_advisory_revenue = get_value(
-            "income_statement", "financial_advisory_revenue"
-        )
+        investment_advisory_revenue = get_value("income_statement", "investment_advisory_revenue")
+        securities_custody_revenue = get_value("income_statement", "securities_custody_revenue")
+        financial_advisory_revenue = get_value("income_statement", "financial_advisory_revenue")
         other_operating_income = get_value("income_statement", "other_operating_income")
 
-        total_operating_expenses = get_value(
-            "income_statement", "total_operating_expenses"
-        )
-        interest_expense_fa = get_value(
-            "income_statement",
-            "interest_expense_on_financial_assets_recognized_through_p_and_l",
-        )
-        provisions_impairment = get_value(
-            "income_statement", "provisions_for_impairment_of_financial_assets"
-        )
+        total_operating_expenses = get_value("income_statement", "total_operating_expenses")
+        interest_expense_fa = get_value("income_statement", "interest_expense_on_financial_assets_recognized_through_p_and_l")
+        interest_expense = get_value("income_statement", "interest_expense")
+        decrease_fair_value_fa = get_value("income_statement", "decrease_in_fair_value_of_financial_assets")
+        transaction_fees_fa = get_value("income_statement", "transaction_fees_for_financial_assets")
+        increase_fair_value_warrants = get_value("income_statement", "increase_in_fair_value_of_outstanding_warrants")
+        loss_htm = get_value("income_statement", "loss_from_held_to_maturity_investments")
+        loss_afs_reclassification = get_value("income_statement", "loss_and_recognition_of_fair_value_difference_of_available_for_sale_financial_assets_upon_reclassification")
+        provisions_impairment = get_value("income_statement", "provisions_for_impairment_of_financial_assets")
+        loss_hedging_derivatives = get_value("income_statement", "loss_from_hedging_derivatives")
+        operating_expense = get_value("income_statement", "operating_expense")
         brokerage_fees = get_value("income_statement", "brokerage_fees")
-        underwriting_costs = get_value(
-            "income_statement", "underwriting_and_bond_issuance_costs"
-        )
-        investment_advisory_expenses = get_value(
-            "income_statement", "investment_advisory_expenses"
-        )
-        securities_custody_expenses = get_value(
-            "income_statement", "securities_custody_expenses"
-        )
+        underwriting_costs = get_value("income_statement", "underwriting_and_bond_issuance_costs")
+        investment_advisory_expenses = get_value("income_statement", "investment_advisory_expenses")
+        securities_custody_expenses = get_value("income_statement", "securities_custody_expenses")
+        financial_advisory_expenses = get_value("income_statement", "financial_advisory_expenses")
+        other_operating_expenses = get_value("income_statement", "other_operating_expenses")
 
-        interest_expense_borrowings = get_value(
-            "income_statement", "interest_expense_on_borrowings"
-        )
-        exchange_rate_loss = get_value(
-            "income_statement", "increase_decrease_in_fair_value_of_exchange_rate_loss"
-        )
-        other_financial_expenses = get_value(
-            "income_statement", "other_financial_expenses"
-        )
+        total_financial_operating_revenue = get_value("income_statement", "total_financial_operating_revenue")
+        exchange_rate_unrealized = get_value("income_statement", "increase_decrease_in_fair_value_of_exchange_rate_and_unrealized")
+        interest_income_deposits = get_value("income_statement", "interest_income_from_deposits")
+        gain_disposal_investments = get_value("income_statement", "gain_on_disposal_of_investments_in_subsidiaries_associates_and_joint_ventures")
+        other_investment_income = get_value("income_statement", "other_investment_income")
 
-        general_admin_expenses = get_value(
-            "income_statement", "general_and_administrative_expenses"
-        )
+        exchange_rate_loss = get_value("income_statement", "increase_decrease_in_fair_value_of_exchange_rate_loss")
+        interest_expense_borrowings = get_value("income_statement", "interest_expense_on_borrowings")
+        loss_disposal_investments = get_value("income_statement", "loss_on_disposal_of_investments_in_subsidiaries_associates_and_joint_ventures")
+        provision_long_term_investments = get_value("income_statement", "provision_for_impairment_of_long_term_financial_investments")
+        other_financial_expenses = get_value("income_statement", "other_financial_expenses")
+        total_financial_expenses = get_value("income_statement", "total_financial_expenses")
 
-        total_financial_operating_revenue = get_value(
-            "income_statement", "total_financial_operating_revenue"
-        )
-        exchange_rate_unrealized = get_value(
-            "income_statement",
-            "increase_decrease_in_fair_value_of_exchange_rate_and_unrealized",
-        )
-        interest_income_deposits = get_value(
-            "income_statement", "interest_income_from_deposits"
-        )
-        other_investment_income = get_value(
-            "income_statement", "other_investment_income"
-        )
+        selling_expenses = get_value("income_statement", "selling_expenses")
+        general_admin_expenses = get_value("income_statement", "general_and_administrative_expenses")
 
         operating_profit = get_value("income_statement", "operating_profit")
-        net_other_income_expenses = get_value(
-            "income_statement", "net_other_income_and_expenses"
-        )
         other_income = get_value("income_statement", "other_income")
         other_expenses = get_value("income_statement", "other_expenses")
-        accounting_profit_before_tax = get_value(
-            "income_statement", "accounting_profit_before_tax"
-        )
+        net_other_income_expenses = get_value("income_statement", "net_other_income_and_expenses")
+        accounting_profit_before_tax = get_value("income_statement", "accounting_profit_before_tax")
         realized_profit = get_value("income_statement", "realized_profit")
         unrealized_profit_loss = get_value("income_statement", "unrealized_profit_loss")
-        total_corporate_income_tax = get_value(
-            "income_statement", "total_corporate_income_tax"
-        )
-        current_tax_expense = get_value(
-            "income_statement", "current_corporate_income_tax_expense"
-        )
-        deferred_tax_benefit = get_value(
-            "income_statement", "benefit_from_deferred_income_tax_expense"
-        )
+        total_corporate_income_tax = get_value("income_statement", "total_corporate_income_tax")
+        current_tax_expense = get_value("income_statement", "current_corporate_income_tax_expense")
+        deferred_tax_benefit = get_value("income_statement", "benefit_from_deferred_income_tax_expense")
         net_profit_after_tax = get_value("income_statement", "net_profit_after_tax")
+        profit_equity_holders = get_value("income_statement", "profit_attributable_to_equity_holders")
+        profit_after_tax_funds = get_value("income_statement", "profit_after_tax_allocated_to_funds")
+        profit_non_controlling = get_value("income_statement", "profit_attributable_to_non_controlling_interests")
 
         # Lấy giá trị năm trước để tính growth và ratios
         prev_total_assets = get_prev_value("financial_statement", "total_assets")
@@ -410,10 +374,10 @@ def calculate_financial_metrics(data):
             if total_operating_revenue and prev_total_assets and prev_total_assets != 0
             else None
         )
-        fixed_asset_turnover = None  # Cần fixed assets value riêng
+        fixed_asset_turnover = None
 
         # Profit metrics
-        ebitda = ebit  # Giả sử EBITDA = EBIT (không có depreciation riêng)
+        ebitda = ebit
         ebit_margin = (
             ebit / total_operating_revenue
             if ebit and total_operating_revenue and total_operating_revenue != 0
@@ -423,9 +387,7 @@ def calculate_financial_metrics(data):
         # Profitability ratios (sử dụng assets/equity năm trước)
         ros = (
             net_profit_after_tax / total_operating_revenue
-            if net_profit_after_tax
-            and total_operating_revenue
-            and total_operating_revenue != 0
+            if net_profit_after_tax and total_operating_revenue and total_operating_revenue != 0
             else None
         )
         roa = (
@@ -444,25 +406,23 @@ def calculate_financial_metrics(data):
 
         # Liquidity ratios
         current_ratio = (
-            current_assets / short_term_liabilities
-            if current_assets and short_term_liabilities and short_term_liabilities != 0
+            short_term_assets / short_term_liabilities
+            if short_term_assets and short_term_liabilities and short_term_liabilities != 0
             else None
         )
         quick_ratio = (
-            (current_assets - 0) / short_term_liabilities
-            if current_assets and short_term_liabilities and short_term_liabilities != 0
+            (short_term_assets - 0) / short_term_liabilities
+            if short_term_assets and short_term_liabilities and short_term_liabilities != 0
             else None
         )
         cash_ratio = (
-            cash_and_equivalents / short_term_liabilities
-            if cash_and_equivalents
-            and short_term_liabilities
-            and short_term_liabilities != 0
+            cash_and_cash_equivalents / short_term_liabilities
+            if cash_and_cash_equivalents and short_term_liabilities and short_term_liabilities != 0
             else None
         )
         working_capital = (
-            current_assets - short_term_liabilities
-            if current_assets and short_term_liabilities
+            short_term_assets - short_term_liabilities
+            if short_term_assets and short_term_liabilities
             else None
         )
 
@@ -500,8 +460,13 @@ def calculate_financial_metrics(data):
                     "total_operating_revenue": total_operating_revenue,
                     "interest_and_fee_income_from_financial_assets_recognized_through_p_and_l": interest_and_fee_income,
                     "interest_income_from_financial_assets_recognized_through_p_and_l": interest_income_from_fa,
+                    "increase_decrease_in_fair_value_of_financial_assets_recognized_through_p_and_l": increase_decrease_fair_value_fa,
                     "dividend_and_interest_income_from_financial_assets_recognized_through_p_and_l": dividend_and_interest,
+                    "decrease_in_fair_value_of_outstanding_warrants": decrease_fair_value_warrants,
                     "interest_income_from_held_to_maturity_investments": interest_income_htm,
+                    "interest_income_from_loans_and_receivables": interest_income_loans,
+                    "interest_income_from_available_for_sale_financial_assets": interest_income_afs,
+                    "gain_from_hedging_derivatives": gain_hedging_derivatives,
                     "brokerage_revenue": brokerage_revenue,
                     "underwriting_revenue": underwriting_revenue,
                     "investment_advisory_revenue": investment_advisory_revenue,
@@ -512,20 +477,40 @@ def calculate_financial_metrics(data):
                 "operating_expenses": {
                     "total_operating_expenses": total_operating_expenses,
                     "interest_expense_on_financial_assets_recognized_through_p_and_l": interest_expense_fa,
+                    "interest_expense": interest_expense,
+                    "decrease_in_fair_value_of_financial_assets": decrease_fair_value_fa,
+                    "transaction_fees_for_financial_assets": transaction_fees_fa,
+                    "increase_in_fair_value_of_outstanding_warrants": increase_fair_value_warrants,
+                    "loss_from_held_to_maturity_investments": loss_htm,
+                    "loss_and_recognition_of_fair_value_difference_of_available_for_sale_financial_assets_upon_reclassification": loss_afs_reclassification,
                     "provisions_for_impairment_of_financial_assets": provisions_impairment,
+                    "loss_from_hedging_derivatives": loss_hedging_derivatives,
+                    "operating_expense": operating_expense,
                     "brokerage_fees": brokerage_fees,
                     "underwriting_and_bond_issuance_costs": underwriting_costs,
                     "investment_advisory_expenses": investment_advisory_expenses,
                     "securities_custody_expenses": securities_custody_expenses,
+                    "financial_advisory_expenses": financial_advisory_expenses,
+                    "other_operating_expenses": other_operating_expenses,
+                },
+                "financial_revenue": {
+                    "total_financial_operating_revenue": total_financial_operating_revenue,
+                    "increase_decrease_in_fair_value_of_exchange_rate_and_unrealized": exchange_rate_unrealized,
+                    "interest_income_from_deposits": interest_income_deposits,
+                    "gain_on_disposal_of_investments_in_subsidiaries_associates_and_joint_ventures": gain_disposal_investments,
+                    "other_investment_income": other_investment_income,
                 },
                 "financial_expenses": {
-                    "interest_expense_on_borrowings": interest_expense_borrowings,
+                    "total_financial_expenses": total_financial_expenses,
                     "increase_decrease_in_fair_value_of_exchange_rate_loss": exchange_rate_loss,
+                    "interest_expense_on_borrowings": interest_expense_borrowings,
+                    "loss_on_disposal_of_investments_in_subsidiaries_associates_and_joint_ventures": loss_disposal_investments,
+                    "provision_for_impairment_of_long_term_financial_investments": provision_long_term_investments,
                     "other_financial_expenses": other_financial_expenses,
                 },
                 "administrative_expenses": {
+                    "selling_expenses": selling_expenses,
                     "general_and_administrative_expenses": general_admin_expenses,
-                    "selling_expenses": None,
                 },
                 "operational_efficiency": {
                     "ato": ato,
@@ -533,17 +518,11 @@ def calculate_financial_metrics(data):
                 },
             },
             "earnings": {
-                "financial_operating_revenue": {
-                    "total_financial_operating_revenue": total_financial_operating_revenue,
-                    "increase_decrease_in_fair_value_of_exchange_rate_and_unrealized": exchange_rate_unrealized,
-                    "interest_income_from_deposits": interest_income_deposits,
-                    "other_investment_income": other_investment_income,
-                },
                 "profit_and_tax": {
                     "operating_profit": operating_profit,
-                    "net_other_income_and_expenses": net_other_income_expenses,
                     "other_income": other_income,
                     "other_expenses": other_expenses,
+                    "net_other_income_and_expenses": net_other_income_expenses,
                     "accounting_profit_before_tax": accounting_profit_before_tax,
                     "realized_profit": realized_profit,
                     "unrealized_profit_loss": unrealized_profit_loss,
@@ -551,6 +530,9 @@ def calculate_financial_metrics(data):
                     "current_corporate_income_tax_expense": current_tax_expense,
                     "benefit_from_deferred_income_tax_expense": deferred_tax_benefit,
                     "net_profit_after_tax": net_profit_after_tax,
+                    "profit_attributable_to_equity_holders": profit_equity_holders,
+                    "profit_after_tax_allocated_to_funds": profit_after_tax_funds,
+                    "profit_attributable_to_non_controlling_interests": profit_non_controlling,
                 },
                 "profit_metrics": {
                     "ebit": ebit,
@@ -583,8 +565,7 @@ def calculate_financial_metrics(data):
 # mlflow.langchain.autolog()
 graph = BusinessLoanValidationGraphProvider().provide()
 chat_agent = AgentApplication.initialize(graph=graph)
-incoming_message = ChatAgentMessage(role="user", content=TEST_QUESTION)
+incoming_message = ChatAgentMessage(role="user", content=DNSE_TEST_QUESTION)
 response = chat_agent.predict([incoming_message])
 print(response)
 # mlflow.models.set_model(chat_agent)
-
