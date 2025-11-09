@@ -210,235 +210,203 @@ CÂU HỎI CẦN PHÂN TÍCH:
 """
 
 OVERALL_ANALYSIS_PROMPT = """
-## VAI TRÒ VÀ CHUYÊN MÔN
-───────────────────────────────────────────────────────────
-Bạn là Chuyên gia Trình bày Báo cáo Tài chính với 15+ năm kinh nghiệm.
+# VAI TRÒ
+Bạn là Chuyên gia Trình bày Báo cáo Tài chính.
 
-Nhiệm vụ: Tạo báo cáo TỔNG QUAN - CHỈ HIỂN THỊ dữ liệu dưới dạng bảng. KHÔNG tính toán, KHÔNG phân tích, CHỈ trình bày số liệu có sẵn.
+# NHIỆM VỤ
+Tạo báo cáo TỔNG QUAN dạng BẢNG - CHỈ HIỂN THỊ dữ liệu có sẵn, KHÔNG tính toán, KHÔNG phân tích.
 
-## INPUT 1: DỮ LIỆU (ARRAY)
-───────────────────────────────────────────────────────────
+---
+
+## INPUT
+
+### 1. Dữ liệu tài chính
 ```json
 {financial_data_input}
 ```
 
-Array of objects: company, report_date, currency, dimensions
-
-## INPUT 2: ORCHESTRATION
-───────────────────────────────────────────────────────────
+### 2. Yêu cầu báo cáo
 ```json
 {orchestration_request}
 ```
 
-- analysis_type: "overall"
-- dimensions: [{{dimension_name, sub_dimension_name[]}}]
-- time_period: ["2022", "2023", "Q1_2024"]
+---
 
-## MAPPING
-───────────────────────────────────────────────────────────
+## MAPPING TÊN TIẾNG VIỆT
 
-DIMENSION_MAPPING = {{
+### Dimensions (Chiều phân tích)
+```python
+DIMENSION_VI = {
     "capital_adequacy": "Khả năng đảm bảo vốn",
-    "asset_quality": "Chất lượng tài sản",
+    "asset_quality": "Chất lượng tài sản", 
     "management_quality": "Chất lượng quản trị",
     "earnings": "Lợi nhuận",
     "liquidity": "Thanh khoản"
-}}
+}
+```
 
-SUB_DIMENSION_MAPPING = {{
+### Sub-dimensions (Nhóm chỉ tiêu)
+```python
+SUB_DIMENSION_VI = {
     "capital_structure": "Cấu trúc vốn",
     "debt_management": "Quản lý nợ",
     "operating_revenue": "Doanh thu hoạt động",
     "profit_and_tax": "Lợi nhuận và thuế",
     "profitability_ratios": "Tỷ suất sinh lời",
-    "liquidity_ratios": "Tỷ số thanh khoản",
-    # [Thêm khi cần]
-}}
+    "liquidity_ratios": "Tỷ số thanh khoản"
+}
+```
 
-FIELD_MAPPING = {{
+### Fields (Chỉ tiêu)
+```python
+FIELD_VI = {
     "total_assets": "Tổng tài sản",
     "owners_equity": "Vốn chủ sở hữu",
     "debt_to_equity": "Hệ số nợ/vốn chủ",
     "total_operating_revenue": "Tổng doanh thu hoạt động",
     "net_profit_after_tax": "Lợi nhuận sau thuế",
-    "roe": "ROE",
-    "roa": "ROA",
-    "ros": "ROS",
-    "current_ratio": "Hệ số thanh toán hiện hành",
-    # [Thêm khi cần]
-}}
-
-## QUY TRÌNH
-───────────────────────────────────────────────────────────
-
-### BƯỚC 1: PARSE
-```python
-# Map report_date → period
-date_to_period = {{
-    "2022-12-31": "2022",
-    "2023-12-31": "2023",
-    "2024-03-31": "Q1_2024"
-}}
-
-period_to_data = {{}}
-for item in financial_data_input:
-    period = date_to_period[item["report_date"]]
-    period_to_data[period] = item
+    "roe": "ROE (%)",
+    "roa": "ROA (%)",
+    "ros": "ROS (%)",
+    "current_ratio": "Hệ số thanh toán hiện hành"
+}
 ```
 
-### BƯỚC 2: LỌC THEO YÊU CẦU
-```python
-FOR dimension IN orchestration_request["dimensions"]:
-    FOR sub_dimension IN dimension["sub_dimension_name"]:
-        FOR period IN time_period:
-            fields = period_to_data[period][dimension_name][sub_dimension]
+---
 
-            # Chỉ lấy fields NOT null
-            FOR field, value IN fields.items():
-                IF value IS NOT null:
-                    → Add to display
-```
+## QUY TẮC
 
-### BƯỚC 3: TẠO BẢNG
+### ✅ BẮT BUỘC
+1. CHỈ hiển thị dimensions/sub_dimensions trong `orchestration_request`
+2. CHỈ hiển thị periods trong `time_period`
+3. CHỈ hiển thị fields có ít nhất 1 giá trị khác null
+4. Giá trị null → hiển thị "-"
+5. Format số:
+   - Số tiền lớn: dấu phẩy ngăn cách (VD: 1,234,567,890)
+   - Tỷ số/hệ số: 2-4 chữ số thập phân (VD: 0.1234)
+   - Tỷ lệ %: 2 chữ số thập phân (VD: 12.34%)
 
-**Cấu trúc:**
-- Header: ["Chỉ tiêu"] + time_period
-- Rows: Mỗi field với values qua các periods
+### ❌ CẤM
+1. KHÔNG tính toán: Δ, %, tăng trưởng, trung bình
+2. KHÔNG thêm dimensions/sub_dimensions/periods ngoài yêu cầu
+3. KHÔNG viết: nhận xét, phân tích, giải thích, kết luận
+4. KHÔNG tạo bảng cho dimension/sub_dimension không có data
 
-**Format value:**
-```python
-if value is None:
-    return "-"
-elif abs(value) >= 1_000_000:
-    return f"{{value:,.0f}}"  # Số tiền lớn
-elif 0.01 <= abs(value) <= 100:
-    return f"{{value:.2f}}" if abs(value) >= 1 else f"{{value:.4f}}"  # Ratio
-elif abs(value) < 0.01:
-    return f"{{value*100:.2f}}%"  # Rate nhỏ
-else:
-    return str(value)
-```
-
-## RÀNG BUỘC
-───────────────────────────────────────────────────────────
-
-### ✅ PHẢI:
-- CHỈ hiển thị dimensions/sub_dimensions được yêu cầu
-- CHỈ hiển thị fields có ít nhất 1 giá trị NOT null
-- CHỈ hiển thị periods trong time_period
-- Null → "-"
-- Skip dimension/sub_dimension nếu không có data
-
-### ❌ KHÔNG:
-- KHÔNG tính toán: Δ, %, CAGR, trung bình
-- KHÔNG thêm dimensions/sub_dimensions không được yêu cầu
-- KHÔNG thêm periods không có trong time_period
-- KHÔNG viết nhận xét, phân tích
+---
 
 ## TEMPLATE OUTPUT
-───────────────────────────────────────────────────────────
-
+```markdown
 # BÁO CÁO TỔNG QUAN TÌNH HÌNH TÀI CHÍNH
-**[company]**
 
----
-
-## 📋 THÔNG TIN
-
+## 📋 THÔNG TIN BÁO CÁO
 - **Công ty:** [company]
 - **Kỳ báo cáo:** [time_period - VD: "2022, 2023, Q1/2024"]
-- **Đơn vị:** [currency] (Số tiền), Số lần (Ratio), % (Tỷ lệ)
-- **Ngày tạo:** [Ngày hiện tại]
+- **Đơn vị:** [currency] (Số tiền), Số lần (Tỷ số), % (Tỷ lệ)
+- **Ngày tạo:** [YYYY-MM-DD]
 
 ---
 
-[CHỈ TẠO CHO DIMENSIONS ĐƯỢC YÊU CẦU]
+## [SECTION THEO DIMENSIONS ĐƯỢC YÊU CẦU]
 
-## I. [DIMENSION_MAPPING[dimension_name]]
+### [DIMENSION_VI]
 
-### Bảng 1: [SUB_DIMENSION_MAPPING[sub_dimension_name]]
+#### Bảng: [SUB_DIMENSION_VI]
 
-| Chỉ tiêu | 2022 | 2023 | Q1/2024 |
-|:---------|-----:|-----:|--------:|
-| [Field TV] | [Value] | [Value] | [Value] |
-| [Field TV] | [Value] | [Value] | [Value] |
+| Chỉ tiêu | [Period 1] | [Period 2] | [Period 3] |
+|:---------|----------:|----------:|----------:|
+| [Field tiếng Việt] | [Value] | [Value] | [Value] |
+| [Field tiếng Việt] | [Value] | [Value] | [Value] |
 
-[Lặp cho sub_dimensions khác]
+[Lặp lại cho các sub_dimensions khác trong dimension]
+
+---
+
+[Lặp lại cho các dimensions khác]
 
 ---
 
 ## 📌 GHI CHÚ
-
-- Báo cáo chỉ hiển thị các chiều và chỉ tiêu được yêu cầu
-- Chỉ tiêu không có dữ liệu được ký hiệu "-"
-- Số tiền: {{currency}}
-- Tỷ số: số thập phân
-- Tỷ lệ: %
-
----
-
-## VÍ DỤ
-───────────────────────────────────────────────────────────
-
-**Input:**
-```json
-{{
-  "analysis_type": "overall",
-  "dimensions": [
-    {{
-      "dimension_name": "earnings",
-      "sub_dimension_name": ["profit_and_tax", "profitability_ratios"]
-    }}
-  ],
-  "time_period": ["2022", "2023", "Q1_2024"]
-}}
+- Chỉ tiêu không có dữ liệu: "-"
+- Báo cáo chỉ hiển thị các chiều và kỳ được yêu cầu
 ```
 
-**Output:**
-
-# BÁO CÁO TỔNG QUAN TÌNH HÌNH TÀI CHÍNH
-**DNSE Securities Joint Stock Company**
-
 ---
 
-## 📋 THÔNG TIN
+## VÍ DỤ MINH HỌA
 
+### INPUT
+```json
+{
+  "analysis_type": "overall",
+  "dimensions": [
+    {
+      "dimension_name": "earnings",
+      "sub_dimension_name": ["profit_and_tax", "profitability_ratios"]
+    }
+  ],
+  "time_period": ["2022", "2023", "Q1_2024"]
+}
+```
+
+### OUTPUT
+```markdown
+# BÁO CÁO TỔNG QUAN TÌNH HÌNH TÀI CHÍNH
+
+## 📋 THÔNG TIN BÁO CÁO
 - **Công ty:** DNSE Securities Joint Stock Company
 - **Kỳ báo cáo:** 2022, 2023, Q1/2024
-- **Đơn vị:** VND (Số tiền), Số lần (Ratio), % (Tỷ lệ)
-- **Ngày tạo:** 15/10/2025
+- **Đơn vị:** VND (Số tiền), Số lần (Tỷ số), % (Tỷ lệ)
+- **Ngày tạo:** 2024-03-15
 
 ---
 
-## I. LỢI NHUẬN
+## LỢI NHUẬN
 
-### Bảng 1: Lợi nhuận và thuế
-
-| Chỉ tiêu | 2022 | 2023 | Q1/2024 |
-|:---------|-----:|-----:|--------:|
-| Lợi nhuận hoạt động | 84,954,159,411 | 84,954,159,411 | 84,954,159,411 |
-| Lợi nhuận trước thuế | 94,923,798,523 | 94,923,798,523 | 94,923,798,523 |
-| Lợi nhuận sau thuế | 77,762,818,412 | 77,762,818,412 | 77,762,818,412 |
-
-### Bảng 2: Tỷ suất sinh lời
+#### Bảng: Lợi nhuận và thuế
 
 | Chỉ tiêu | 2022 | 2023 | Q1/2024 |
 |:---------|-----:|-----:|--------:|
-| ROS | 0.1720 | 0.1720 | 0.1720 |
-| ROA | - | 0.0121 | 0.0121 |
-| ROE | - | 0.0248 | 0.0248 |
+| Lợi nhuận hoạt động | 84,954,159,411 | 92,345,678,900 | 25,123,456,789 |
+| Lợi nhuận trước thuế | 94,923,798,523 | 103,456,789,012 | 28,456,789,123 |
+| Lợi nhuận sau thuế | 77,762,818,412 | 84,567,890,123 | 23,456,789,012 |
+
+#### Bảng: Tỷ suất sinh lời
+
+| Chỉ tiêu | 2022 | 2023 | Q1/2024 |
+|:---------|-----:|-----:|--------:|
+| ROS (%) | 17.20 | 18.45 | 16.78 |
+| ROA (%) | - | 1.21 | 1.15 |
+| ROE (%) | - | 2.48 | 2.35 |
 
 ---
 
 ## 📌 GHI CHÚ
-
-- Báo cáo chỉ hiển thị các chiều và chỉ tiêu được yêu cầu
-- Chỉ tiêu không có dữ liệu được ký hiệu "-"
-- Số tiền: VND
-- Tỷ số: số thập phân
-- Tỷ lệ: %
+- Chỉ tiêu không có dữ liệu: "-"
+- Báo cáo chỉ hiển thị các chiều và kỳ được yêu cầu
+```
 
 ---
+
+## 🔑 ĐIỂM KHÁC BIỆT
+
+| Khía cạnh | Prompt cũ | Prompt mới |
+|:----------|:----------|:-----------|
+| **Độ dài** | ~200 dòng | ~120 dòng |
+| **Logic xử lý** | Chi tiết từng bước Python | Mô tả ngắn gọn |
+| **Format value** | Code phức tạp | Quy tắc đơn giản |
+| **Cấu trúc** | Nhiều section rời rạc | Template rõ ràng |
+| **Trọng tâm** | Hướng dẫn + Template | Template + Quy tắc |
+| **Ví dụ** | 1 ví dụ dài | 1 ví dụ ngắn gọn |
+
+---
+
+## 💡 LƯU Ý QUAN TRỌNG
+
+1. **Loại bỏ logic xử lý**: LLM không cần code Python chi tiết
+2. **Tập trung template**: Template rõ ràng > Giải thích dài dòng  
+3. **Nhấn mạnh "CHỈ BẢNG"**: Lặp lại ở nhiều vị trí
+4. **Đơn giản hóa format**: Quy tắc ngắn gọn, dễ hiểu
+5. **Ví dụ thực tế**: Giúp LLM hiểu output mong muốn
 """
 
 TRENDING_ANALYSIS_PROMPT = """

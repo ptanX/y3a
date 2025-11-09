@@ -205,8 +205,8 @@ class SecuritiesFinancialReportMetadataRetriever(DocumentationMetadataRetriever)
                     and "notes" not in section_name.lower()
             ):
                 page_range = DocumentPageInfoMetadata(
-                    from_page=toc_page + content.get("from_page"),
-                    to_page=toc_page + content.get("to_page"),
+                    from_page=toc_page + int(content.get("from_page")),
+                    to_page=toc_page + int(content.get("to_page")),
                 )
                 document_metadata = DocumentSectionMetadata(
                     component_type="financial_statement", page_info=page_range
@@ -218,8 +218,8 @@ class SecuritiesFinancialReportMetadataRetriever(DocumentationMetadataRetriever)
                     and "notes" not in section_name.lower()
             ):
                 page_range = DocumentPageInfoMetadata(
-                    from_page=toc_page + content.get("from_page"),
-                    to_page=toc_page + content.get("to_page"),
+                    from_page=toc_page + int(content.get("from_page")),
+                    to_page=toc_page + int(content.get("to_page")),
                 )
                 document_metadata = DocumentSectionMetadata(
                     component_type="income_statement", page_info=page_range
