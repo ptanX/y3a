@@ -131,8 +131,8 @@ IF câu hỏi có mention period cụ thể:
     Ví dụ: "từ 2022 đến 2024" → ["2022", "2023", "2024"]
     Ví dụ: "Q1/2024" → ["Q1_2024"]
 
-ELSE IF có previous_periods (follow-up):
-    time_period = previous_periods
+ELSE IF có previous_period (follow-up):
+    time_period = previous_period
     
 ELSE:
     time_period = available_periods  # DEFAULT: lấy TẤT CẢ
@@ -284,7 +284,7 @@ IF confidence < 0.70:
 {{
   "question": "Còn thanh khoản thì sao?",
   "context": {{
-    "previous_periods": ["2022", "2023", "2024"],
+    "previous_period": ["2022", "2023", "2024"],
     "previous_dimensions": [
       {{
         "dimension_name": "earnings",
