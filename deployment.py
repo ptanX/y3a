@@ -35,7 +35,7 @@ def deploy():
         model_info = mlflow.pyfunc.log_model(
             name=MODEL_NAME,
             ## TODO implement the factory initialize agent here
-            python_model="demo0phase2.py",
+            python_model="business_customer_loan_validation.py",
             input_example=data_example,
             pip_requirements="requirements.txt"
         )
