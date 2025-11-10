@@ -23,7 +23,7 @@ class InMemoryShortTermContextRepository(ShortTermContextRepository):
         self.memory = initialized_memory
 
     def put(self, thread_id: str, context: LendingShortTermContext):
-        self.memory[thread_id] = [LendingShortTermContext]
+        self.memory[thread_id] = [context]
 
     def get(self, thread_id: str) -> List[LendingShortTermContext]:
         context = self.memory.get(thread_id)
