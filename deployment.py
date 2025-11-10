@@ -5,6 +5,7 @@ import mlflow
 from mlflow import MlflowClient, MlflowException
 from mlflow.entities.model_registry import RegisteredModel
 
+from src.bidv.agent.documentation import DNSE_TEST_QUESTION
 from src.config.settings import MODEL_NAME, MODEL_VERSION_ALIAS
 
 client = MlflowClient()
@@ -27,7 +28,7 @@ def deploy():
     mlflow.set_experiment("rawiq-quickstart")
 
     data_example = {
-        "messages": [{"role": "user", "content": "What is MLflow?"}],
+        "messages": [{"role": "user", "content": DNSE_TEST_QUESTION}],
         # "max_tokens": 25,
     }
 
