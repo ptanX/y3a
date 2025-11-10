@@ -1,5 +1,4 @@
 import json
-from typing import List, Dict
 
 import mlflow
 from dotenv import load_dotenv
@@ -11,12 +10,15 @@ from langgraph.graph.state import CompiledStateGraph, StateGraph
 from pydantic import BaseModel, Field
 
 from src.agent.agent_application import AgentApplication
+from src.bidv.agent.lending_agent_model import BusinessLoanValidationState, LendingShortTermContext, \
+    OrchestrationInformation
 from src.bidv.agent.lending_prompt import (
     INCOMING_QUESTION_ANALYSIS,
     OVERALL_ANALYSIS_PROMPT,
     TRENDING_ANALYSIS_PROMPT,
     DEEP_ANALYSIS_PROMPT,
 )
+from src.bidv.agent.short_term_context import InMemoryShortTermContextRepository
 from src.graph.graph_provider import GraphProvider
 from src.state.type import DefaultState
 
@@ -39,48 +41,11 @@ load_dotenv()
 """
 
 
-class DimensionRequest(BaseModel):
-    """Schema cho từng dimension được request"""
-
-    dimension_name: str = Field(
-        description="Tên dimension từ danh sách hợp lệ: capital_adequacy, asset_quality, management_quality, earnings,"
-                    " liquidity, sensitivity_to_market_risk"
-    )
-    sub_dimension_name: List[str] = Field(
-        description="Danh sách các sub-dimension names thuộc dimension này"
-    )
-
-
-class OrchestrationInformation(BaseModel):
-    """Schema cho orchestration output"""
-
-    analysis_type: str = Field(
-        description="Loại phân tích: overall, trending, hoặc deep_analysis"
-    )
-    dimensions: List[DimensionRequest] = Field(
-        description="Danh sách các dimensions và sub-dimensions cần phân tích"
-    )
-    time_period: List[str] = Field(
-        description="Các khoảng thời gian cần phân tích: 2021, 2022, 2023, Q1_2024"
-    )
-    confidence: float = Field(description="mức độ tự tin")
-    reasoning: str = Field(description="lý do đưa ra quyết định")
-    suggested_clarifications: List[str] = Field(
-        description="clarification nếu như confidence < 0.7"
-    )
-
-
-class BusinessLoanValidationState(DefaultState):
-    question: str
-    orchestration_information: OrchestrationInformation
-    documents: List[Dict]
-    fined_grain_data: List[Dict]
-
-
 class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationState]):
 
     def __init__(self):
         self.llm = ChatGoogleGenerativeAI(model="gemini-2.5-pro", temperature=0)
+        self.short_term_context_repository = InMemoryShortTermContextRepository()
 
     def provide(self) -> CompiledStateGraph:
         graph = StateGraph(BusinessLoanValidationState)
@@ -96,27 +61,56 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
     def handle_supervisor(self, state):
         incoming_message = state.get("message")
         structured_message = json.loads(incoming_message.content)
+        document_id = structured_message.get("document_id")
         question = structured_message.get("question")
         documents = structured_message.get("documents")
-        orchestration_information = self.get_orchestration_information(question)
-        fined_grain_data = calculate_financial_metrics(documents)
+        orchestration_information = self.get_orchestration_information(document_id, question, documents)
+        filtered_documents = []
+        for document in documents:
+            if document.get("report_date").split("-")[0] in orchestration_information.time_period:
+                filtered_documents.append(document)
+        fined_grain_data = calculate_financial_metrics(filtered_documents)
         return {
             "question": question,
             "orchestration_information": orchestration_information,
-            "documents": documents,
             "fined_grain_data": fined_grain_data,
         }
 
-    def get_orchestration_information(self, question):
+    def get_orchestration_information(self, document_id, question, documents):
+        previous_context = self.short_term_context_repository.get(thread_id=document_id)
+        if len(previous_context) > 0:
+            previous_context_json = previous_context[-1].model_dump_json()
+        else:
+            previous_context_json = "{}"
+        available_time_period = []
+        # print(f"########### {previous_context_json} ########")
+        for document in documents:
+            report_date = document.get("report_date")
+            available_time_period.append(report_date)
+        available_time_period_json = json.dumps(sorted(available_time_period))
         prompt_template = ChatPromptTemplate.from_template(INCOMING_QUESTION_ANALYSIS)
         rag_chain = (
-            {"question": RunnablePassthrough()}
-            | prompt_template
-            | self.llm.with_structured_output(
-                OrchestrationInformation, method="json_mode"
-            )
+                {
+                    "question": RunnablePassthrough(),
+                    "available_periods": lambda _: available_time_period_json,
+                    "previous_context": lambda _: previous_context_json
+                }
+                | prompt_template
+                | self.llm.with_structured_output(
+            OrchestrationInformation, method="json_mode"
         )
-        return rag_chain.invoke(question)
+        )
+        orchestration_response = rag_chain.invoke(question)
+        print(orchestration_response)
+        current_context = LendingShortTermContext(
+            previous_analysis_type=orchestration_response.analysis_type,
+            previous_dimensions=orchestration_response.dimensions,
+            previous_period=orchestration_response.time_period
+        )
+        self.short_term_context_repository.put(thread_id=document_id, context=current_context)
+        # memory_context = self.short_term_context_repository.get("680314b8-14b8-1803-99ee-f8afe3e7b2de")[-1]
+        # print(f"########## {memory_context.model_dump_json()} #########")
+        return orchestration_response
 
     def route_function(self, state):
         orchestration_information = state["orchestration_information"]
@@ -147,20 +141,22 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         """
         prompt_template = ChatPromptTemplate.from_template(prompt)
         rag_chain = (
-            {
-                "question": RunnablePassthrough(),
-                "clarifications": lambda _: raw_clarifications,
-            }
-            | prompt_template
-            | self.llm
-            | StrOutputParser()
+                {
+                    "question": RunnablePassthrough(),
+                    "clarifications": lambda _: raw_clarifications,
+                }
+                | prompt_template
+                | self.llm
+                | StrOutputParser()
         )
         return {"message": rag_chain.invoke(question)}
 
     def handle_final_answer(self, state):
         question = state["question"]
         orchestration_request = state["orchestration_information"]
+        orchestration_request_json = orchestration_request.model_dump_json()
         financial_data_input = state["fined_grain_data"]
+        financial_data_input_json = json.dumps(financial_data_input)
         analysis_type = orchestration_request.analysis_type
         if analysis_type == "overall":
             prompt_template = ChatPromptTemplate.from_template(OVERALL_ANALYSIS_PROMPT)
@@ -171,14 +167,14 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         else:
             raise Exception(f"Illegal analysis type {analysis_type}")
         rag_chain = (
-            {
-                "question": RunnablePassthrough(),
-                "orchestration_request": lambda _: orchestration_request,
-                "financial_data_input": lambda _: financial_data_input,
-            }
-            | prompt_template
-            | self.llm
-            | StrOutputParser()
+                {
+                    "question": RunnablePassthrough(),
+                    "orchestration_request": lambda _: orchestration_request_json,
+                    "financial_data_input": lambda _: financial_data_input_json,
+                }
+                | prompt_template
+                | self.llm
+                | StrOutputParser()
         )
         return {"message": rag_chain.invoke(question)}
 
@@ -239,10 +235,14 @@ def calculate_financial_metrics(data):
 
         # Lấy các giá trị từ income_statement
         total_operating_revenue = get_value("income_statement", "total_operating_revenue")
-        interest_and_fee_income = get_value("income_statement", "interest_and_fee_income_from_financial_assets_recognized_through_p_and_l")
-        interest_income_from_fa = get_value("income_statement", "interest_income_from_financial_assets_recognized_through_p_and_l")
-        increase_decrease_fair_value_fa = get_value("income_statement", "increase_decrease_in_fair_value_of_financial_assets_recognized_through_p_and_l")
-        dividend_and_interest = get_value("income_statement", "dividend_and_interest_income_from_financial_assets_recognized_through_p_and_l")
+        interest_and_fee_income = get_value("income_statement",
+                                            "interest_and_fee_income_from_financial_assets_recognized_through_p_and_l")
+        interest_income_from_fa = get_value("income_statement",
+                                            "interest_income_from_financial_assets_recognized_through_p_and_l")
+        increase_decrease_fair_value_fa = get_value("income_statement",
+                                                    "increase_decrease_in_fair_value_of_financial_assets_recognized_through_p_and_l")
+        dividend_and_interest = get_value("income_statement",
+                                          "dividend_and_interest_income_from_financial_assets_recognized_through_p_and_l")
         decrease_fair_value_warrants = get_value("income_statement", "decrease_in_fair_value_of_outstanding_warrants")
         interest_income_htm = get_value("income_statement", "interest_income_from_held_to_maturity_investments")
         interest_income_loans = get_value("income_statement", "interest_income_from_loans_and_receivables")
@@ -256,13 +256,15 @@ def calculate_financial_metrics(data):
         other_operating_income = get_value("income_statement", "other_operating_income")
 
         total_operating_expenses = get_value("income_statement", "total_operating_expenses")
-        interest_expense_fa = get_value("income_statement", "interest_expense_on_financial_assets_recognized_through_p_and_l")
+        interest_expense_fa = get_value("income_statement",
+                                        "interest_expense_on_financial_assets_recognized_through_p_and_l")
         interest_expense = get_value("income_statement", "interest_expense")
         decrease_fair_value_fa = get_value("income_statement", "decrease_in_fair_value_of_financial_assets")
         transaction_fees_fa = get_value("income_statement", "transaction_fees_for_financial_assets")
         increase_fair_value_warrants = get_value("income_statement", "increase_in_fair_value_of_outstanding_warrants")
         loss_htm = get_value("income_statement", "loss_from_held_to_maturity_investments")
-        loss_afs_reclassification = get_value("income_statement", "loss_and_recognition_of_fair_value_difference_of_available_for_sale_financial_assets_upon_reclassification")
+        loss_afs_reclassification = get_value("income_statement",
+                                              "loss_and_recognition_of_fair_value_difference_of_available_for_sale_financial_assets_upon_reclassification")
         provisions_impairment = get_value("income_statement", "provisions_for_impairment_of_financial_assets")
         loss_hedging_derivatives = get_value("income_statement", "loss_from_hedging_derivatives")
         operating_expense = get_value("income_statement", "operating_expense")
@@ -274,15 +276,19 @@ def calculate_financial_metrics(data):
         other_operating_expenses = get_value("income_statement", "other_operating_expenses")
 
         total_financial_operating_revenue = get_value("income_statement", "total_financial_operating_revenue")
-        exchange_rate_unrealized = get_value("income_statement", "increase_decrease_in_fair_value_of_exchange_rate_and_unrealized")
+        exchange_rate_unrealized = get_value("income_statement",
+                                             "increase_decrease_in_fair_value_of_exchange_rate_and_unrealized")
         interest_income_deposits = get_value("income_statement", "interest_income_from_deposits")
-        gain_disposal_investments = get_value("income_statement", "gain_on_disposal_of_investments_in_subsidiaries_associates_and_joint_ventures")
+        gain_disposal_investments = get_value("income_statement",
+                                              "gain_on_disposal_of_investments_in_subsidiaries_associates_and_joint_ventures")
         other_investment_income = get_value("income_statement", "other_investment_income")
 
         exchange_rate_loss = get_value("income_statement", "increase_decrease_in_fair_value_of_exchange_rate_loss")
         interest_expense_borrowings = get_value("income_statement", "interest_expense_on_borrowings")
-        loss_disposal_investments = get_value("income_statement", "loss_on_disposal_of_investments_in_subsidiaries_associates_and_joint_ventures")
-        provision_long_term_investments = get_value("income_statement", "provision_for_impairment_of_long_term_financial_investments")
+        loss_disposal_investments = get_value("income_statement",
+                                              "loss_on_disposal_of_investments_in_subsidiaries_associates_and_joint_ventures")
+        provision_long_term_investments = get_value("income_statement",
+                                                    "provision_for_impairment_of_long_term_financial_investments")
         other_financial_expenses = get_value("income_statement", "other_financial_expenses")
         total_financial_expenses = get_value("income_statement", "total_financial_expenses")
 
@@ -563,7 +569,4 @@ def calculate_financial_metrics(data):
 mlflow.langchain.autolog()
 graph = BusinessLoanValidationGraphProvider().provide()
 chat_agent = AgentApplication.initialize(graph=graph)
-# incoming_message = ChatAgentMessage(role="user", content=DNSE_TEST_QUESTION)
-# response = chat_agent.predict([incoming_message])
-# print(response)
 mlflow.models.set_model(chat_agent)
