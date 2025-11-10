@@ -450,30 +450,30 @@ Tạo báo cáo TỔNG QUAN dạng BẢNG - CHỈ HIỂN THỊ dữ liệu có s
 
 ### Dimensions (Chiều phân tích)
 ```python
-DIMENSION_VI = {
+DIMENSION_VI = {{
     "capital_adequacy": "Khả năng đảm bảo vốn",
     "asset_quality": "Chất lượng tài sản", 
     "management_quality": "Chất lượng quản trị",
     "earnings": "Lợi nhuận",
     "liquidity": "Thanh khoản"
-}
+}}
 ```
 
 ### Sub-dimensions (Nhóm chỉ tiêu)
 ```python
-SUB_DIMENSION_VI = {
+SUB_DIMENSION_VI = {{
     "capital_structure": "Cấu trúc vốn",
     "debt_management": "Quản lý nợ",
     "operating_revenue": "Doanh thu hoạt động",
     "profit_and_tax": "Lợi nhuận và thuế",
     "profitability_ratios": "Tỷ suất sinh lời",
     "liquidity_ratios": "Tỷ số thanh khoản"
-}
+}}
 ```
 
 ### Fields (Chỉ tiêu)
 ```python
-FIELD_VI = {
+FIELD_VI = {{
     "total_assets": "Tổng tài sản",
     "owners_equity": "Vốn chủ sở hữu",
     "debt_to_equity": "Hệ số nợ/vốn chủ",
@@ -483,7 +483,7 @@ FIELD_VI = {
     "roa": "ROA (%)",
     "ros": "ROS (%)",
     "current_ratio": "Hệ số thanh toán hiện hành"
-}
+}}
 ```
 
 ---
@@ -550,16 +550,16 @@ FIELD_VI = {
 
 ### INPUT
 ```json
-{
+{{
   "analysis_type": "overall",
   "dimensions": [
-    {
+    {{
       "dimension_name": "earnings",
       "sub_dimension_name": ["profit_and_tax", "profitability_ratios"]
-    }
+    }}
   ],
   "time_period": ["2022", "2023", "Q1_2024"]
-}
+}}
 ```
 
 ### OUTPUT

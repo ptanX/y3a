@@ -64,7 +64,11 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         question = structured_message.get("question")
         documents = structured_message.get("documents")
         orchestration_information = self.get_orchestration_information(document_id, question, documents)
-        fined_grain_data = calculate_financial_metrics(documents)
+        filtered_documents = []
+        for document in documents:
+            if document.get("report_date").split("-")[0] in orchestration_information.time_period:
+                filtered_documents.append(document)
+        fined_grain_data = calculate_financial_metrics(filtered_documents)
         return {
             "question": question,
             "orchestration_information": orchestration_information,
@@ -78,11 +82,11 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         else:
             previous_context_json = "{}"
         available_time_period = []
+        # print(f"########### {previous_context_json} ########")
         for document in documents:
             report_date = document.get("report_date")
             available_time_period.append(report_date)
         available_time_period_json = json.dumps(sorted(available_time_period))
-
         prompt_template = ChatPromptTemplate.from_template(INCOMING_QUESTION_ANALYSIS)
         rag_chain = (
                 {
@@ -96,13 +100,15 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         )
         )
         orchestration_response = rag_chain.invoke(question)
-
+        print(orchestration_response)
         current_context = LendingShortTermContext(
             previous_analysis_type=orchestration_response.analysis_type,
             previous_dimensions=orchestration_response.dimensions,
             previous_period=orchestration_response.time_period
         )
         self.short_term_context_repository.put(thread_id=document_id, context=current_context)
+        # memory_context = self.short_term_context_repository.get("680314b8-14b8-1803-99ee-f8afe3e7b2de")[-1]
+        # print(f"########## {memory_context.model_dump_json()} #########")
         return orchestration_response
 
     def route_function(self, state):
@@ -562,7 +568,34 @@ def calculate_financial_metrics(data):
 # mlflow.langchain.autolog()
 graph = BusinessLoanValidationGraphProvider().provide()
 chat_agent = AgentApplication.initialize(graph=graph)
-incoming_message = ChatAgentMessage(role="user", content=SSI_TEST_QUESTION)
-response = chat_agent.predict([incoming_message])
-print(response)
+
+# print("Chatbot đã sẵn sàng! Nhập 'exit' hoặc 'quit' để thoát.\n")
+#
+# while True:
+#     # Nhận input từ user
+#     user_input = input("Bạn: ").strip()
+#
+#     # Kiểm tra điều kiện thoát
+#     if user_input.lower() in ['exit', 'quit', 'thoát']:
+#         print("Đã thoát chương trình!")
+#         break
+#
+#     # Bỏ qua nếu input rỗng
+#     if not user_input:
+#         continue
+#
+#     # Tạo message và gửi đến agent
+#     incoming_message = ChatAgentMessage(role="user", content=SSI_TEST_QUESTION.replace("___", user_input))
+#
+#     print("\nAgent đang xử lý...")
+#
+#     # Đợi agent trả lời
+#     response = chat_agent.predict([incoming_message])
+#
+#     # In kết quả
+#     print(f"\nAgent: {response}\n")
+#     print("-" * 50)
+# incoming_message = ChatAgentMessage(role="user", content=SSI_TEST_QUESTION)
+# response = chat_agent.predict([incoming_message])
+# print(response)
 # mlflow.models.set_model(chat_agent)
