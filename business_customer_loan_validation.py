@@ -67,8 +67,10 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         orchestration_information = self.get_orchestration_information(document_id, question, documents)
         filtered_documents = []
         for document in documents:
-            if document.get("report_date").split("-")[0] in orchestration_information.time_period:
-                filtered_documents.append(document)
+            document_time = document.get("report_date").split("-")[0]
+            for period_time in orchestration_information.time_period:
+                if document_time in period_time:
+                    filtered_documents.append(document)
         fined_grain_data = calculate_financial_metrics(filtered_documents)
         return {
             "question": question,
