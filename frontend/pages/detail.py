@@ -49,7 +49,7 @@ field_columns_mapping = {
     "database_value": "CSDL nội bộ (DB)",
     "is_consistent": "Nhất quán với các tài liệu",
     "is_match_database": "Nhất quán với DB",
-    "user_input": "Ý kiến QTTD"
+    "user_input": "Ý kiến QHKH"
 }
 
 
