@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from src.bidv.db.bidv_entity import Base, CustomerProfile, LegalRepresentative
+from src.lending.db.bidv_entity import Base, CustomerProfile, LegalRepresentative
 
 load_dotenv()
 DATABASE_PATH = os.environ['BIDV_DB_PATH']

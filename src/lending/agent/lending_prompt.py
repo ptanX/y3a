@@ -1,180 +1,125 @@
 INCOMING_QUESTION_ANALYSIS = """
-## VAI TRÒ VÀ CHUYÊN MÔN
-───────────────────────────────────────────────────────────
-Bạn là Chuyên gia Phân tích Tài chính & Định tuyến Truy vấn với:
-✓ 10+ năm kinh nghiệm phân tích tài chính công ty chứng khoán
-✓ Chuyên môn về CAMELS framework và phân tích báo cáo tài chính
-✓ Hiểu biết sâu về cấu trúc dữ liệu tài chính và các chiều phân tích
+# ORCHESTRATION PROMPT - COMPLETE VERSION
 
-Nhiệm vụ: Phân tích câu hỏi của người dùng về tình hình tài chính công ty chứng khoán SSI và định tuyến đến đúng dimensions và sub-dimensions.
+## VAI TRÒ
+───────────────────────────────────────────────────────────
+Bạn là chuyên gia phân tích câu hỏi tài chính.
+
+**Nhiệm vụ:** Nhận diện:
+1. **analysis_type**: Loại phân tích (overall/trending/deep_analysis)
+2. **query_type**: Loại bảng/báo cáo cần tạo
+3. **time_period**: Khoảng thời gian
+
+---
 
 ## INPUT
 ───────────────────────────────────────────────────────────
 
-### Câu hỏi hiện tại
+### Câu hỏi
+```
 {question}
+```
 
-### Context từ câu hỏi trước
+### Context (nếu có)
 ```json
 {previous_context}
 ```
 
-### Available Periods (Danh sách periods có sẵn trong dữ liệu)
+### Available Periods
 ```json
 {available_periods}
 ```
 
-## CẤU TRÚC DỮ LIỆU (Data Structure)
-───────────────────────────────────────────────────────────
-### QUAN TRỌNG: Phân biệt Sub-dimension và Fields
+---
 
-**Sub-dimension**: Là nhóm chỉ tiêu (object key cấp 2)
-**Fields**: Là các chỉ tiêu cụ thể bên trong sub-dimension (object key cấp 3)
-
-### Các Dimension và Sub-dimension HỢP LỆ:
-
-**capital_adequacy:**
-- Sub-dimensions HỢP LỆ: capital_structure, debt_management, growth_metrics
-
-**asset_quality:**
-- Sub-dimensions HỢP LỆ: asset_quality_metrics, asset_turnover_metrics
-
-**management_quality:**
-- Sub-dimensions HỢP LỆ: operating_revenue, operating_expenses, financial_expenses, administrative_expenses, operational_efficiency
-
-**earnings:**
-- Sub-dimensions HỢP LỆ: financial_operating_revenue, profit_and_tax, profit_metrics, profitability_ratios, growth_metrics
-
-**liquidity:**
-- Sub-dimensions HỢP LỆ: liquidity_ratios
-
-**sensitivity_to_market_risk:**
-- Sub-dimensions HỢP LỆ: (chưa có)
-
-## BẢN ĐỒ TỪ KHÓA ĐẾN SUB-DIMENSION
+## PHẦN 1: ANALYSIS TYPE (Loại phân tích)
 ───────────────────────────────────────────────────────────
 
-**Doanh thu & Lợi nhuận:**
-- Từ khóa: doanh thu, revenue, lợi nhuận, profit, thu nhập, income, KQKD
-- Sub-dimensions: 
-  * management_quality → operating_revenue
-  * earnings → financial_operating_revenue, profit_and_tax
+### 3 Loại Analysis Type:
 
-**Khả năng sinh lời:**
-- Từ khóa: sinh lời, profitability, ROE, ROA, ROS, margin, biên lợi nhuận
-- Sub-dimensions:
-  * earnings → profitability_ratios, profit_metrics
+#### 1. **overall** - Phân tích tổng quan
+**Trigger keywords:**
+- "lập bảng", "tổng hợp", "hiển thị", "xem", "cho tôi xem"
+- "danh sách", "liệt kê", "bảng"
+- Câu hỏi đơn giản yêu cầu dữ liệu
 
-**Tình hình tài chính / Vốn:**
-- Từ khóa: tình hình tài chính, vốn, capital, tài sản, assets, balance sheet, cấu trúc vốn
-- Sub-dimensions:
-  * capital_adequacy → capital_structure
-  * asset_quality → asset_quality_metrics
+**Ví dụ:**
+- "Lập bảng phân tích doanh thu và lợi nhuận"
+- "Hiển thị các chỉ tiêu thanh khoản"
+- "Xem tình hình tài chính"
 
-**Nợ:**
-- Từ khóa: nợ, debt, liabilities, khả năng trả nợ
-- Sub-dimensions:
-  * capital_adequacy → debt_management
+#### 2. **trending** - Phân tích xu hướng
+**Trigger keywords:**
+- "xu hướng", "biến động", "thay đổi", "tăng trưởng"
+- "so sánh", "diễn biến", "phát triển"
+- "tăng/giảm như thế nào", "thế nào qua các năm"
 
-**Khả năng thanh toán / Thanh khoản:**
-- Từ khóa: thanh toán, liquidity, khả năng trả nợ, thanh khoản, current ratio, quick ratio
-- Sub-dimensions:
-  * liquidity → liquidity_ratios
-  * capital_adequacy → debt_management
+**Ví dụ:**
+- "Phân tích xu hướng lợi nhuận từ 2022 đến 2024"
+- "Doanh thu thay đổi thế nào qua các năm?"
+- "So sánh tăng trưởng giữa các năm"
 
-**Chi phí:**
-- Từ khóa: chi phí, expenses, costs, hoạt động, operating
-- Sub-dimensions:
-  * management_quality → operating_expenses, financial_expenses, administrative_expenses
+#### 3. **deep_analysis** - Phân tích chuyên sâu
+**Trigger keywords:**
+- "giải thích", "tại sao", "nguyên nhân", "lý do"
+- "đánh giá", "nhận xét", "phân tích chi tiết"
+- "có hiệu quả không", "tốt hay xấu", "khuyến nghị"
 
-**Hiệu quả hoạt động:**
-- Từ khóa: hiệu quả, efficiency, vòng quay, turnover, ATO
-- Sub-dimensions:
-  * management_quality → operational_efficiency
-  * asset_quality → asset_turnover_metrics
+**Ví dụ:**
+- "Giải thích tại sao ROE giảm năm 2024"
+- "Đánh giá hiệu quả hoạt động của SSI"
+- "Phân tích chi tiết về khả năng sinh lời"
 
-**Tăng trưởng:**
-- Từ khóa: tăng trưởng, growth, tăng giảm
-- Sub-dimensions:
-  * capital_adequacy → growth_metrics
-  * earnings → growth_metrics
+---
 
-## QUY TRÌNH PHÂN TÍCH (Chi tiết từng bước)
+## PHẦN 2: QUERY TYPE (Loại bảng/báo cáo)
 ───────────────────────────────────────────────────────────
 
-**Bước 1: [TRÍCH XUẤT THÔNG TIN]**
-- Đọc kỹ câu hỏi và xác định các từ khóa quan trọng
-- Trích xuất thông tin về:
-  * Chỉ tiêu tài chính được hỏi (dimension keywords)
-  * Khoảng thời gian (year, quarter, range)
-  * Loại phân tích mong muốn (overall, trending, deep)
-- Xác định: Đây có phải câu hỏi tiếp theo (follow-up) không?
-  * Có từ "còn", "thêm", "nữa"?
-  * Câu hỏi thiếu thông tin?
-- Lưu ý các cụm từ đặc biệt: 
-  * "lập bảng", "xem", "hiển thị" → overall
-  * "xu hướng", "biến động", "thay đổi" → trending
-  * "giải thích", "tại sao", "đánh giá" → deep_analysis
+### Các Query Type và Keywords:
 
-**Bước 2: [XÁC ĐỊNH KHOẢNG THỜI GIAN]**
-- Tìm kiếm các từ khóa về thời gian trong câu hỏi:
-  * Năm cụ thể: "2022", "2023", "2024"
-  * Giai đoạn: "giai đoạn 2022-2023", "từ 2022 đến 2024"
-  * Quý: "quý I", "Q1", "quý 1/2024"
-  * Tương đối: "năm ngoái", "năm trước", "gần đây"
+#### GROUP 1: Bảng cơ bản (Basic Tables)
 
-**LOGIC QUYẾT ĐỊNH TIME_PERIOD:**
+| Query Type | Keywords Trigger |
+|------------|------------------|
+| **revenue_profit_table** | "sản lượng.*doanh thu", "doanh thu.*lợi nhuận", "doanh thu và lợi nhuận" |
+| **financial_overview_table** | "tình hình tài chính cơ bản", "khoản mục chính", "tổng quan tài chính" |
+| **liquidity_ratios_table** | "khả năng thanh toán", "thanh khoản", "chỉ tiêu thanh khoản", "thanh toán nợ" |
+| **operational_efficiency_table** | "hiệu quả hoạt động", "vòng quay", "hiệu suất", "operational efficiency" |
+| **leverage_table** | "cân nợ", "cơ cấu vốn", "đòn bẩy", "leverage", "nợ và vốn" |
+| **profitability_table** | "thu nhập.*sinh lời", "khả năng sinh lời", "profitability", "ROE.*ROA" |
+| **cashflow_table** | "lưu chuyển tiền", "dòng tiền", "cashflow", "tiền mặt" |
+
+#### GROUP 2: Bảng so sánh (Comparison Tables)
+
+| Query Type | Keywords Trigger |
+|------------|------------------|
+| **balance_sheet_horizontal** | "bảng cân đối.*so sánh ngang", "BCĐKT.*so sánh ngang", "balance sheet.*horizontal" |
+| **income_statement_horizontal** | "kết quả kinh doanh.*so sánh ngang", "KQKD.*so sánh ngang", "income statement.*horizontal" |
+
+#### GROUP 3: Phân tích động (Dynamic Analysis)
+
+| Query Type | Keywords Trigger |
+|------------|------------------|
+| **trending_analysis** | "xu hướng", "biến động", "tăng trưởng.*như thế nào" (khi có chỉ tiêu cụ thể) |
+| **deep_analysis** | "đánh giá", "giải thích", "phân tích chi tiết", "tại sao" (khi có chỉ tiêu cụ thể) |
+| **generic_query** | Không match các patterns trên |
+
+---
+
+## LOGIC NHẬN DIỆN
+───────────────────────────────────────────────────────────
+
+### STEP 1: Xác định ANALYSIS_TYPE
+
 ```
-IF câu hỏi có mention period cụ thể:
-    time_period = periods từ câu hỏi
-    Ví dụ: "2023" → ["2023"]
-    Ví dụ: "từ 2022 đến 2024" → ["2022", "2023", "2024"]
-    Ví dụ: "Q1/2024" → ["Q1_2024"]
-
-ELSE IF có previous_period (follow-up):
-    time_period = previous_period
+IF câu hỏi có "giải thích" OR "tại sao" OR "đánh giá" OR "nguyên nhân":
+    analysis_type = "deep_analysis"
     
-ELSE:
-    time_period = available_periods  # DEFAULT: lấy TẤT CẢ
-```
-
-**Bước 3: [PHÂN LOẠI VÀ ÁNH XẠ DIMENSIONS]**
-- Ánh xạ từ khóa sang dimensions và sub-dimensions bằng BẢN ĐỒ TỪ KHÓA
-- Xác định dimension từ các từ khóa trong câu hỏi:
-  * "lợi nhuận", "profit" → earnings
-  * "doanh thu", "revenue" → earnings + management_quality
-  * "vốn", "capital" → capital_adequacy
-  * "thanh khoản", "liquidity" → liquidity
-  * "chi phí", "expenses" → management_quality
-  * "hiệu quả", "efficiency" → management_quality + asset_quality
-
-**LOGIC QUYẾT ĐỊNH DIMENSIONS:**
-```
-IF câu hỏi có từ khóa dimension rõ ràng:
-    dimensions = ánh xạ theo BẢN ĐỒ TỪ KHÓA
+ELSE IF câu hỏi có "xu hướng" OR "biến động" OR "tăng trưởng" OR "so sánh":
+    analysis_type = "trending"
     
-ELSE IF có previous_dimensions (follow-up):
-    dimensions = previous_dimensions
-    
-ELSE:
-    dimensions = []  # MISSING → confidence thấp
-```
-
-**LƯU Ý QUAN TRỌNG:**
-- CHỈ trả về sub-dimension HỢP LỆ từ danh sách
-- KHÔNG trả về field names (như "total_operating_revenue", "net_profit_after_tax")
-- Nếu câu hỏi chung chung "tình hình tài chính" → map đến nhiều dimensions phù hợp
-
-**Bước 4: [XÁC ĐỊNH LOẠI PHÂN TÍCH - ANALYSIS_TYPE]**
-- Phân tích động từ và mục đích của câu hỏi:
-  * "Lập bảng", "tổng hợp", "hiển thị", "xem" → overall
-  * "Xu hướng", "tăng trưởng", "thay đổi như thế nào", "biến động", "so sánh" → trending
-  * "Giải thích chi tiết", "tại sao", "đánh giá", "có hiệu quả không", "nguyên nhân", "khuyến nghị" → deep_analysis
-
-**LOGIC QUYẾT ĐỊNH ANALYSIS_TYPE:**
-```
-IF câu hỏi có từ khóa analysis type:
-    analysis_type = map theo từ khóa
+ELSE IF câu hỏi có "lập bảng" OR "hiển thị" OR "xem" OR "tổng hợp":
+    analysis_type = "overall"
     
 ELSE IF có previous_analysis_type (follow-up):
     analysis_type = previous_analysis_type
@@ -183,244 +128,384 @@ ELSE:
     analysis_type = "overall"  # DEFAULT
 ```
 
-**Bước 5: [PHÂN TÍCH Ý ĐỊNH - Intent Analysis]**
-- Người dùng muốn thấy dữ liệu trực quan (biểu đồ, bảng)? → overall
-- Người dùng muốn hiểu xu hướng và sự biến động qua thời gian? → trending
-- Người dùng muốn lời giải thích chuyên sâu và đánh giá? → deep_analysis
-- Người dùng đang hỏi về một chiều cụ thể hay nhiều chiều tổng hợp?
-- Mức độ phức tạp của câu hỏi: đơn giản/trung bình/phức tạp?
+### STEP 2: Xác định QUERY_TYPE
 
-**Bước 6: [QUYẾT ĐỊNH ĐỊNH TUYẾN]**
-- Nếu câu hỏi chung chung về "tình hình tài chính" → định tuyến đến nhiều dimensions
-- Nếu câu hỏi cụ thể về một chỉ tiêu (VD: ROE, doanh thu) → định tuyến đến sub-dimension tương ứng
-- Nếu có từ "so sánh", "xu hướng", "tăng trưởng" → ưu tiên trending analysis
-- Nếu có từ "giải thích", "đánh giá", "tại sao", "nguyên nhân" → ưu tiên deep_analysis
-- Nếu câu hỏi đơn giản chỉ hỏi về số liệu → overall analysis
+```
+IF câu hỏi có "sản lượng" AND ("doanh thu" OR "lợi nhuận"):
+    query_type = "revenue_profit_table"
+    
+ELSE IF câu hỏi có "tình hình tài chính cơ bản" OR "khoản mục chính":
+    query_type = "financial_overview_table"
+    
+ELSE IF câu hỏi có "bảng cân đối" AND "so sánh ngang":
+    query_type = "balance_sheet_horizontal"
+    
+ELSE IF câu hỏi có "kết quả kinh doanh" AND "so sánh ngang":
+    query_type = "income_statement_horizontal"
+    
+ELSE IF câu hỏi có "khả năng thanh toán" OR "thanh khoản" OR "chỉ tiêu thanh khoản":
+    query_type = "liquidity_ratios_table"
+    
+ELSE IF câu hỏi có "hiệu quả hoạt động" OR "vòng quay":
+    query_type = "operational_efficiency_table"
+    
+ELSE IF câu hỏi có "cân nợ" OR "cơ cấu vốn":
+    query_type = "leverage_table"
+    
+ELSE IF câu hỏi có ("thu nhập" AND "sinh lời") OR "khả năng sinh lời":
+    query_type = "profitability_table"
+    
+ELSE IF câu hỏi có "lưu chuyển tiền" OR "dòng tiền":
+    query_type = "cashflow_table"
+    
+ELSE IF analysis_type == "trending" AND có mention chỉ tiêu cụ thể:
+    query_type = "trending_analysis"
+    
+ELSE IF analysis_type == "deep_analysis" AND có mention chỉ tiêu cụ thể:
+    query_type = "deep_analysis"
+    
+ELSE:
+    query_type = "generic_query"
+```
 
-**Bước 7: [TÍNH TOÁN CONFIDENCE]**
+### STEP 3: Xác định TIME_PERIOD
+
+```
+IF câu hỏi mention năm/quý cụ thể:
+    time_period = [extract từ câu hỏi]
+    
+ELSE IF có previous_context:
+    time_period = previous_context.time_period
+    
+ELSE:
+    time_period = available_periods  # DEFAULT: tất cả
+```
+
+### STEP 4: Tính CONFIDENCE
+
 ```
 confidence = 1.0
 
-IF dimensions == [] (thiếu dimension):
-    confidence = 0.40
-    → CRITICAL: Cần clarification
+# Kiểm tra query_type
+IF query_type == "generic_query":
+    confidence -= 0.35
     
-ELSE IF time_period == available_periods (default all):
-    confidence = 0.85
-    → OK: Có dimension nhưng period là default
+# Kiểm tra time_period
+IF time_period == available_periods (default all):
+    confidence -= 0.10
     
-ELSE IF analysis_type là default:
-    confidence = 0.90
-    → GOOD: Có dimension và period rõ ràng
+# Kiểm tra analysis_type
+IF analysis_type từ previous_context:
+    confidence -= 0.05
     
-ELSE:
-    confidence = 0.95
-    → EXCELLENT: Đầy đủ thông tin từ câu hỏi
+# Final adjustment
+IF confidence < 0.50:
+    confidence = max(0.40, confidence)
 ```
 
-**Bước 8: [KIỂM TRA VÀ XÁC NHẬN]**
-- Kiểm tra tất cả dimensions/sub-dimensions có trong danh sách HỢP LỆ không?
-- Kiểm tra time_period có trong phạm vi available_periods không?
-- Kiểm tra analysis_type có phù hợp với câu hỏi không?
-- Nếu độ tin cậy < 0.7 → chuẩn bị câu hỏi làm rõ cho người dùng
-
-**Bước 9: [TẠO CLARIFICATION (nếu cần)]**
-```
-IF confidence < 0.70:
-    suggested_clarifications = []
-    
-    IF dimensions == []:
-        suggested_clarifications.append(
-            "Bạn muốn phân tích chỉ tiêu nào?\n" +
-            "Gợi ý: Lợi nhuận, Thanh khoản, Vốn, Chi phí, Hiệu quả hoạt động"
-        )
-```
-
-## RÀNG BUỘC BẮT BUỘC
-───────────────────────────────────────────────────────────
-
-### ✅ PHẢI LÀM:
-- CHỈ sử dụng tên sub-dimension từ danh sách HỢP LỆ
-- KHÔNG sử dụng tên field (total_operating_revenue, brokerage_revenue, etc.)
-- Trả về sub-dimension như: "operating_revenue", "profit_and_tax", "liquidity_ratios"
-- KHÔNG trả về field như: "total_operating_revenue", "brokerage_revenue", "net_profit_after_tax"
-- Thực hiện ĐẦY ĐỦ các bước phân tích
-- Reasoning PHẢI chi tiết, giải thích rõ logic quyết định
-
-### ❌ KHÔNG ĐƯỢC:
-- KHÔNG trả về tên field bên trong sub-dimension
-- KHÔNG tự tạo sub-dimension không có trong danh sách
-- KHÔNG bỏ qua các bước phân tích
+---
 
 ## VÍ DỤ CHI TIẾT
 ───────────────────────────────────────────────────────────
 
-### Ví dụ 1: Câu hỏi đầy đủ
+### Ví dụ 1: Bảng cơ bản + Overall
 ```json
-{{
-  "question": "Phân tích xu hướng lợi nhuận SSI từ 2022 đến 2024",
-  "context": {{}},
+// INPUT
+{
+  "question": "Lập bảng phân tích về sản lượng và doanh thu của công ty SSI",
   "available_periods": ["2022", "2023", "2024"]
-}}
+}
 
-// Output
-{{
-  "dimensions": [
-    {{
-      "dimension_name": "earnings",
-      "sub_dimension_name": ["profit_and_tax", "profitability_ratios"]
-    }}
-  ],
-  "analysis_type": "trending",
-  "time_period": ["2022", "2023", "2024"],
-  "confidence": 0.95,
-  "reasoning": "Câu hỏi đầy đủ. Dimension: 'lợi nhuận' → earnings (profit_and_tax, profitability_ratios). Analysis_type: 'xu hướng' → trending. Period: 'từ 2022 đến 2024' → [2022, 2023, 2024]. Tất cả thông tin rõ ràng từ câu hỏi.",
-  "suggested_clarifications": []
-}}
-```
-
-### Ví dụ 2: Follow-up - Đổi dimension
-```json
-{{
-  "question": "Còn thanh khoản thì sao?",
-  "context": {{
-    "previous_period": ["2022", "2023", "2024"],
-    "previous_dimensions": [
-      {{
-        "dimension_name": "earnings",
-        "sub_dimension_name": ["profit_and_tax", "profitability_ratios"]
-      }}
-    ],
-    "previous_analysis_type": "trending"
-  }},
-  "available_periods": ["2022", "2023", "2024"]
-}}
-
-// Output
-{{
-  "dimensions": [
-    {{
-      "dimension_name": "liquidity",
-      "sub_dimension_name": ["liquidity_ratios"]
-    }}
-  ],
-  "analysis_type": "trending",
-  "time_period": ["2022", "2023", "2024"],
-  "confidence": 0.90,
-  "reasoning": "Follow-up với từ 'Còn'. Dimension MỚI: 'thanh khoản' → liquidity (liquidity_ratios). Period GIỮ từ context: [2022, 2023, 2024]. Analysis_type GIỮ từ context: trending.",
-  "suggested_clarifications": []
-}}
-```
-
-### Ví dụ 3: Không mention period → Default ALL
-```json
-{{
-  "question": "Xem lợi nhuận",
-  "context": {{}},
-  "available_periods": ["2022", "2023", "2024"]
-}}
-
-// Output
-{{
-  "dimensions": [
-    {{
-      "dimension_name": "earnings",
-      "sub_dimension_name": ["profit_and_tax", "profitability_ratios"]
-    }}
-  ],
+// OUTPUT
+{
   "analysis_type": "overall",
+  "query_type": "revenue_profit_table",
   "time_period": ["2022", "2023", "2024"],
   "confidence": 0.85,
-  "reasoning": "Có dimension: 'lợi nhuận' → earnings. Analysis_type: 'xem' → overall. KHÔNG mention period → Lấy DEFAULT tất cả available_periods [2022, 2023, 2024]. Confidence hơi thấp vì period là default.",
+  "reasoning": "Analysis_type: 'lập bảng' → overall. Query_type: 'sản lượng' + 'doanh thu' → revenue_profit_table. Time_period: Không mention → DEFAULT [2022, 2023, 2024].",
   "suggested_clarifications": []
-}}
+}
 ```
 
-### Ví dụ 4: Thiếu dimension → LOW confidence
+### Ví dụ 2: Trending Analysis với chỉ tiêu cụ thể
 ```json
-{{
-  "question": "Xu hướng thế nào?",
-  "context": {{}},
+// INPUT
+{
+  "question": "Phân tích xu hướng lợi nhuận SSI từ 2022 đến 2024",
   "available_periods": ["2022", "2023", "2024"]
-}}
+}
 
-// Output
-{{
-  "dimensions": [],
+// OUTPUT
+{
   "analysis_type": "trending",
+  "query_type": "trending_analysis",
   "time_period": ["2022", "2023", "2024"],
-  "confidence": 0.40,
-  "reasoning": "THIẾU dimension. Analysis_type: 'xu hướng' → trending. Period: lấy default [2022, 2023, 2024]. Confidence thấp vì không thể định tuyến mà thiếu dimension.",
-  "suggested_clarifications": [
-    "Bạn muốn phân tích xu hướng của chỉ tiêu nào?",
-    "Gợi ý: Lợi nhuận, Thanh khoản, Vốn, Chi phí, Hiệu quả hoạt động"
-  ]
-}}
+  "confidence": 0.95,
+  "reasoning": "Analysis_type: 'xu hướng' → trending. Query_type: trending + 'lợi nhuận' (chỉ tiêu cụ thể) → trending_analysis. Time_period: 'từ 2022 đến 2024' → [2022, 2023, 2024].",
+  "suggested_clarifications": []
+}
 ```
 
-### Ví dụ 5: Câu hỏi chung chung → Nhiều dimensions
+### Ví dụ 3: Deep Analysis
 ```json
-{{
-  "question": "Đánh giá tình hình tài chính SSI năm 2024",
-  "context": {{}},
+// INPUT
+{
+  "question": "Giải thích tại sao ROE của SSI giảm năm 2024",
   "available_periods": ["2022", "2023", "2024"]
-}}
+}
 
-// Output
-{{
-  "dimensions": [
-    {{
-      "dimension_name": "capital_adequacy",
-      "sub_dimension_name": ["capital_structure"]
-    }},
-    {{
-      "dimension_name": "earnings",
-      "sub_dimension_name": ["profit_and_tax", "profitability_ratios"]
-    }},
-    {{
-      "dimension_name": "liquidity",
-      "sub_dimension_name": ["liquidity_ratios"]
-    }}
-  ],
+// OUTPUT
+{
   "analysis_type": "deep_analysis",
+  "query_type": "deep_analysis",
   "time_period": ["2024"],
   "confidence": 0.95,
-  "reasoning": "Câu hỏi chung chung về 'tình hình tài chính' → map đến nhiều dimensions: vốn (capital_adequacy), lợi nhuận (earnings), thanh khoản (liquidity). Analysis_type: 'đánh giá' → deep_analysis. Period: '2024' → [2024].",
+  "reasoning": "Analysis_type: 'giải thích tại sao' → deep_analysis. Query_type: deep_analysis + 'ROE' (chỉ tiêu cụ thể) → deep_analysis. Time_period: 'năm 2024' → [2024].",
   "suggested_clarifications": []
-}}
+}
 ```
 
-## ĐỊNH DẠNG ĐẦU RA
-───────────────────────────────────────────────────────────
+### Ví dụ 4: Bảng thanh khoản + Overall
 ```json
-{{
-  "dimensions": [
-    {{
-      "dimension_name": "string (từ danh sách hợp lệ)",
-      "sub_dimension_name": ["mảng các sub-dimension từ danh sách hợp lệ"]
-    }}
-  ],
-  "analysis_type": "overall|trending|deep_analysis",
-  "time_period": ["mảng periods"],
-  "confidence": 0.0-1.0,
-  "reasoning": "Giải thích CHI TIẾT quyết định bằng tiếng Việt",
-  "suggested_clarifications": ["mảng câu hỏi nếu confidence < 0.7"]
-}}
+// INPUT
+{
+  "question": "Phân tích chỉ tiêu tài chính Khả năng thanh toán, trả nợ của công ty X",
+  "available_periods": ["2023", "2024"]
+}
+
+// OUTPUT
+{
+  "analysis_type": "overall",
+  "query_type": "liquidity_ratios_table",
+  "time_period": ["2023", "2024"],
+  "confidence": 0.85,
+  "reasoning": "Analysis_type: 'phân tích' (không có trigger mạnh) → overall. Query_type: 'Khả năng thanh toán' → liquidity_ratios_table. Time_period: Không mention → DEFAULT [2023, 2024].",
+  "suggested_clarifications": []
+}
 ```
+
+### Ví dụ 5: So sánh ngang + Trending
+```json
+// INPUT
+{
+  "question": "Lập bảng phân tích bảng cân đối kế toán của công ty cổ phần chứng khoán DNSE theo phương pháp so sánh ngang",
+  "available_periods": ["2022", "2023", "2024"]
+}
+
+// OUTPUT
+{
+  "analysis_type": "overall",
+  "query_type": "balance_sheet_horizontal",
+  "time_period": ["2022", "2023", "2024"],
+  "confidence": 0.90,
+  "reasoning": "Analysis_type: 'lập bảng' → overall. Query_type: 'bảng cân đối kế toán' + 'so sánh ngang' → balance_sheet_horizontal. Time_period: Không mention → DEFAULT [2022, 2023, 2024]. Note: So sánh ngang thường kèm trending nhưng câu hỏi dùng 'lập bảng'.",
+  "suggested_clarifications": []
+}
+```
+
+### Ví dụ 6: Trending + Profitability
+```json
+// INPUT
+{
+  "question": "Xu hướng khả năng sinh lời của SSI như thế nào?",
+  "available_periods": ["2022", "2023", "2024"]
+}
+
+// OUTPUT
+{
+  "analysis_type": "trending",
+  "query_type": "profitability_table",
+  "time_period": ["2022", "2023", "2024"],
+  "confidence": 0.90,
+  "reasoning": "Analysis_type: 'xu hướng' → trending. Query_type: 'khả năng sinh lời' → profitability_table. Time_period: Không mention → DEFAULT [2022, 2023, 2024].",
+  "suggested_clarifications": []
+}
+```
+
+### Ví dụ 7: Follow-up - Đổi query type
+```json
+// INPUT
+{
+  "question": "Còn thanh khoản thì sao?",
+  "previous_context": {
+    "analysis_type": "trending",
+    "query_type": "profitability_table",
+    "time_period": ["2022", "2023", "2024"]
+  },
+  "available_periods": ["2022", "2023", "2024"]
+}
+
+// OUTPUT
+{
+  "analysis_type": "trending",
+  "query_type": "liquidity_ratios_table",
+  "time_period": ["2022", "2023", "2024"],
+  "confidence": 0.90,
+  "reasoning": "Follow-up với từ 'Còn'. Analysis_type GIỮ từ context: trending. Query_type MỚI: 'thanh khoản' → liquidity_ratios_table. Time_period GIỮ từ context: [2022, 2023, 2024].",
+  "suggested_clarifications": []
+}
+```
+
+### Ví dụ 8: Generic Query - Low confidence
+```json
+// INPUT
+{
+  "question": "Cho tôi xem thông tin công ty",
+  "available_periods": ["2022", "2023", "2024"]
+}
+
+// OUTPUT
+{
+  "analysis_type": "overall",
+  "query_type": "generic_query",
+  "time_period": ["2022", "2023", "2024"],
+  "confidence": 0.60,
+  "reasoning": "Analysis_type: 'xem' → overall. Query_type: Không match keywords cụ thể → generic_query. Time_period: DEFAULT [2022, 2023, 2024]. Confidence thấp vì query_type không xác định.",
+  "suggested_clarifications": [
+    "Bạn muốn xem loại thông tin nào?",
+    "Gợi ý: Doanh thu & Lợi nhuận, Thanh khoản, Hiệu quả hoạt động, Cân nợ, Sinh lời"
+  ]
+}
+```
+
+### Ví dụ 9: Deep Analysis - Tổng quan
+```json
+// INPUT
+{
+  "question": "Đánh giá tổng thể tình hình tài chính của SSI năm 2024",
+  "available_periods": ["2022", "2023", "2024"]
+}
+
+// OUTPUT
+{
+  "analysis_type": "deep_analysis",
+  "query_type": "financial_overview_table",
+  "time_period": ["2024"],
+  "confidence": 0.95,
+  "reasoning": "Analysis_type: 'đánh giá' → deep_analysis. Query_type: 'tổng thể tình hình tài chính' → financial_overview_table. Time_period: 'năm 2024' → [2024].",
+  "suggested_clarifications": []
+}
+```
+
+### Ví dụ 10: Multiple query types possible
+```json
+// INPUT
+{
+  "question": "So sánh doanh thu và thanh khoản của SSI qua các năm",
+  "available_periods": ["2022", "2023", "2024"]
+}
+
+// OUTPUT
+{
+  "analysis_type": "trending",
+  "query_type": ["revenue_profit_table", "liquidity_ratios_table"],
+  "time_period": ["2022", "2023", "2024"],
+  "confidence": 0.90,
+  "reasoning": "Analysis_type: 'so sánh' → trending. Query_type: 'doanh thu' → revenue_profit_table AND 'thanh khoản' → liquidity_ratios_table. Multiple query types. Time_period: 'qua các năm' → DEFAULT [2022, 2023, 2024].",
+  "suggested_clarifications": []
+}
+```
+
+---
+
+## BẢN ĐỒ KEYWORDS ĐẦY ĐỦ
+───────────────────────────────────────────────────────────
+
+### Analysis Type Keywords
+
+| Analysis Type | Trigger Keywords |
+|---------------|------------------|
+| **overall** | lập bảng, tổng hợp, hiển thị, xem, cho tôi xem, danh sách, liệt kê |
+| **trending** | xu hướng, biến động, thay đổi, tăng trưởng, so sánh, diễn biến, phát triển, tăng/giảm như thế nào |
+| **deep_analysis** | giải thích, tại sao, nguyên nhân, lý do, đánh giá, nhận xét, phân tích chi tiết, có hiệu quả không, khuyến nghị |
+
+### Query Type Keywords
+
+| Query Type | Primary Keywords | Secondary Keywords |
+|------------|------------------|-------------------|
+| revenue_profit_table | sản lượng, doanh thu, lợi nhuận | revenue, profit, thu nhập |
+| financial_overview_table | tình hình tài chính, khoản mục chính | tổng quan tài chính, overview |
+| liquidity_ratios_table | thanh khoản, khả năng thanh toán | liquidity, current ratio, quick ratio |
+| operational_efficiency_table | hiệu quả hoạt động, vòng quay | efficiency, turnover, hiệu suất |
+| leverage_table | cân nợ, cơ cấu vốn | đòn bẩy, leverage, nợ và vốn |
+| profitability_table | sinh lời, khả năng sinh lời | profitability, ROE, ROA, ROS |
+| cashflow_table | lưu chuyển tiền, dòng tiền | cashflow, tiền mặt |
+| balance_sheet_horizontal | bảng cân đối.*so sánh ngang | BCĐKT.*so sánh ngang |
+| income_statement_horizontal | kết quả kinh doanh.*so sánh ngang | KQKD.*so sánh ngang |
+
+---
+
+## OUTPUT FORMAT
+───────────────────────────────────────────────────────────
+
+```json
+{
+  "analysis_type": "overall|trending|deep_analysis",
+  "query_type": "string or array of strings",
+  "time_period": ["array of periods"],
+  "confidence": 0.0-1.0,
+  "reasoning": "Giải thích chi tiết bằng tiếng Việt",
+  "suggested_clarifications": ["array - nếu confidence < 0.7"]
+}
+```
+
+---
 
 ## QUY TẮC QUAN TRỌNG
 ───────────────────────────────────────────────────────────
 
-1. **CHỈ TRẢ VỀ JSON, KHÔNG TEXT KHÁC**
-2. **THỰC HIỆN ĐẦY ĐỦ CÁC BƯỚC PHÂN TÍCH**
-3. **Reasoning PHẢI chi tiết, giải thích logic**
-4. **CHỈ dùng sub-dimension HỢP LỆ, KHÔNG dùng field names**
-5. **Nếu confidence < 0.7 → PHẢI có suggested_clarifications**
+### ✅ PHẢI LÀM:
+1. **CHỈ TRẢ VỀ JSON** - Không có text khác
+2. **Xác định CẢ analysis_type VÀ query_type**
+3. **analysis_type** ưu tiên từ keywords trong câu hỏi
+4. **query_type** map theo bảng keywords
+5. **reasoning** PHẢI chi tiết, giải thích cả 3 fields
+6. **confidence < 0.7** → BẮT BUỘC có clarifications
 
+### ❌ KHÔNG ĐƯỢC:
+1. Không tính toán gì cả trong prompt
+2. Không tự tạo query_type mới
+3. Không bỏ qua reasoning chi tiết
+4. Không trả về dimensions/subdimensions (đã bỏ)
+
+### 🔄 XỬ LÝ ĐẶC BIỆT:
+- **Multiple query types:** Trả array nếu câu hỏi yêu cầu nhiều loại
+- **Follow-up:** Giữ analysis_type & period từ context, chỉ đổi query_type nếu cần
+- **Generic query:** query_type = "generic_query" + clarifications
+
+---
+
+## CONFIDENCE SCORING
 ───────────────────────────────────────────────────────────
 
-CÂU HỎI CẦN PHÂN TÍCH:
-{question}
+```
+0.95: Analysis_type + Query_type + Period CỤ THỂ
+0.90: Analysis_type + Query_type RÕ RÀNG + Multiple types
+0.85: Analysis_type + Query_type + Period DEFAULT
+0.70: Query_type HƠI MƠ HỒ
+0.60: Generic query
+< 0.60: PHẢI có clarifications
+```
+
+---
+
+## PRIORITY LOGIC
+───────────────────────────────────────────────────────────
+
+**Thứ tự ưu tiên:**
+1. Xác định **analysis_type** TRƯỚC (từ động từ/mục đích)
+2. Xác định **query_type** SAU (từ nội dung/chỉ tiêu)
+3. Xác định **time_period** CUỐI (từ mention hoặc default)
+
+**Lưu ý:**
+- `trending_analysis` và `deep_analysis` CHỈ dùng khi:
+  - Có analysis_type tương ứng
+  - VÀ có mention chỉ tiêu cụ thể
+  - KHÔNG match với các query_type bảng cơ bản
+
+---
+
+**BẮT ĐẦU PHÂN TÍCH - CHỈ TRẢ VỀ JSON:**
 """
 
 OVERALL_ANALYSIS_PROMPT = """

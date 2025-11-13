@@ -6,8 +6,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from frontend.menu import menu_with_redirect
-from src.bidv.db.bidv_entity import DocumentationInformation
-from src.bidv.startup.environment_initialization import DATABASE_PATH
+from src.lending.db.bidv_entity import DocumentationInformation
+from src.lending.startup.environment_initialization import DATABASE_PATH
 from src.exceptions import EntityNotFound
 
 menu_with_redirect()

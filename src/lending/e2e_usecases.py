@@ -9,11 +9,11 @@ from datetime import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from src.bidv import email_handling
-from src.bidv.db.bidv_entity import DocumentationInformation
-from src.bidv.full_flow import handle_heavy_tasks
-from src.bidv.services.data_validator_service import DataValidatorService
-from src.bidv.startup.environment_initialization import DATABASE_PATH
+from src.lending import email_handling
+from src.lending.db.bidv_entity import DocumentationInformation
+from src.lending.full_flow import handle_heavy_tasks
+from src.lending.services.data_validator_service import DataValidatorService
+from src.lending.startup.environment_initialization import DATABASE_PATH
 
 
 def async_execute(content):

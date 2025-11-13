@@ -7,9 +7,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from frontend.menu import menu_with_redirect
-from src.bidv import e2e_usecases
-from src.bidv.db.bidv_entity import DocumentationInformation
-from src.bidv.startup.environment_initialization import DATABASE_PATH
+from src.lending import e2e_usecases
+from src.lending.db.bidv_entity import DocumentationInformation
+from src.lending.startup.environment_initialization import DATABASE_PATH
 
 menu_with_redirect()
 

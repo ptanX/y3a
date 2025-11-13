@@ -6,9 +6,9 @@ import streamlit as st
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from src.bidv import full_flow
-from src.bidv.db.bidv_entity import DocumentationInformation
-from src.bidv.startup.environment_initialization import DATABASE_PATH
+from src.lending import full_flow
+from src.lending.db.bidv_entity import DocumentationInformation
+from src.lending.startup.environment_initialization import DATABASE_PATH
 from src.exceptions import EntityNotFound
 
 

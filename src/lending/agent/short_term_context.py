@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from src.bidv.agent.lending_agent_model import LendingShortTermContext
+from src.lending.agent.lending_agent_model import LendingShortTermContext
 
 
 class ShortTermContextRepository(ABC):
