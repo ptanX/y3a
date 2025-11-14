@@ -1,4 +1,251 @@
-SIMPLE_TABLE_MAPPING = """
+DIMENSIONAL_BASED_MAPPING = """
+{
+  "query_type_mappings": {
+    "camels_rating": {
+      "description": "Bảng đánh giá CAMELS - 6 sections, mỗi section 1 layer",
+      "sections": [
+        {
+          "section_name": "C - Capital Adequacy (Khả năng đủ vốn)",
+          "fields": [
+            {
+              "display_name": "Nợ phải trả / Tổng tài sản",
+              "field_path": "calculated_metrics.debt_ratio",
+              "data_type": "Percentage",
+              "show_difference": true
+            },
+            {
+              "display_name": "Hệ số đòn bẩy (Tổng TS / VCSH)",
+              "field_path": "calculated_metrics.leverage_ratio",
+              "data_type": "Ratio",
+              "show_difference": true
+            },
+            {
+              "display_name": "Nợ dài hạn / VCSH",
+              "field_path": "calculated_metrics.long_term_debt_to_equity",
+              "data_type": "Percentage",
+              "show_difference": true
+            },
+            {
+              "display_name": "Nợ / VCSH",
+              "field_path": "calculated_metrics.debt_to_equity",
+              "data_type": "Ratio",
+              "show_difference": true
+            },
+            {
+              "display_name": "Tốc độ tăng trưởng tài sản",
+              "field_path": "calculated_metrics.asset_growth_rate",
+              "data_type": "Percentage",
+              "show_difference": true
+            }
+          ]
+        },
+        {
+          "section_name": "A - Asset Quality (Chất lượng tài sản)",
+          "fields": [
+            {
+              "display_name": "Vòng quay các khoản phải thu",
+              "field_path": "calculated_metrics.receivables_turnover",
+              "data_type": "Times",
+              "show_difference": true
+            },
+            {
+              "display_name": "Vòng quay tài sản (ATO)",
+              "field_path": "calculated_metrics.ato",
+              "data_type": "Times",
+              "show_difference": true
+            },
+            {
+              "display_name": "Hiệu quả sử dụng TSCĐ",
+              "field_path": "calculated_metrics.fixed_asset_turnover",
+              "data_type": "Times",
+              "show_difference": true
+            }
+          ]
+        },
+        {
+          "section_name": "M - Management Quality (Chất lượng quản lý)",
+          "fields": [
+            {
+              "display_name": "Chi phí bán hàng",
+              "field_path": "income_statement.selling_expenses",
+              "data_type": "VND",
+              "show_difference": true
+            },
+            {
+              "display_name": "Chi phí quản lý doanh nghiệp",
+              "field_path": "income_statement.general_and_administrative_expenses",
+              "data_type": "VND",
+              "show_difference": true
+            },
+            {
+              "display_name": "Tổng doanh thu hoạt động",
+              "field_path": "income_statement.total_operating_revenue",
+              "data_type": "VND",
+              "show_difference": true
+            },
+            {
+              "display_name": "Lợi nhuận hoạt động",
+              "field_path": "income_statement.operating_profit",
+              "data_type": "VND",
+              "show_difference": true
+            },
+            {
+              "display_name": "Tỷ suất LN hoạt động",
+              "field_path": "calculated_metrics.operating_profit_margin",
+              "data_type": "Percentage",
+              "show_difference": true
+            }
+          ]
+        },
+        {
+          "section_name": "E - Earnings (Khả năng sinh lời)",
+          "fields": [
+            {
+              "display_name": "ROA (LN sau thuế / TS bình quân)",
+              "field_path": "calculated_metrics.roa",
+              "data_type": "Percentage",
+              "show_difference": true
+            },
+            {
+              "display_name": "ROE (LN sau thuế / VCSH bình quân)",
+              "field_path": "calculated_metrics.roe",
+              "data_type": "Percentage",
+              "show_difference": true
+            },
+            {
+              "display_name": "ROS (LN sau thuế / Doanh thu)",
+              "field_path": "calculated_metrics.ros",
+              "data_type": "Percentage",
+              "show_difference": true
+            },
+            {
+              "display_name": "EBIT",
+              "field_path": "calculated_metrics.ebit",
+              "data_type": "VND",
+              "show_difference": true
+            },
+            {
+              "display_name": "EBITDA",
+              "field_path": "calculated_metrics.ebitda",
+              "data_type": "VND",
+              "show_difference": true
+            },
+            {
+              "display_name": "Tỷ suất EBIT",
+              "field_path": "calculated_metrics.ebit_margin",
+              "data_type": "Percentage",
+              "show_difference": true
+            },
+            {
+              "display_name": "LN trước thuế",
+              "field_path": "income_statement.accounting_profit_before_tax",
+              "data_type": "VND",
+              "show_difference": true
+            },
+            {
+              "display_name": "LN sau thuế",
+              "field_path": "income_statement.net_profit_after_tax",
+              "data_type": "VND",
+              "show_difference": true
+            },
+            {
+              "display_name": "Tốc độ tăng trưởng LN",
+              "field_path": "calculated_metrics.net_profit_growth_rate",
+              "data_type": "Percentage",
+              "show_difference": true
+            }
+          ]
+        },
+        {
+          "section_name": "L - Liquidity (Thanh khoản)",
+          "fields": [
+            {
+              "display_name": "Khả năng thanh toán hiện hành",
+              "field_path": "calculated_metrics.current_ratio",
+              "data_type": "Ratio",
+              "show_difference": true
+            },
+            {
+              "display_name": "Khả năng thanh toán nhanh",
+              "field_path": "calculated_metrics.quick_ratio",
+              "data_type": "Ratio",
+              "show_difference": true
+            },
+            {
+              "display_name": "Khả năng thanh toán tức thời",
+              "field_path": "calculated_metrics.cash_ratio",
+              "data_type": "Ratio",
+              "show_difference": true
+            },
+            {
+              "display_name": "Vốn lưu động",
+              "field_path": "calculated_metrics.working_capital",
+              "data_type": "VND",
+              "show_difference": true
+            },
+            {
+              "display_name": "Tiền và tương đương tiền",
+              "field_path": "financial_statement.cash_and_cash_equivalents",
+              "data_type": "VND",
+              "show_difference": true
+            },
+            {
+              "display_name": "Tài sản ngắn hạn",
+              "field_path": "financial_statement.short_term_assets",
+              "data_type": "VND",
+              "show_difference": true
+            },
+            {
+              "display_name": "Nợ ngắn hạn",
+              "field_path": "financial_statement.short_term_liabilities",
+              "data_type": "VND",
+              "show_difference": true
+            }
+          ]
+        },
+        {
+          "section_name": "S - Sensitivity to Market Risk (Độ nhạy rủi ro thị trường)",
+          "fields": [
+            {
+              "display_name": "Chi phí lãi vay",
+              "field_path": "income_statement.interest_expense_on_borrowings",
+              "data_type": "VND",
+              "show_difference": true
+            },
+            {
+              "display_name": "Khả năng thanh toán lãi vay (EBIT / Lãi vay)",
+              "field_path": "calculated_metrics.interest_coverage_ratio",
+              "data_type": "Ratio",
+              "show_difference": true
+            },
+            {
+              "display_name": "Vay ngắn hạn",
+              "field_path": "financial_statement.short_term_borrowings_and_finance_lease_liabilities",
+              "data_type": "VND",
+              "show_difference": true
+            },
+            {
+              "display_name": "Vay dài hạn",
+              "field_path": "financial_statement.long_term_borrowings_and_finance_lease_liabilities",
+              "data_type": "VND",
+              "show_difference": true
+            },
+            {
+              "display_name": "Tổng nợ phải trả",
+              "field_path": "financial_statement.liabilities",
+              "data_type": "VND",
+              "show_difference": true
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
+"""
+
+
+TABLE_BASED_MAPPING = """
 {
   "query_type_mappings": {
     "revenue_profit_table": {
@@ -230,15 +477,7 @@ SIMPLE_TABLE_MAPPING = """
           ]
         }
       ]
-    }
-  }
-}
-"""
-
-
-HORIZONTAL_COMPARISON_TABLE_MAPPING = """
-{
-  "query_type_mappings": {
+    },
     "balance_sheet_horizontal": {
       "description": "Bảng cân đối kế toán so sánh ngang",
       "sections": [
