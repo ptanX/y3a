@@ -10,6 +10,7 @@ from langgraph.graph.state import CompiledStateGraph, StateGraph
 from pydantic import BaseModel, Field
 
 from src.agent.agent_application import AgentApplication
+from src.lending.agent.documentation import SSI_TEST_QUESTION
 from src.lending.agent.lending_agent_model import BusinessLoanValidationState, LendingShortTermContext, \
     OrchestrationInformation
 from src.lending.agent.lending_prompt import (
@@ -18,6 +19,7 @@ from src.lending.agent.lending_prompt import (
     TRENDING_ANALYSIS_PROMPT,
     DEEP_ANALYSIS_PROMPT,
 )
+from src.lending.agent.mapping import DIMENSIONAL_BASED_MAPPING, TABLE_BASED_MAPPING
 from src.lending.agent.short_term_context import InMemoryShortTermContextRepository
 from src.graph.graph_provider import GraphProvider
 from src.state.type import DefaultState
@@ -466,7 +468,124 @@ def calculate_financial_metrics(data):
     return results
 
 
+def build_financial_table_output(
+        financial_metrics: list[dict],
+        mapping: dict
+) -> dict:
+    """
+    Generate DataFrame-like output from financial metrics and mapping configuration,
+    with rows ordered strictly by the order of fields in mapping.
+    """
+
+    # Extract periods from financial_metrics and sort descending (newest first)
+    periods = sorted(
+        [metric["report_date"][:4] for metric in financial_metrics],
+        reverse=True
+    )
+
+    # Create lookup dictionary by year
+    metrics_by_period = {
+        metric["report_date"][:4]: metric for metric in financial_metrics
+    }
+
+    # Generate column names
+    columns = ["indicator"]
+
+    # Determine if has proportion or difference
+    has_proportion = any(field.get("show_proportion", False) for field in mapping.get("fields", []))
+    has_difference = any(field.get("show_difference", False) for field in mapping.get("fields", []))
+
+    # Build columns for each period
+    for period in periods:
+        columns.append(f"value_{period}")
+        if has_proportion:
+            columns.append(f"proportion_{period}")
+
+    # Add difference columns
+    if has_difference:
+        for i in range(len(periods) - 1):
+            columns.append(f"diff_{periods[i]}_{periods[i + 1]}")
+
+    # Build data rows
+    data = []
+
+    section_name = mapping.get("description", "")
+    if section_name:
+        header_row = [section_name] + [None] * (len(columns) - 1)
+        data.append(header_row)
+
+    # Duyệt fields theo đúng thứ tự trong mapping
+    for field in mapping.get("fields", []):
+        if field.get("is_group_header"):
+            group_row = [field.get("display_name", "")] + [None] * (len(columns) - 1)
+            data.append(group_row)
+            continue
+
+        row = [field.get("display_name", "")]
+        field_path = field.get("field_path", "")
+        proportion_base = field.get("proportion_base")
+        show_proportion = field.get("show_proportion", False) or proportion_base
+        show_difference = field.get("show_difference", False)
+
+        # Extract values for each period
+        values = []
+        for period in periods:
+            metric = metrics_by_period.get(period)
+            value = None
+            if metric and field_path:
+                parts = field_path.split(".")
+                if len(parts) == 2:
+                    source, field_name = parts
+                    if source in metric:
+                        value = metric[source].get(field_name)
+                else:
+                    value = metric.get(field_path)
+
+            values.append(value)
+            row.append(value)
+
+            # Calculate proportion if enabled
+            if has_proportion:
+                proportion = None
+                if show_proportion and proportion_base and metric:
+                    base_parts = proportion_base.split(".")
+                    base_value = None
+                    if len(base_parts) == 2:
+                        base_source, base_field = base_parts
+                        if base_source in metric:
+                            base_value = metric[base_source].get(base_field)
+                    if value is not None and base_value is not None and base_value != 0:
+                        proportion = (value / base_value) * 100
+                row.append(proportion)
+
+        # Calculate differences if enabled
+        if has_difference:
+            for i in range(len(periods) - 1):
+                diff = None
+                if show_difference:
+                    current_val = values[i]
+                    prev_val = values[i + 1]
+                    if current_val is not None and prev_val is not None and prev_val != 0:
+                        diff = ((current_val - prev_val) / prev_val) * 100
+                row.append(diff)
+
+        data.append(row)
+
+    return {
+        "columns": columns,
+        "data": data
+    }
+
+
 mlflow.langchain.autolog()
 graph = BusinessLoanValidationGraphProvider().provide()
 chat_agent = AgentApplication.initialize(graph=graph)
 mlflow.models.set_model(chat_agent)
+
+# if __name__ == '__main__':
+#     documents = json.loads(SSI_TEST_QUESTION).get("documents")
+#     financial_metrics = calculate_financial_metrics(documents)
+#     mapping = json.loads(TABLE_BASED_MAPPING).get("income_statement_horizontal")
+#     financial_table_metrics = build_financial_table_output(financial_metrics=financial_metrics,
+#                                                            mapping=mapping)
+#     print(financial_table_metrics)
