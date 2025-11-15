@@ -846,7 +846,7 @@ else:
 ```
 """
 
-OVERALL_ANALYSIS_PROMPT = """
+TABULAR_RECEIVING_PROMPT = """
 # VAI TRÒ
 Bạn là Chuyên gia Trình bày Báo cáo Tài chính.
 

@@ -10,15 +10,15 @@ from langgraph.graph.state import CompiledStateGraph, StateGraph
 from pydantic import BaseModel, Field
 
 from src.agent.agent_application import AgentApplication
-from src.bidv.agent.lending_agent_model import BusinessLoanValidationState, LendingShortTermContext, \
+from src.lending.agent.lending_agent_model import BusinessLoanValidationState, LendingShortTermContext, \
     OrchestrationInformation
-from src.bidv.agent.lending_prompt import (
+from src.lending.agent.lending_prompt import (
     INCOMING_QUESTION_ANALYSIS,
-    OVERALL_ANALYSIS_PROMPT,
+    TABULAR_RECEIVING_PROMPT,
     TRENDING_ANALYSIS_PROMPT,
     DEEP_ANALYSIS_PROMPT,
 )
-from src.bidv.agent.short_term_context import InMemoryShortTermContextRepository
+from src.lending.agent.short_term_context import InMemoryShortTermContextRepository
 from src.graph.graph_provider import GraphProvider
 from src.state.type import DefaultState
 
@@ -160,8 +160,8 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         financial_data_input = state["fined_grain_data"]
         financial_data_input_json = json.dumps(financial_data_input)
         analysis_type = orchestration_request.analysis_type
-        if analysis_type == "overall":
-            prompt_template = ChatPromptTemplate.from_template(OVERALL_ANALYSIS_PROMPT)
+        if analysis_type == "tabular":
+            prompt_template = ChatPromptTemplate.from_template(TABULAR_RECEIVING_PROMPT)
         elif analysis_type == "trending":
             prompt_template = ChatPromptTemplate.from_template(TRENDING_ANALYSIS_PROMPT)
         elif analysis_type == "deep_analysis":
