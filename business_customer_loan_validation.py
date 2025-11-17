@@ -1,4 +1,5 @@
 import json
+import os
 
 import mlflow
 from dotenv import load_dotenv
@@ -11,7 +12,7 @@ from mlflow.types.agent import ChatAgentMessage
 
 from src.agent.agent_application import AgentApplication
 from src.graph.graph_provider import GraphProvider
-from src.lending.agent.documentation import DNSE_TEST_QUESTION
+from src.lending.agent.documentation import DNSE_TEST_QUESTION, SSI_TEST_QUESTION
 from src.lending.agent.lending_agent_model import BusinessLoanValidationState, LendingShortTermContext, \
     OrchestrationInformation
 from src.lending.agent.lending_prompt import (
@@ -25,22 +26,6 @@ from src.lending.agent.short_term_context import InMemoryShortTermContextReposit
 from toon import encode
 
 load_dotenv()
-"""
-{
-  "dimensions": [
-    {
-      "dimension_name": "capital",
-      "sub_dimension_name": ["1", "2", "3"]
-    },
-    {
-      "dimension_name": "financial_situation",
-      "sub_dimension_name": ["1", "2", "3"]
-    }
-  ],
-  "analysis_type": "overall/trending/deep_analysis",
-  "time_period": "1/2/3"
-}
-"""
 
 
 class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationState]):
@@ -80,7 +65,7 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
             financial_outputs.append(build_financial_table_output(
                 financial_metrics=fined_grain_data,
                 mapping=dimensional_mapping
-                )
+            )
             )
         return {
             "question": question,
@@ -112,10 +97,10 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         )
         )
         orchestration_response = rag_chain.invoke(question)
-        # print(orchestration_response)
+        print(orchestration_response)
         current_context = LendingShortTermContext(
             previous_analysis_type=orchestration_response.analysis_type,
-            previous_dimensions=orchestration_response.query_scopes,
+            previous_query_scopes=orchestration_response.query_scopes,
             previous_period=orchestration_response.time_period
         )
         self.short_term_context_repository.put(thread_id=document_id, context=current_context)
@@ -585,7 +570,7 @@ def build_financial_table_output(
 # mlflow.langchain.autolog()
 graph = BusinessLoanValidationGraphProvider().provide()
 chat_agent = AgentApplication.initialize(graph=graph)
-incoming_message = ChatAgentMessage(role="user", content=DNSE_TEST_QUESTION)
+incoming_message = ChatAgentMessage(role="user", content=SSI_TEST_QUESTION)
 response = chat_agent.predict([incoming_message])
 print(response)
 # mlflow.models.set_model(chat_agent)
