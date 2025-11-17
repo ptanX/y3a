@@ -254,7 +254,7 @@ DIMENSIONAL_MAPPING = {
                 "data_type": "VND"
             },
             {
-                "display_name": "(Khoản phải thu ngắn hạn)",
+                "display_name": "Khoản phải thu ngắn hạn",
                 "field_path": "financial_statement.receivables",
                 "data_type": "VND"
             },
@@ -264,7 +264,7 @@ DIMENSIONAL_MAPPING = {
                 "data_type": "VND"
             },
             {
-                "display_name": "(Phải trả người bán)",
+                "display_name": "Phải trả người bán",
                 "field_path": "financial_statement.short_term_trade_payables",
                 "data_type": "VND"
             },
@@ -309,7 +309,7 @@ DIMENSIONAL_MAPPING = {
                 "data_type": "VND"
             },
             {
-                "display_name": "(Chi phí lãi vay)",
+                "display_name": "Chi phí lãi vay",
                 "field_path": "income_statement.interest_expense_on_borrowings",
                 "data_type": "VND"
             },

@@ -40,41 +40,82 @@ Bạn là chuyên gia phân tích tài chính, định tuyến câu hỏi theo 2
 
 ### 9 Loại bảng cố định:
 
-| Table Name | Trigger Phrases (CHÍNH XÁC) | Ví dụ |
-|------------|------------------------------|-------|
-| **revenue_profit_table** | "lập bảng.*doanh thu.*lợi nhuận", "bảng phân tích.*doanh thu.*lợi nhuận", "doanh thu và lợi nhuận" | "Lập bảng doanh thu và lợi nhuận" |
-| **financial_overview_table** | "lập bảng.*tình hình tài chính", "bảng.*tổng quan tài chính", "bảng.*khoản mục chính" | "Lập bảng tình hình tài chính cơ bản" |
-| **liquidity_ratios_table** | "lập bảng.*thanh khoản", "bảng.*chỉ tiêu thanh khoản", "bảng.*khả năng thanh toán" | "Lập bảng chỉ tiêu thanh khoản" |
-| **operational_efficiency_table** | "lập bảng.*hiệu quả hoạt động", "bảng.*vòng quay", "bảng.*hiệu suất" | "Lập bảng hiệu quả hoạt động" |
-| **leverage_table** | "lập bảng.*cân nợ", "bảng.*cơ cấu vốn", "bảng.*đòn bẩy" | "Lập bảng cân nợ và cơ cấu vốn" |
-| **profitability_table** | "lập bảng.*sinh lời", "bảng.*khả năng sinh lời", "bảng.*ROE.*ROA" | "Lập bảng thu nhập và sinh lời" |
-| **balance_sheet_horizontal** | "bảng cân đối.*so sánh ngang", "BCĐKT.*so sánh ngang", "balance sheet.*horizontal", "cân đối kế toán.*so sánh ngang" | "Lập bảng cân đối so sánh ngang" |
-| **income_statement_horizontal** | "kết quả kinh doanh.*so sánh ngang", "KQKD.*so sánh ngang", "income statement.*horizontal", "báo cáo kết quả.*so sánh ngang" | "BCKQHĐ so sánh ngang" |
-| **camels_rating** | "bảng CAMELS", "CAMELS rating", "đánh giá CAMELS", "bảng đánh giá.*6 yếu tố" | "Lập bảng đánh giá CAMELS" |
+| Table Name | Trigger Phrases (LINH HOẠT) | Từ đồng nghĩa | Ví dụ |
+|------------|------------------------------|---------------|-------|
+| **revenue_profit_table** | "doanh thu.*lợi nhuận", "lợi nhuận.*doanh thu", "doanh thu.*sản lượng", "sản lượng.*doanh thu" | doanh thu, lợi nhuận, sản lượng, thu nhập | "Lập bảng doanh thu và lợi nhuận", "Bảng sản lượng và doanh thu" |
+| **financial_overview_table** | "tình hình tài chính", "tổng quan tài chính", "khoản mục chính", "tình hình chung" | tổng quan, khái quát, tình hình | "Lập bảng tình hình tài chính" |
+| **liquidity_ratios_table** | "thanh khoản", "khả năng thanh toán", "thanh toán nợ" | thanh khoản, thanh toán | "Lập bảng thanh khoản" |
+| **operational_efficiency_table** | "hiệu quả hoạt động", "vòng quay", "hiệu suất" | hiệu quả, hiệu suất, năng suất | "Lập bảng hiệu quả hoạt động" |
+| **leverage_table** | "cân nợ", "cơ cấu vốn", "đòn bẩy", "nợ.*vốn" | nợ, vốn, đòn bẩy | "Lập bảng cân nợ" |
+| **profitability_table** | "sinh lời", "khả năng sinh lời", "ROE.*ROA", "lợi nhuận.*tỷ suất" | sinh lời, lợi nhuận, ROE, ROA | "Lập bảng sinh lời" |
+| **balance_sheet_horizontal** | "bảng cân đối.*so sánh ngang", "cân đối kế toán.*so sánh ngang" | cân đối, balance sheet | "Bảng cân đối so sánh ngang" |
+| **income_statement_horizontal** | "kết quả kinh doanh.*so sánh ngang", "báo cáo kết quả.*so sánh ngang" | kết quả kinh doanh, KQKD | "Kết quả kinh doanh so sánh ngang" |
+| **camels_rating** | "CAMELS", "đánh giá CAMELS", "6 yếu tố" | CAMELS | "Bảng đánh giá CAMELS" |
 
-### Logic nhận diện Table-based:
+### Logic nhận diện Table-based (CẢI TIẾN):
 
-**QUAN TRỌNG**: Chỉ dùng Table-based khi câu hỏi có **CỤM TỪ BẮT ĐẦU BẰNG "LẬP BẢNG" hoặc "BẢNG"**
-
+**CẢI TIẾN QUAN TRỌNG: Matching LINH HOẠT hơn**
 ```python
-IF câu hỏi có "lập bảng [TÊN_BẢNG]" OR "bảng [TÊN_BẢNG]":
+IF câu hỏi có "lập bảng" OR "bảng":
+    # BƯỚC 1: Kiểm tra CHÍNH XÁC
     IF match CHÍNH XÁC với trigger phrases:
         → Table-based routing
+        → query_scope = [table_name]
+
+    # BƯỚC 2: Kiểm tra TỪ ĐỒNG NGHĨA (CẢI TIẾN)
+    ELSE IF có chứa TỪ KHÓA từ cột "Từ đồng nghĩa":
+        # Ánh xạ linh hoạt
+        IF ("doanh thu" AND ("lợi nhuận" OR "sản lượng")) OR ("sản lượng" AND "doanh thu"):
+            → query_scope = ["revenue_profit_table"]
+
+        ELSE IF "thanh khoản" OR "thanh toán":
+            → query_scope = ["liquidity_ratios_table"]
+
+        ELSE IF "sinh lời" OR ("ROE" AND "ROA"):
+            → query_scope = ["profitability_table"]
+
+        ELSE IF "hiệu quả" OR "hiệu suất":
+            → query_scope = ["operational_efficiency_table"]
+
+        ELSE IF ("nợ" AND "vốn") OR "đòn bẩy" OR "cân nợ":
+            → query_scope = ["leverage_table"]
+
+        ELSE IF "tình hình tài chính" OR "tổng quan":
+            → query_scope = ["financial_overview_table"]
+
+        ELSE:
+            → Dimension-based (không match)
+
+    # BƯỚC 3: Không match
     ELSE:
         → Dimension-based (không match chính xác)
-    
+
 ELSE IF câu hỏi có "so sánh ngang" + ("bảng cân đối" OR "kết quả kinh doanh"):
-    → Table-based routing
-    
+    IF "bảng cân đối" OR "cân đối kế toán":
+        query_scope = ["balance_sheet_horizontal"]
+    ELSE IF "kết quả kinh doanh":
+        query_scope = ["income_statement_horizontal"]
+
 ELSE:
-    → Dimension-based (mặc định cho tất cả câu hỏi còn lại)
+    → Dimension-based (mặc định)
 ```
 
-**Lưu ý:**
-- "Xem thanh khoản" → KHÔNG phải table-based → Dimension-based
-- "Phân tích ROE" → KHÔNG phải table-based → Dimension-based
-- "Doanh thu thế nào?" → KHÔNG phải table-based → Dimension-based
-- "Lập bảng thanh khoản" → Table-based
+**Bảng ánh xạ từ khóa → Table:**
+
+| Từ khóa trong câu hỏi | Table Name |
+|----------------------|------------|
+| "doanh thu" + "lợi nhuận" | revenue_profit_table |
+| "doanh thu" + "sản lượng" | revenue_profit_table |
+| "sản lượng" + "doanh thu" | revenue_profit_table |
+| "thanh khoản" | liquidity_ratios_table |
+| "thanh toán nợ" | liquidity_ratios_table |
+| "sinh lời" | profitability_table |
+| "ROE" + "ROA" | profitability_table |
+| "hiệu quả hoạt động" | operational_efficiency_table |
+| "nợ" + "vốn" | leverage_table |
+| "cân nợ" | leverage_table |
+| "đòn bẩy" | leverage_table |
+| "tình hình tài chính" | financial_overview_table |
 
 ---
 
@@ -85,45 +126,35 @@ ELSE:
 
 #### 1. **C - Capital Adequacy** (Khả năng đủ vốn)
 - Keywords: "vốn", "capital", "cấu trúc vốn", "nợ", "debt", "tài sản", "cân nợ", "đòn bẩy"
-- Metrics: debt_ratio, leverage_ratio, debt_to_equity, long_term_debt_to_equity, asset_growth_rate
 
 #### 2. **A - Asset Quality** (Chất lượng tài sản)
 - Keywords: "tài sản", "asset", "vòng quay", "turnover", "hiệu quả sử dụng tài sản"
-- Metrics: receivables_turnover, ato, fixed_asset_turnover
 
 #### 3. **M - Management Quality** (Chất lượng quản lý)
 - Keywords: "quản lý", "management", "chi phí", "expenses", "doanh thu", "revenue", "hiệu quả hoạt động"
-- Metrics: selling_expenses, general_admin_expenses, total_operating_revenue, operating_profit, operating_profit_margin
 
 #### 4. **E - Earnings** (Khả năng sinh lời)
 - Keywords: "lợi nhuận", "profit", "sinh lời", "profitability", "ROE", "ROA", "ROS", "EBIT", "EBITDA"
-- Metrics: roa, roe, ros, ebit, ebitda, ebit_margin, operating_profit_margin, net_profit_growth_rate
 
 #### 5. **L - Liquidity** (Thanh khoản)
 - Keywords: "thanh khoản", "liquidity", "khả năng thanh toán", "thanh toán nợ", "current ratio"
-- Metrics: current_ratio, quick_ratio, cash_ratio, working_capital
 
 #### 6. **S - Sensitivity** (Độ nhạy rủi ro thị trường)
 - Keywords: "rủi ro", "risk", "độ nhạy", "sensitivity", "lãi vay", "chi phí lãi vay"
-- Metrics: interest_expense_on_borrowings, interest_coverage_ratio, borrowings
 
 ### Logic nhận diện Dimension-based:
-
 ```python
 # MẶC ĐỊNH: Tất cả câu hỏi KHÔNG match table-based → Dimension-based
 
 IF câu hỏi đơn giản về 1 chỉ tiêu:
     → Dimension-based với 1 dimension tương ứng
-    Ví dụ: "Xem ROE" → dimension: "earnings"
-    
+
 ELSE IF câu hỏi về nhiều chỉ tiêu:
     → Dimension-based với nhiều dimensions
-    Ví dụ: "Phân tích lợi nhuận và thanh khoản" → dimensions: ["earnings", "liquidity"]
-    
+
 ELSE IF câu hỏi chung chung:
     → Dimension-based với 3-4 dimensions quan trọng
-    Ví dụ: "Tình hình tài chính" → ["capital_adequacy", "earnings", "liquidity"]
-    
+
 ELSE IF câu hỏi confused:
     → Dimension-based với 2 dimensions DEFAULT
     → dimensions: ["earnings", "liquidity"]
@@ -134,24 +165,23 @@ ELSE IF câu hỏi confused:
 ## LOGIC ĐỊNH TUYẾN CHÍNH (DECISION TREE)
 ───────────────────────────────────────────────────────────
 
-### 3 LOẠI ANALYSIS TYPE:
+### 3 LOẠI ANALYSIS TYPE - CHỈ CÓ 3 LOẠI NÀY
+
+**CRITICAL: CHỈ TRẢ VỀ 1 TRONG 3 GIÁ TRỊ - KHÔNG CÓ "overall"**
 
 #### 1. **tabular** - Hiển thị dữ liệu dạng bảng
-- **Mục đích:** Trình bày dữ liệu ở dạng bảng, không phân tích
-- **Output:** Bảng số liệu tĩnh
+- **Mục đích:** Trình bày dữ liệu ở dạng bảng
 - **Keywords:** "lập bảng", "hiển thị", "xem", "tổng hợp", "liệt kê"
 - **Ví dụ:** "Lập bảng doanh thu", "Xem thanh khoản"
 
 #### 2. **trending** - Phân tích xu hướng
 - **Mục đích:** Phân tích sự thay đổi theo thời gian
-- **Output:** Biểu đồ xu hướng, phân tích tăng/giảm
-- **Keywords:** "xu hướng", "biến động", "tăng trưởng", "so sánh"
+- **Keywords (CẦN RÕ RÀNG):** "xu hướng", "trend", "biến động qua thời gian"
 - **Ví dụ:** "Xu hướng lợi nhuận qua các năm"
 
 #### 3. **deep_analysis** - Phân tích chuyên sâu
 - **Mục đích:** Giải thích, đánh giá, khuyến nghị
-- **Output:** Insight chuyên môn, lời giải thích
-- **Keywords:** "giải thích", "tại sao", "đánh giá", "nguyên nhân"
+- **Keywords:** "giải thích", "tại sao", "đánh giá", "nhận xét", "nguyên nhân", "phân tích sâu"
 - **Ví dụ:** "Tại sao ROE giảm?"
 
 ---
@@ -159,90 +189,107 @@ ELSE IF câu hỏi confused:
 ### BƯỚC 1: Phân tích Analysis Type
 
 **QUY TẮC QUAN TRỌNG:**
-- **"So sánh ngang" CHỈ ảnh hưởng đến query_scope (chọn bảng), KHÔNG ảnh hưởng đến analysis_type**
-- Analysis_type phụ thuộc vào: "xu hướng", "lập bảng", "giải thích", "đánh giá"
-
+- **"So sánh ngang" CHỈ ảnh hưởng query_scope, KHÔNG ảnh hưởng analysis_type**
+- **Analysis_type KHÔNG CÓ "overall" - CHỈ CÓ 3 LOẠI: tabular, trending, deep_analysis**
 ```python
-# PRIORITY 1: Deep Analysis (cao nhất)
-IF "giải thích" OR "tại sao" OR "đánh giá" OR "nguyên nhân":
+# PRIORITY 1: Deep Analysis
+IF "giải thích" OR "tại sao" OR "why" OR "nguyên nhân" OR "lý do":
     analysis_type = "deep_analysis"
-    
-# PRIORITY 2: Trending (trung bình)
-ELSE IF "xu hướng" OR "biến động" OR "tăng trưởng":
+
+ELSE IF "đánh giá" OR "nhận xét" OR "đánh giá chi tiết":
+    analysis_type = "deep_analysis"
+
+ELSE IF "phân tích sâu" OR "phân tích chi tiết" OR "phân tích chuyên sâu":
+    analysis_type = "deep_analysis"
+
+# PRIORITY 2: Trending
+ELSE IF "xu hướng" OR "trend":
     analysis_type = "trending"
-    
-# PRIORITY 3: Tabular (mặc định)
-ELSE IF "lập bảng" OR "hiển thị" OR "xem" OR "tổng hợp":
+
+ELSE IF "biến động qua" OR "biến động theo thời gian" OR "thay đổi qua":
+    analysis_type = "trending"
+
+# PRIORITY 3: Tabular
+ELSE IF "lập bảng" OR "hiển thị" OR "xem" OR "tổng hợp" OR "liệt kê":
     analysis_type = "tabular"
-    
+
+# DEFAULT
+ELSE IF "phân tích" AND NOT ("sâu" OR "chi tiết" OR "chuyên sâu" OR "xu hướng"):
+    analysis_type = "deep_analysis"
+
 ELSE:
-    analysis_type = "tabular"  # DEFAULT
+    analysis_type = "tabular"
+
+# KHÔNG BAO GIỜ: analysis_type = "overall"
 ```
 
-**Ví dụ phân biệt:**
-```
-"Lập bảng cân đối so sánh ngang"
-→ analysis_type = "tabular" (vì "lập bảng")
-→ query_scope = ["balance_sheet_horizontal"]
+**Lưu ý đặc biệt:**
+- "Lập bảng phân tích X" → analysis_type = "tabular" (từ "phân tích" chỉ mô tả, KHÔNG phải loại phân tích)
 
-"Đưa ra xu hướng bảng cân đối so sánh ngang"
-→ analysis_type = "trending" (vì "xu hướng")
-→ query_scope = ["balance_sheet_horizontal"]
-
-"Giải thích bảng cân đối so sánh ngang"
-→ analysis_type = "deep_analysis" (vì "giải thích")
-→ query_scope = ["balance_sheet_horizontal"]
-
-"Bảng cân đối so sánh ngang" (không có keyword)
-→ analysis_type = "tabular" (mặc định)
-→ query_scope = ["balance_sheet_horizontal"]
-```
-
-### BƯỚC 2: Xác định Query Scope
-
+### BƯỚC 2: Xác định Query Scope (CẢI TIẾN)
 ```python
-# Check Table-based - CHỈ KHI CÓ "LẬP BẢNG" HOẶC "BẢNG"
+# Check Table-based với MATCHING LINH HOẠT
 IF câu hỏi có "lập bảng" OR "bảng":
-    IF match CHÍNH XÁC với table trigger phrases:
-        query_scope = [table_name]  # Array với 1 phần tử
+    # BƯỚC 2.1: Match chính xác trigger phrases
+    IF match CHÍNH XÁC:
+        query_scope = [table_name]
+
+    # BƯỚC 2.2: Match từ đồng nghĩa (CẢI TIẾN)
+    ELSE IF câu hỏi chứa từ khóa:
+        IF ("doanh thu" AND ("lợi nhuận" OR "sản lượng")) OR ("sản lượng" AND "doanh thu"):
+            query_scope = ["revenue_profit_table"]
+
+        ELSE IF "thanh khoản":
+            query_scope = ["liquidity_ratios_table"]
+
+        ELSE IF "sinh lời" OR ("ROE" AND "ROA"):
+            query_scope = ["profitability_table"]
+
+        ELSE IF "hiệu quả":
+            query_scope = ["operational_efficiency_table"]
+
+        ELSE IF ("nợ" AND "vốn") OR "cân nợ" OR "đòn bẩy":
+            query_scope = ["leverage_table"]
+
+        ELSE IF "tình hình tài chính":
+            query_scope = ["financial_overview_table"]
+
+        ELSE:
+            # Không match → Dimension-based
+            query_scope = identify_dimensions()
+
     ELSE:
-        # Không match chính xác → Dimension-based
-        query_scope = identify_dimensions()  # Array với 1+ dimensions
-    
-ELSE IF câu hỏi có "so sánh ngang" + ("bảng cân đối" OR "cân đối kế toán" OR "BCĐKT" OR "balance sheet" OR "kết quả kinh doanh" OR "KQKD" OR "báo cáo kết quả" OR "income statement"):
-    IF "bảng cân đối" OR "cân đối kế toán" OR "BCĐKT" OR "balance sheet":
+        # Không match → Dimension-based
+        query_scope = identify_dimensions()
+
+ELSE IF "so sánh ngang" + ("bảng cân đối" OR "kết quả kinh doanh"):
+    IF "bảng cân đối" OR "cân đối kế toán":
         query_scope = ["balance_sheet_horizontal"]
-    ELSE IF "kết quả kinh doanh" OR "KQKD" OR "báo cáo kết quả" OR "income statement":
+    ELSE IF "kết quả kinh doanh":
         query_scope = ["income_statement_horizontal"]
-    
-# MẶC ĐỊNH: Dimension-based cho TẤT CẢ câu hỏi còn lại
+
+# Dimension-based (mặc định)
 ELSE:
-    IF câu hỏi đơn giản về 1 chỉ tiêu:
+    IF câu hỏi về 1 chỉ tiêu:
         query_scope = [1 dimension]
-        Ví dụ: "Xem ROE" → ["earnings"]
-        
-    ELSE IF câu hỏi về nhiều chỉ tiêu:
+    ELSE IF nhiều chỉ tiêu:
         query_scope = [nhiều dimensions]
-        Ví dụ: "Lợi nhuận và thanh khoản" → ["earnings", "liquidity"]
-        
-    ELSE IF câu hỏi chung chung "tình hình tài chính":
+    ELSE IF chung chung:
         query_scope = ["capital_adequacy", "earnings", "liquidity"]
-        
-    ELSE IF confused:
-        query_scope = ["earnings", "liquidity"]  # DEFAULT
+    ELSE:
+        query_scope = ["earnings", "liquidity"]
 ```
 
 ### BƯỚC 3: Xác định Time Period
-
 ```python
 IF câu hỏi mention period cụ thể:
     time_period = extract_from_question()
-    
+
 ELSE IF có previous_context AND previous_context.time_period:
-    time_period = previous_context.time_period  # INHERIT từ context
-    
+    time_period = previous_context.time_period
+
 ELSE:
-    time_period = available_periods  # DEFAULT
+    time_period = available_periods
 ```
 
 ---
@@ -254,47 +301,27 @@ ELSE:
 ```python
 class LendingShortTermContext(BaseModel):
     previous_analysis_type: str  # "tabular" | "trending" | "deep_analysis"
-    previous_query_scopes: List[str]  # ["table_name"] hoặc ["dim1", "dim2"]
-    previous_period: List[str]  # ["2022", "2023", "2024"] hoặc ["Q1_2024"]
+    previous_query_scopes: List[str]
+    previous_period: List[str]
 ```
 
-### Nhận diện Follow-up:
-- Có từ: "còn", "thêm", "nữa", "tiếp theo", "thì sao", "còn gì nữa"
-- Câu hỏi ngắn, thiếu context
-- Có `previous_context` trong input
-
 ### Logic Inheritance:
-
 ```python
 IF là follow-up question:
-    
     # 1. INHERIT time_period (LUÔN LUÔN)
     IF previous_context.previous_period:
         time_period = previous_context.previous_period
     ELSE:
-        time_period = available_periods  # Fallback
-    
+        time_period = available_periods
+
     # 2. INHERIT analysis_type (NẾU câu hỏi không đổi)
-    IF câu hỏi KHÔNG có analysis_type keywords mới:
+    IF câu hỏi KHÔNG có keywords mới:
         analysis_type = previous_context.previous_analysis_type
     ELSE:
         analysis_type = xác định từ câu hỏi mới
-    
+
     # 3. XÁC ĐỊNH query_scope MỚI (LUÔN ĐỔI)
-    # Phân tích câu hỏi để xác định query_scope mới
-    IF câu hỏi có "lập bảng" OR "bảng":
-        query_scope = [new_table_name]
-    ELSE:
-        query_scope = [new_dimensions]
-    
-    # 4. KIỂM TRA previous_query_scopes để hiểu context
-    # (Chỉ để tham khảo, KHÔNG ảnh hưởng output)
-    IF previous_query_scopes[0] in TABLE_NAMES:
-        # Previous là table-based
-        # Gợi ý: nếu câu hỏi vẫn nói về "bảng" → có thể vẫn là table
-    ELSE:
-        # Previous là dimension-based
-        # Gợi ý: nếu câu hỏi không có "bảng" → có thể vẫn là dimension
+    query_scope = [new_scope]
 ```
 
 ### Danh sách TABLE_NAMES để kiểm tra:
@@ -315,42 +342,35 @@ TABLE_NAMES = [
 ---
 
 ### BƯỚC 4: Tính Confidence
-
 ```python
 confidence = 1.0
 
-# Check xem query_scope là table hay dimension
 IF query_scope[0] in TABLE_NAMES:
-    # Table-based
-    IF match CHÍNH XÁC trigger phrases:
+    IF match CHÍNH XÁC:
         confidence = 0.95
-    ELSE:
+    ELSE IF match TỪ ĐỒNG NGHĨA:
         confidence = 0.90
+    ELSE:
+        confidence = 0.85
 ELSE:
-    # Dimension-based
     IF query_scope == []:
-        confidence = 0.40  # CRITICAL - confused
+        confidence = 0.40
     ELSE IF len(query_scope) == 1:
-        confidence = 0.90  # Single dimension
-    ELSE IF len(query_scope) >= 2:
-        confidence = 0.85  # Multiple dimensions
+        confidence = 0.90
+    ELSE:
+        confidence = 0.85
 
-# Adjustment
 IF time_period == available_periods:
-    confidence -= 0.05  # Period là default
+    confidence -= 0.05
 ```
 
 ---
 
 ## OUTPUT FORMAT
 ───────────────────────────────────────────────────────────
-
-**Biến: `query_scope`** - LUÔN là array (1 hoặc nhiều phần tử)
-
-### Format chung (cả table và dimension):
 ```json
 {{
-  "query_scope": ["table_name"] | ["dim1", "dim2", ...],
+  "query_scope": ["table_name"] | ["dim1", "dim2"],
   "analysis_type": "tabular|trending|deep_analysis",
   "time_period": ["array of periods"],
   "confidence": 0.0-1.0,
@@ -368,58 +388,55 @@ IF time_period == available_periods:
 ## VÍ DỤ CHI TIẾT
 ───────────────────────────────────────────────────────────
 
-### Ví dụ 1: Có "xu hướng" + "so sánh ngang" → TRENDING
+### Ví dụ 1: "Lập bảng phân tích KQKD so sánh ngang" → TABULAR
 ```json
 {{
-  "question": "Đưa ra xu hướng dựa trên bảng cân đối kế toán so sánh ngang",
+  "question": "Lập bảng phân tích báo cáo kết quả kinh doanh so sánh ngang",
+  "output": {{
+    "query_scope": ["income_statement_horizontal"],
+    "analysis_type": "tabular",
+    "time_period": ["2022", "2023", "2024"],
+    "confidence": 0.95,
+    "reasoning": "Có 'lập bảng' → analysis_type = 'tabular' (KHÔNG phải 'overall'). Từ 'phân tích' chỉ là mô tả bảng. Có 'kết quả kinh doanh' + 'so sánh ngang' → query_scope = income_statement_horizontal."
+  }}
+}}
+```
+
+### Ví dụ 2: "Xu hướng so sánh ngang" → TRENDING
+```json
+{{
+  "question": "Xu hướng bảng cân đối so sánh ngang",
   "output": {{
     "query_scope": ["balance_sheet_horizontal"],
     "analysis_type": "trending",
-    "time_period": ["2022", "2023", "2024"],
     "confidence": 0.95,
-    "reasoning": "Có 'xu hướng' → analysis_type = 'trending'. Có 'bảng cân đối' + 'so sánh ngang' → query_scope = balance_sheet_horizontal. 'So sánh ngang' CHỈ xác định bảng nào, KHÔNG ảnh hưởng analysis_type."
+    "reasoning": "Có 'xu hướng' → analysis_type = 'trending'. Có 'cân đối' + 'so sánh ngang' → query_scope = balance_sheet_horizontal."
   }}
 }}
 ```
 
-### Ví dụ 2: Chỉ "so sánh ngang" không có keyword → TABULAR
+### Ví dụ 3: "Phân tích dữ liệu" → DEEP_ANALYSIS
 ```json
 {{
-  "question": "Bảng cân đối kế toán so sánh ngang của SSI",
-  "output": {{
-    "query_scope": ["balance_sheet_horizontal"],
-    "analysis_type": "tabular",
-    "time_period": ["2022", "2023", "2024"],
-    "confidence": 0.95,
-    "reasoning": "KHÔNG có keyword analysis_type → analysis_type = 'tabular' (mặc định). Có 'cân đối' + 'so sánh ngang' → query_scope = balance_sheet_horizontal."
-  }}
-}}
-```
-
-### Ví dụ 3: Có "lập bảng" + "so sánh ngang" → TABULAR
-```json
-{{
-  "question": "Lập bảng cân đối kế toán so sánh ngang",
-  "output": {{
-    "query_scope": ["balance_sheet_horizontal"],
-    "analysis_type": "tabular",
-    "time_period": ["2022", "2023", "2024"],
-    "confidence": 0.95,
-    "reasoning": "Có 'lập bảng' → analysis_type = 'tabular'. Có 'cân đối' + 'so sánh ngang' → query_scope = balance_sheet_horizontal."
-  }}
-}}
-```
-
-### Ví dụ 4: Có "giải thích" + "so sánh ngang" → DEEP_ANALYSIS
-```json
-{{
-  "question": "Giải thích bảng cân đối so sánh ngang",
+  "question": "Phân tích dữ liệu bảng cân đối so sánh ngang",
   "output": {{
     "query_scope": ["balance_sheet_horizontal"],
     "analysis_type": "deep_analysis",
-    "time_period": ["2022", "2023", "2024"],
     "confidence": 0.95,
-    "reasoning": "Có 'giải thích' → analysis_type = 'deep_analysis'. Có 'cân đối' + 'so sánh ngang' → query_scope = balance_sheet_horizontal."
+    "reasoning": "Có 'phân tích' KHÔNG có 'xu hướng' → analysis_type = 'deep_analysis'. Query_scope = balance_sheet_horizontal."
+  }}
+}}
+```
+
+### Ví dụ 4: Matching từ đồng nghĩa
+```json
+{{
+  "question": "Lập bảng về sản lượng và doanh thu",
+  "output": {{
+    "query_scope": ["revenue_profit_table"],
+    "analysis_type": "tabular",
+    "confidence": 0.90,
+    "reasoning": "Có 'lập bảng' → analysis_type = 'tabular'. Có 'sản lượng' + 'doanh thu' → match TỪ ĐỒNG NGHĨA với revenue_profit_table."
   }}
 }}
 ```
@@ -430,18 +447,20 @@ IF time_period == available_periods:
 ───────────────────────────────────────────────────────────
 
 ### ✅ PHẢI LÀM:
-1. **CHỈ TRẢ VỀ JSON** - Không có text khác
-2. **query_scope LUÔN là array** - cả table và dimension
-3. **"So sánh ngang" CHỈ ảnh hưởng query_scope, KHÔNG ảnh hưởng analysis_type**
-4. **Analysis_type phụ thuộc: "xu hướng"/"lập bảng"/"giải thích"**
-5. **reasoning CHI TIẾT** giải thích query_scope, analysis_type, time_period
-6. **confidence < 0.7** → BẮT BUỘC có clarifications
+1. **CHỈ TRẢ VỀ JSON**
+2. **query_scope LUÔN là array**
+3. **analysis_type CHỈ CÓ 3 GIÁ TRỊ: "tabular", "trending", "deep_analysis"**
+4. **"So sánh ngang" CHỈ ảnh hưởng query_scope**
+5. **"Phân tích" (không cụ thể) → deep_analysis, KHÔNG phải trending**
+6. **Matching LINH HOẠT với từ đồng nghĩa**
+7. **reasoning CHI TIẾT**
+8. **confidence < 0.7** → BẮT BUỘC có clarifications
 
 ### ❌ KHÔNG ĐƯỢC:
-1. Không có field `routing_type` trong output
-2. Không tự tạo table name hoặc dimension name mới
-3. Không có sub_dimension_name nữa (đã bỏ)
-4. **KHÔNG dùng "so sánh ngang" để quyết định analysis_type**
+1. **TUYỆT ĐỐI KHÔNG trả về "overall"**
+2. **KHÔNG dùng "so sánh ngang" để quyết định analysis_type**
+3. **KHÔNG nhầm "phân tích" với "trending"**
+4. Không bỏ qua từ đồng nghĩa
 5. Không bỏ qua reasoning chi tiết
 
 ---
@@ -756,34 +775,6 @@ TABLE_NAMES = {{
 
 ---
 
-## 📋 TÓM TẮT ĐIỀU HÀNH
-
-### CREDIT RATING
-> 🏆 **Rating:** {{AAA/.../CCC}}  
-> 📈 **Outlook:** {{Positive/Stable/Negative}}
-
-### QUY MÔ
-
-| Chỉ tiêu | {{P1}} | {{P2}} | Δ% |
-|:---------|-----:|-----:|---:|
-| Tổng TS | {{V}} tỷ | {{V}} tỷ | {{±X%}} |
-| Vốn chủ | {{V}} tỷ | {{V}} tỷ | {{±X%}} |
-| Doanh thu | {{V}} tỷ | {{V}} tỷ | {{±X%}} |
-| LN | {{V}} tỷ | {{V}} tỷ | {{±X%}} |
-
-### ✅ ĐIỂM MẠNH (Top 3)
-1. **{{Chỉ tiêu}}:** {{V}} - ✅ Tốt
-2. {{...}}
-
-### 🚩 ĐIỂM YẾU (Top 3)
-1. **{{Chỉ tiêu}}:** {{V}} - 🚩 Rủi ro
-2. {{...}}
-
-### 🔴 RỦI RO (Top 3)
-**1. {{Rủi ro}}** - 🔴 Cao: {{Mô tả}}
-
----
-
 ## {{TABLE_NAME}}
 
 ### {{Section_1}}
@@ -857,13 +848,45 @@ TABLE_NAMES = {{
 
 ### A. ĐIỂM MẠNH (Top 5)
 1. **{{CT}}:** {{V}} - {{Mô tả}}
+2. **{{CT}}:** {{V}} - {{Mô tả}}
+3. **{{CT}}:** {{V}} - {{Mô tả}}
+4. **{{CT}}:** {{V}} - {{Mô tả}}
+5. **{{CT}}:** {{V}} - {{Mô tả}}
 
 ### B. ĐIỂM YẾU (Top 5)
 1. **{{CT}}:** {{V}} - {{Mô tả}}
+2. **{{CT}}:** {{V}} - {{Mô tả}}
+3. **{{CT}}:** {{V}} - {{Mô tả}}
+4. **{{CT}}:** {{V}} - {{Mô tả}}
+5. **{{CT}}:** {{V}} - {{Mô tả}}
 
 ### C. RỦI RO CHI TIẾT
 
 **🔴 1. {{Rủi ro}}**
+
+{{2-3 đoạn}}
+
+Bằng chứng:
+- {{SL 1}}
+- {{SL 2}}
+
+Tác động:
+- Ngắn hạn: {{...}}
+- Dài hạn: {{...}}
+
+**🔴 2. {{Rủi ro}}**
+
+{{2-3 đoạn}}
+
+Bằng chứng:
+- {{SL 1}}
+- {{SL 2}}
+
+Tác động:
+- Ngắn hạn: {{...}}
+- Dài hạn: {{...}}
+
+**🔴 3. {{Rủi ro}}**
 
 {{2-3 đoạn}}
 
@@ -917,44 +940,6 @@ Tác động:
 
 **Rủi ro vỡ nợ:** {{Thấp/TB/Cao}}
 {{Chi tiết}}
-
----
-
-## KHUYẾN NGHỊ
-
-### Thông tin cần bổ sung
-- Chiến lược kinh doanh
-- Lịch sử tín dụng
-- TSĐB
-
-### Vấn đề cần làm rõ
-1. {{Vấn đề 1}}
-2. {{Vấn đề 2}}
-
-### Biện pháp giảm thiểu
-
-**Ngắn hạn:**
-- {{...}}
-
-**Trung hạn:**
-- {{...}}
-
-**Dài hạn:**
-- {{...}}
-
----
-
-## LƯU Ý
-
-⚠️ Báo cáo KHÔNG PHẢI quyết định tín dụng.
-
-Cần:
-- Phân tích định tính (5C)
-- Xem xét chính sách nội bộ
-- Đánh giá TSĐB
-- Xác minh độc lập
-
-Cập nhật định kỳ.
 ```
 
 ---

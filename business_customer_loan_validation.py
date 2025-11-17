@@ -1,5 +1,4 @@
 import json
-import os
 
 import mlflow
 from dotenv import load_dotenv
@@ -8,11 +7,10 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph.state import CompiledStateGraph, StateGraph
-from mlflow.types.agent import ChatAgentMessage
+from toon import encode
 
 from src.agent.agent_application import AgentApplication
 from src.graph.graph_provider import GraphProvider
-from src.lending.agent.documentation import DNSE_TEST_QUESTION, SSI_TEST_QUESTION
 from src.lending.agent.lending_agent_model import BusinessLoanValidationState, LendingShortTermContext, \
     OrchestrationInformation
 from src.lending.agent.lending_prompt import (
@@ -23,7 +21,6 @@ from src.lending.agent.lending_prompt import (
 )
 from src.lending.agent.mapping import DIMENSIONAL_MAPPING
 from src.lending.agent.short_term_context import InMemoryShortTermContextRepository
-from toon import encode
 
 load_dotenv()
 
@@ -31,7 +28,7 @@ load_dotenv()
 class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationState]):
 
     def __init__(self):
-        self.llm = ChatGoogleGenerativeAI(model="gemini-2.5-pro", temperature=0)
+        self.llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
         self.short_term_context_repository = InMemoryShortTermContextRepository()
 
     def provide(self) -> CompiledStateGraph:
@@ -303,7 +300,7 @@ def calculate_financial_metrics(data):
         ebitda = (
             ebit + depreciation_amortization
             if ebit is not None and depreciation_amortization is not None
-            else ebit  # Tạm thời = EBIT nếu chưa có khấu hao
+            else None  # Tạm thời = EBIT nếu chưa có khấu hao
         )
 
         # 4. Growth metrics
@@ -567,13 +564,13 @@ def build_financial_table_output(
     }
 
 
-# mlflow.langchain.autolog()
+mlflow.langchain.autolog()
 graph = BusinessLoanValidationGraphProvider().provide()
 chat_agent = AgentApplication.initialize(graph=graph)
-incoming_message = ChatAgentMessage(role="user", content=SSI_TEST_QUESTION)
-response = chat_agent.predict([incoming_message])
-print(response)
-# mlflow.models.set_model(chat_agent)
+# incoming_message = ChatAgentMessage(role="user", content=SSI_TEST_QUESTION)
+# response = chat_agent.predict([incoming_message])
+# print(response)
+mlflow.models.set_model(chat_agent)
 
 # if __name__ == '__main__':
 #     documents = json.loads(SSI_TEST_QUESTION).get("documents")
