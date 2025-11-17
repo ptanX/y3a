@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from src.bidv.db.bidv_entity import CustomerProfile, LegalRepresentative
+from src.lending.db.bidv_entity import CustomerProfile, LegalRepresentative
 
 
 @dataclass

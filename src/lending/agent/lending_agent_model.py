@@ -23,7 +23,7 @@ class OrchestrationInformation(BaseModel):
     analysis_type: str = Field(
         description="Loại phân tích: overall, trending, hoặc deep_analysis"
     )
-    dimensions: List[DimensionRequest] = Field(
+    query_scopes: List[str] = Field(
         description="Danh sách các dimensions và sub-dimensions cần phân tích"
     )
     time_period: List[str] = Field(
@@ -41,8 +41,8 @@ class LendingShortTermContext(BaseModel):
         description="Loại phân tích: overall, trending, hoặc deep_analysis"
     )
 
-    previous_dimensions: List[DimensionRequest] = Field(
-        description="Danh sách các dimensions và sub-dimensions cần phân tích"
+    previous_query_scopes: List[str] = Field(
+        description="Danh sách các query scope cũ"
     )
 
     previous_period: List[str] = Field(
@@ -53,4 +53,4 @@ class LendingShortTermContext(BaseModel):
 class BusinessLoanValidationState(DefaultState):
     question: str
     orchestration_information: OrchestrationInformation
-    fined_grain_data: List[Dict]
+    financial_outputs: List[Dict]

@@ -7,44 +7,28 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph.state import CompiledStateGraph, StateGraph
-from pydantic import BaseModel, Field
+from toon import encode
 
 from src.agent.agent_application import AgentApplication
-from src.bidv.agent.lending_agent_model import BusinessLoanValidationState, LendingShortTermContext, \
+from src.graph.graph_provider import GraphProvider
+from src.lending.agent.lending_agent_model import BusinessLoanValidationState, LendingShortTermContext, \
     OrchestrationInformation
-from src.bidv.agent.lending_prompt import (
+from src.lending.agent.lending_prompt import (
     INCOMING_QUESTION_ANALYSIS,
-    OVERALL_ANALYSIS_PROMPT,
+    TABULAR_RECEIVING_PROMPT,
     TRENDING_ANALYSIS_PROMPT,
     DEEP_ANALYSIS_PROMPT,
 )
-from src.bidv.agent.short_term_context import InMemoryShortTermContextRepository
-from src.graph.graph_provider import GraphProvider
-from src.state.type import DefaultState
+from src.lending.agent.mapping import DIMENSIONAL_MAPPING
+from src.lending.agent.short_term_context import InMemoryShortTermContextRepository
 
 load_dotenv()
-"""
-{
-  "dimensions": [
-    {
-      "dimension_name": "capital",
-      "sub_dimension_name": ["1", "2", "3"]
-    },
-    {
-      "dimension_name": "financial_situation",
-      "sub_dimension_name": ["1", "2", "3"]
-    }
-  ],
-  "analysis_type": "overall/trending/deep_analysis",
-  "time_period": "1/2/3"
-}
-"""
 
 
 class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationState]):
 
     def __init__(self):
-        self.llm = ChatGoogleGenerativeAI(model="gemini-2.5-pro", temperature=0)
+        self.llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
         self.short_term_context_repository = InMemoryShortTermContextRepository()
 
     def provide(self) -> CompiledStateGraph:
@@ -72,10 +56,18 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
                 if document_time in period_time:
                     filtered_documents.append(document)
         fined_grain_data = calculate_financial_metrics(filtered_documents)
+        financial_outputs = []
+        for query_scope in orchestration_information.query_scopes:
+            dimensional_mapping = DIMENSIONAL_MAPPING.get(query_scope)
+            financial_outputs.append(build_financial_table_output(
+                financial_metrics=fined_grain_data,
+                mapping=dimensional_mapping
+            )
+            )
         return {
             "question": question,
             "orchestration_information": orchestration_information,
-            "fined_grain_data": fined_grain_data,
+            "financial_outputs": financial_outputs,
         }
 
     def get_orchestration_information(self, document_id, question, documents):
@@ -85,7 +77,6 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         else:
             previous_context_json = "{}"
         available_time_period = []
-        # print(f"########### {previous_context_json} ########")
         for document in documents:
             report_date = document.get("report_date")
             available_time_period.append(report_date)
@@ -106,12 +97,10 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         print(orchestration_response)
         current_context = LendingShortTermContext(
             previous_analysis_type=orchestration_response.analysis_type,
-            previous_dimensions=orchestration_response.dimensions,
+            previous_query_scopes=orchestration_response.query_scopes,
             previous_period=orchestration_response.time_period
         )
         self.short_term_context_repository.put(thread_id=document_id, context=current_context)
-        # memory_context = self.short_term_context_repository.get("680314b8-14b8-1803-99ee-f8afe3e7b2de")[-1]
-        # print(f"########## {memory_context.model_dump_json()} #########")
         return orchestration_response
 
     def route_function(self, state):
@@ -157,11 +146,11 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         question = state["question"]
         orchestration_request = state["orchestration_information"]
         orchestration_request_json = orchestration_request.model_dump_json()
-        financial_data_input = state["fined_grain_data"]
-        financial_data_input_json = json.dumps(financial_data_input)
+        financial_outputs = state["financial_outputs"]
+        financial_data_input_toon = encode(financial_outputs)
         analysis_type = orchestration_request.analysis_type
-        if analysis_type == "overall":
-            prompt_template = ChatPromptTemplate.from_template(OVERALL_ANALYSIS_PROMPT)
+        if analysis_type == "tabular":
+            prompt_template = ChatPromptTemplate.from_template(TABULAR_RECEIVING_PROMPT)
         elif analysis_type == "trending":
             prompt_template = ChatPromptTemplate.from_template(TRENDING_ANALYSIS_PROMPT)
         elif analysis_type == "deep_analysis":
@@ -172,7 +161,7 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
                 {
                     "question": RunnablePassthrough(),
                     "orchestration_request": lambda _: orchestration_request_json,
-                    "financial_data_input": lambda _: financial_data_input_json,
+                    "financial_data_input": lambda _: financial_data_input_toon,
                 }
                 | prompt_template
                 | self.llm
@@ -183,9 +172,13 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
 
 def calculate_financial_metrics(data):
     """
-    Tính toán các chỉ số tài chính từ dữ liệu raw
+    Tính toán các chỉ số tài chính từ dữ liệu raw với công thức đã FIX
     Input: list of dictionaries
-    Output: list of dictionaries với các chỉ số đã tính
+    Output: list of dictionaries gồm:
+        - Metadata (company, report_date, currency)
+        - financial_statement: dict chứa tất cả fields từ financial_statement
+        - income_statement: dict chứa tất cả fields từ income_statement
+        - Calculated metrics
     """
     results = []
 
@@ -225,342 +218,236 @@ def calculate_financial_metrics(data):
                             return field["value"]
             return None
 
-        # Lấy các giá trị từ financial_statement
-        total_assets = get_value("financial_statement", "total_assets")
-        total_liabilities = get_value("financial_statement", "liabilities")
-        short_term_liabilities = get_value("financial_statement", "short_term_liabilities")
-        long_term_liabilities = get_value("financial_statement", "long_term_liabilities")
-        owners_equity = get_value("financial_statement", "owners_equity")
-        receivables = get_value("financial_statement", "receivables")
-        short_term_assets = get_value("financial_statement", "short_term_assets")
-        cash_and_cash_equivalents = get_value("financial_statement", "cash_and_cash_equivalents")
+        def get_all_fields(report_name):
+            """Lấy tất cả fields từ một report dưới dạng dict"""
+            result_dict = {}
+            for r in report.get("reports", []):
+                if r["report_name"] == report_name:
+                    for field in r.get("fields", []):
+                        result_dict[field["name"]] = field["value"]
+            return result_dict
 
-        # Lấy các giá trị từ income_statement
-        total_operating_revenue = get_value("income_statement", "total_operating_revenue")
-        interest_and_fee_income = get_value("income_statement",
-                                            "interest_and_fee_income_from_financial_assets_recognized_through_p_and_l")
-        interest_income_from_fa = get_value("income_statement",
-                                            "interest_income_from_financial_assets_recognized_through_p_and_l")
-        increase_decrease_fair_value_fa = get_value("income_statement",
-                                                    "increase_decrease_in_fair_value_of_financial_assets_recognized_through_p_and_l")
-        dividend_and_interest = get_value("income_statement",
-                                          "dividend_and_interest_income_from_financial_assets_recognized_through_p_and_l")
-        decrease_fair_value_warrants = get_value("income_statement", "decrease_in_fair_value_of_outstanding_warrants")
-        interest_income_htm = get_value("income_statement", "interest_income_from_held_to_maturity_investments")
-        interest_income_loans = get_value("income_statement", "interest_income_from_loans_and_receivables")
-        interest_income_afs = get_value("income_statement", "interest_income_from_available_for_sale_financial_assets")
-        gain_hedging_derivatives = get_value("income_statement", "gain_from_hedging_derivatives")
-        brokerage_revenue = get_value("income_statement", "brokerage_revenue")
-        underwriting_revenue = get_value("income_statement", "underwriting_revenue")
-        investment_advisory_revenue = get_value("income_statement", "investment_advisory_revenue")
-        securities_custody_revenue = get_value("income_statement", "securities_custody_revenue")
-        financial_advisory_revenue = get_value("income_statement", "financial_advisory_revenue")
-        other_operating_income = get_value("income_statement", "other_operating_income")
+        # ============ LẤY TOÀN BỘ FINANCIAL_STATEMENT & INCOME_STATEMENT ============
+        financial_statement_data = get_all_fields("financial_statement")
+        income_statement_data = get_all_fields("income_statement")
 
-        total_operating_expenses = get_value("income_statement", "total_operating_expenses")
-        interest_expense_fa = get_value("income_statement",
-                                        "interest_expense_on_financial_assets_recognized_through_p_and_l")
-        interest_expense = get_value("income_statement", "interest_expense")
-        decrease_fair_value_fa = get_value("income_statement", "decrease_in_fair_value_of_financial_assets")
-        transaction_fees_fa = get_value("income_statement", "transaction_fees_for_financial_assets")
-        increase_fair_value_warrants = get_value("income_statement", "increase_in_fair_value_of_outstanding_warrants")
-        loss_htm = get_value("income_statement", "loss_from_held_to_maturity_investments")
-        loss_afs_reclassification = get_value("income_statement",
-                                              "loss_and_recognition_of_fair_value_difference_of_available_for_sale_financial_assets_upon_reclassification")
-        provisions_impairment = get_value("income_statement", "provisions_for_impairment_of_financial_assets")
-        loss_hedging_derivatives = get_value("income_statement", "loss_from_hedging_derivatives")
-        operating_expense = get_value("income_statement", "operating_expense")
-        brokerage_fees = get_value("income_statement", "brokerage_fees")
-        underwriting_costs = get_value("income_statement", "underwriting_and_bond_issuance_costs")
-        investment_advisory_expenses = get_value("income_statement", "investment_advisory_expenses")
-        securities_custody_expenses = get_value("income_statement", "securities_custody_expenses")
-        financial_advisory_expenses = get_value("income_statement", "financial_advisory_expenses")
-        other_operating_expenses = get_value("income_statement", "other_operating_expenses")
+        # ============ LẤY GIÁ TRỊ ĐỂ TÍNH TOÁN ============
+        total_assets = financial_statement_data.get("total_assets")
+        total_liabilities = financial_statement_data.get("liabilities")
+        short_term_liabilities = financial_statement_data.get("short_term_liabilities")
+        long_term_liabilities = financial_statement_data.get("long_term_liabilities")
+        owners_equity = financial_statement_data.get("owners_equity")
+        receivables = financial_statement_data.get("receivables")
+        short_term_assets = financial_statement_data.get("short_term_assets")
+        cash_and_cash_equivalents = financial_statement_data.get("cash_and_cash_equivalents")
 
-        total_financial_operating_revenue = get_value("income_statement", "total_financial_operating_revenue")
-        exchange_rate_unrealized = get_value("income_statement",
-                                             "increase_decrease_in_fair_value_of_exchange_rate_and_unrealized")
-        interest_income_deposits = get_value("income_statement", "interest_income_from_deposits")
-        gain_disposal_investments = get_value("income_statement",
-                                              "gain_on_disposal_of_investments_in_subsidiaries_associates_and_joint_ventures")
-        other_investment_income = get_value("income_statement", "other_investment_income")
+        total_operating_revenue = income_statement_data.get("total_operating_revenue")
+        interest_expense_borrowings = income_statement_data.get("interest_expense_on_borrowings")
+        operating_profit = income_statement_data.get("operating_profit")
+        accounting_profit_before_tax = income_statement_data.get("accounting_profit_before_tax")
+        net_profit_after_tax = income_statement_data.get("net_profit_after_tax")
 
-        exchange_rate_loss = get_value("income_statement", "increase_decrease_in_fair_value_of_exchange_rate_loss")
-        interest_expense_borrowings = get_value("income_statement", "interest_expense_on_borrowings")
-        loss_disposal_investments = get_value("income_statement",
-                                              "loss_on_disposal_of_investments_in_subsidiaries_associates_and_joint_ventures")
-        provision_long_term_investments = get_value("income_statement",
-                                                    "provision_for_impairment_of_long_term_financial_investments")
-        other_financial_expenses = get_value("income_statement", "other_financial_expenses")
-        total_financial_expenses = get_value("income_statement", "total_financial_expenses")
-
-        selling_expenses = get_value("income_statement", "selling_expenses")
-        general_admin_expenses = get_value("income_statement", "general_and_administrative_expenses")
-
-        operating_profit = get_value("income_statement", "operating_profit")
-        other_income = get_value("income_statement", "other_income")
-        other_expenses = get_value("income_statement", "other_expenses")
-        net_other_income_expenses = get_value("income_statement", "net_other_income_and_expenses")
-        accounting_profit_before_tax = get_value("income_statement", "accounting_profit_before_tax")
-        realized_profit = get_value("income_statement", "realized_profit")
-        unrealized_profit_loss = get_value("income_statement", "unrealized_profit_loss")
-        total_corporate_income_tax = get_value("income_statement", "total_corporate_income_tax")
-        current_tax_expense = get_value("income_statement", "current_corporate_income_tax_expense")
-        deferred_tax_benefit = get_value("income_statement", "benefit_from_deferred_income_tax_expense")
-        net_profit_after_tax = get_value("income_statement", "net_profit_after_tax")
-        profit_equity_holders = get_value("income_statement", "profit_attributable_to_equity_holders")
-        profit_after_tax_funds = get_value("income_statement", "profit_after_tax_allocated_to_funds")
-        profit_non_controlling = get_value("income_statement", "profit_attributable_to_non_controlling_interests")
-
-        # Lấy giá trị năm trước để tính growth và ratios
+        # ============ GIÁ TRỊ NĂM TRƯỚC ============
         prev_total_assets = get_prev_value("financial_statement", "total_assets")
         prev_owners_equity = get_prev_value("financial_statement", "owners_equity")
         prev_net_profit = get_prev_value("income_statement", "net_profit_after_tax")
 
-        # Tính toán các chỉ số
-        # Debt management
+        # ============ TÍNH TOÁN CÁC CHỈ SỐ ============
+
+        # 1. Debt management ratios
         debt_to_equity = (
             total_liabilities / owners_equity
             if owners_equity and owners_equity != 0
             else None
         )
+
         leverage_ratio = (
             total_assets / owners_equity
             if owners_equity and owners_equity != 0
             else None
         )
+
         debt_ratio = (
             total_liabilities / total_assets
             if total_assets and total_assets != 0
             else None
         )
+
         long_term_debt_to_equity = (
             long_term_liabilities / owners_equity
             if long_term_liabilities and owners_equity and owners_equity != 0
             else None
         )
 
-        # Interest coverage ratio = EBIT / Interest Expense
+        # 2. EBIT & Interest Coverage (ĐÃ SỬA)
+        # EBIT = Tổng lợi nhuận kế toán trước thuế + Chi phí lãi vay
         ebit = (
-            operating_profit + interest_expense_borrowings
-            if operating_profit and interest_expense_borrowings
+            accounting_profit_before_tax + interest_expense_borrowings
+            if accounting_profit_before_tax is not None and interest_expense_borrowings is not None
             else None
         )
+
         interest_coverage_ratio = (
             ebit / interest_expense_borrowings
             if ebit and interest_expense_borrowings and interest_expense_borrowings != 0
             else None
         )
 
-        # Debt service coverage - cần cash flow data, để null
-        debt_service_coverage_ratio = None
+        # 3. EBITDA (ĐÃ SỬA - CẦN BỔ SUNG KHẤU HAO TỪ CASHFLOW)
+        # EBITDA = EBIT + Khấu hao
+        # TODO: Cần lấy khấu hao từ báo cáo lưu chuyển tiền tệ
+        depreciation_amortization = None  # Placeholder - cần get từ cashflow report
+        ebitda = (
+            ebit + depreciation_amortization
+            if ebit is not None and depreciation_amortization is not None
+            else None  # Tạm thời = EBIT nếu chưa có khấu hao
+        )
 
-        # Growth metrics
+        # 4. Growth metrics
         asset_growth_rate = (
             ((total_assets - prev_total_assets) / prev_total_assets)
             if prev_total_assets and prev_total_assets != 0
             else None
         )
+
         net_profit_growth_rate = (
             ((net_profit_after_tax - prev_net_profit) / prev_net_profit)
             if prev_net_profit and prev_net_profit != 0
             else None
         )
 
-        # Asset turnover metrics
+        # 5. Asset turnover metrics
         receivables_turnover = (
             total_operating_revenue / receivables
             if total_operating_revenue and receivables and receivables != 0
             else None
         )
 
-        # Operational efficiency (sử dụng total assets năm trước)
-        ato = (
-            total_operating_revenue / prev_total_assets
-            if total_operating_revenue and prev_total_assets and prev_total_assets != 0
+        # 6. ATO (ĐÃ SỬA)
+        # ATO = Tổng doanh thu hoạt động / Tổng tài sản bình quân
+        avg_total_assets = (
+            (total_assets + prev_total_assets) / 2
+            if total_assets is not None and prev_total_assets is not None
             else None
         )
-        fixed_asset_turnover = None
 
-        # Profit metrics
-        ebitda = ebit
+        ato = (
+            total_operating_revenue / avg_total_assets
+            if total_operating_revenue and avg_total_assets and avg_total_assets != 0
+            else None
+        )
+
+        # 7. Fixed asset turnover
+        fixed_asset_turnover = None  # Chưa có TSCĐ trong input
+
+        # 8. Profit margins
         ebit_margin = (
             ebit / total_operating_revenue
             if ebit and total_operating_revenue and total_operating_revenue != 0
             else None
         )
 
-        # Profitability ratios (sử dụng assets/equity năm trước)
+        operating_profit_margin = (
+            operating_profit / total_operating_revenue
+            if operating_profit and total_operating_revenue and total_operating_revenue != 0
+            else None
+        )
+
+        # 9. ROA (ĐÃ SỬA)
+        # ROA = Tổng lợi nhuận kế toán sau thuế / Tổng tài sản bình quân
+        roa = (
+            net_profit_after_tax / avg_total_assets
+            if net_profit_after_tax and avg_total_assets and avg_total_assets != 0
+            else None
+        )
+
+        # 10. ROE (ĐÃ SỬA)
+        # ROE = Tổng lợi nhuận kế toán sau thuế / Tổng vốn chủ sở hữu bình quân
+        avg_owners_equity = (
+            (owners_equity + prev_owners_equity) / 2
+            if owners_equity is not None and prev_owners_equity is not None
+            else None
+        )
+
+        roe = (
+            net_profit_after_tax / avg_owners_equity
+            if net_profit_after_tax and avg_owners_equity and avg_owners_equity != 0
+            else None
+        )
+
+        # 11. ROS
         ros = (
             net_profit_after_tax / total_operating_revenue
             if net_profit_after_tax and total_operating_revenue and total_operating_revenue != 0
             else None
         )
-        roa = (
-            net_profit_after_tax / prev_total_assets
-            if net_profit_after_tax and prev_total_assets and prev_total_assets != 0
-            else None
-        )
-        roe = (
-            net_profit_after_tax / prev_owners_equity
-            if net_profit_after_tax and prev_owners_equity and prev_owners_equity != 0
-            else None
-        )
 
-        # Gross profit margin - không có COGS
-        gross_profit_margin = None
-
-        # Liquidity ratios
+        # 12. Liquidity ratios
         current_ratio = (
             short_term_assets / short_term_liabilities
             if short_term_assets and short_term_liabilities and short_term_liabilities != 0
             else None
         )
+
         quick_ratio = (
-            (short_term_assets - 0) / short_term_liabilities
+            short_term_assets / short_term_liabilities
             if short_term_assets and short_term_liabilities and short_term_liabilities != 0
             else None
         )
+
         cash_ratio = (
             cash_and_cash_equivalents / short_term_liabilities
             if cash_and_cash_equivalents and short_term_liabilities and short_term_liabilities != 0
             else None
         )
+
         working_capital = (
             short_term_assets - short_term_liabilities
             if short_term_assets and short_term_liabilities
             else None
         )
 
-        # Tạo output structure
+        # ============ OUTPUT: METADATA + RAW DATA + METRICS ============
         result = {
+            # Metadata
             "company": report["company"],
             "report_date": report["report_date"],
             "currency": report["currency"],
-            "capital_adequacy": {
-                "capital_structure": {
-                    "total_assets": total_assets,
-                    "total_liabilities": total_liabilities,
-                    "short_term_liabilities": short_term_liabilities,
-                    "long_term_liabilities": long_term_liabilities,
-                    "owners_equity": owners_equity,
-                },
-                "debt_management": {
-                    "debt_to_equity": debt_to_equity,
-                    "leverage_ratio": leverage_ratio,
-                    "debt_service_coverage_ratio": debt_service_coverage_ratio,
-                    "interest_coverage_ratio": interest_coverage_ratio,
-                    "debt_ratio": debt_ratio,
-                    "long_term_debt_to_equity": long_term_debt_to_equity,
-                },
-                "growth_metrics": {"asset_growth_rate": asset_growth_rate},
-            },
-            "asset_quality": {
-                "asset_quality_metrics": {"receivables": receivables},
-                "asset_turnover_metrics": {
-                    "receivables_turnover": receivables_turnover
-                },
-            },
-            "management_quality": {
-                "operating_revenue": {
-                    "total_operating_revenue": total_operating_revenue,
-                    "interest_and_fee_income_from_financial_assets_recognized_through_p_and_l": interest_and_fee_income,
-                    "interest_income_from_financial_assets_recognized_through_p_and_l": interest_income_from_fa,
-                    "increase_decrease_in_fair_value_of_financial_assets_recognized_through_p_and_l": increase_decrease_fair_value_fa,
-                    "dividend_and_interest_income_from_financial_assets_recognized_through_p_and_l": dividend_and_interest,
-                    "decrease_in_fair_value_of_outstanding_warrants": decrease_fair_value_warrants,
-                    "interest_income_from_held_to_maturity_investments": interest_income_htm,
-                    "interest_income_from_loans_and_receivables": interest_income_loans,
-                    "interest_income_from_available_for_sale_financial_assets": interest_income_afs,
-                    "gain_from_hedging_derivatives": gain_hedging_derivatives,
-                    "brokerage_revenue": brokerage_revenue,
-                    "underwriting_revenue": underwriting_revenue,
-                    "investment_advisory_revenue": investment_advisory_revenue,
-                    "securities_custody_revenue": securities_custody_revenue,
-                    "financial_advisory_revenue": financial_advisory_revenue,
-                    "other_operating_income": other_operating_income,
-                },
-                "operating_expenses": {
-                    "total_operating_expenses": total_operating_expenses,
-                    "interest_expense_on_financial_assets_recognized_through_p_and_l": interest_expense_fa,
-                    "interest_expense": interest_expense,
-                    "decrease_in_fair_value_of_financial_assets": decrease_fair_value_fa,
-                    "transaction_fees_for_financial_assets": transaction_fees_fa,
-                    "increase_in_fair_value_of_outstanding_warrants": increase_fair_value_warrants,
-                    "loss_from_held_to_maturity_investments": loss_htm,
-                    "loss_and_recognition_of_fair_value_difference_of_available_for_sale_financial_assets_upon_reclassification": loss_afs_reclassification,
-                    "provisions_for_impairment_of_financial_assets": provisions_impairment,
-                    "loss_from_hedging_derivatives": loss_hedging_derivatives,
-                    "operating_expense": operating_expense,
-                    "brokerage_fees": brokerage_fees,
-                    "underwriting_and_bond_issuance_costs": underwriting_costs,
-                    "investment_advisory_expenses": investment_advisory_expenses,
-                    "securities_custody_expenses": securities_custody_expenses,
-                    "financial_advisory_expenses": financial_advisory_expenses,
-                    "other_operating_expenses": other_operating_expenses,
-                },
-                "financial_revenue": {
-                    "total_financial_operating_revenue": total_financial_operating_revenue,
-                    "increase_decrease_in_fair_value_of_exchange_rate_and_unrealized": exchange_rate_unrealized,
-                    "interest_income_from_deposits": interest_income_deposits,
-                    "gain_on_disposal_of_investments_in_subsidiaries_associates_and_joint_ventures": gain_disposal_investments,
-                    "other_investment_income": other_investment_income,
-                },
-                "financial_expenses": {
-                    "total_financial_expenses": total_financial_expenses,
-                    "increase_decrease_in_fair_value_of_exchange_rate_loss": exchange_rate_loss,
-                    "interest_expense_on_borrowings": interest_expense_borrowings,
-                    "loss_on_disposal_of_investments_in_subsidiaries_associates_and_joint_ventures": loss_disposal_investments,
-                    "provision_for_impairment_of_long_term_financial_investments": provision_long_term_investments,
-                    "other_financial_expenses": other_financial_expenses,
-                },
-                "administrative_expenses": {
-                    "selling_expenses": selling_expenses,
-                    "general_and_administrative_expenses": general_admin_expenses,
-                },
-                "operational_efficiency": {
-                    "ato": ato,
-                    "fixed_asset_turnover": fixed_asset_turnover,
-                },
-            },
-            "earnings": {
-                "profit_and_tax": {
-                    "operating_profit": operating_profit,
-                    "other_income": other_income,
-                    "other_expenses": other_expenses,
-                    "net_other_income_and_expenses": net_other_income_expenses,
-                    "accounting_profit_before_tax": accounting_profit_before_tax,
-                    "realized_profit": realized_profit,
-                    "unrealized_profit_loss": unrealized_profit_loss,
-                    "total_corporate_income_tax": total_corporate_income_tax,
-                    "current_corporate_income_tax_expense": current_tax_expense,
-                    "benefit_from_deferred_income_tax_expense": deferred_tax_benefit,
-                    "net_profit_after_tax": net_profit_after_tax,
-                    "profit_attributable_to_equity_holders": profit_equity_holders,
-                    "profit_after_tax_allocated_to_funds": profit_after_tax_funds,
-                    "profit_attributable_to_non_controlling_interests": profit_non_controlling,
-                },
-                "profit_metrics": {
-                    "ebit": ebit,
-                    "ebitda": ebitda,
-                    "ebit_margin": ebit_margin,
-                },
-                "profitability_ratios": {
-                    "gross_profit_margin": gross_profit_margin,
-                    "ros": ros,
-                    "roa": roa,
-                    "roe": roe,
-                },
-                "growth_metrics": {"net_profit_growth_rate": net_profit_growth_rate},
-            },
-            "liquidity": {
-                "liquidity_ratios": {
-                    "current_ratio": current_ratio,
-                    "quick_ratio": quick_ratio,
-                    "cash_ratio": cash_ratio,
-                    "working_capital": working_capital,
-                }
-            },
+
+            # Raw data components
+            "financial_statement": financial_statement_data,
+            "income_statement": income_statement_data,
+
+            # Calculated Metrics - Debt Management
+            "debt_to_equity": debt_to_equity,
+            "leverage_ratio": leverage_ratio,
+            "debt_ratio": debt_ratio,
+            "long_term_debt_to_equity": long_term_debt_to_equity,
+            "interest_coverage_ratio": interest_coverage_ratio,
+
+            # Calculated Metrics - Growth
+            "asset_growth_rate": asset_growth_rate,
+            "net_profit_growth_rate": net_profit_growth_rate,
+
+            # Calculated Metrics - Efficiency
+            "receivables_turnover": receivables_turnover,
+            "ato": ato,
+            "fixed_asset_turnover": fixed_asset_turnover,
+
+            # Calculated Metrics - Profitability
+            "ebit": ebit,
+            "ebitda": ebitda,
+            "ebit_margin": ebit_margin,
+            "operating_profit_margin": operating_profit_margin,
+            "roa": roa,
+            "roe": roe,
+            "ros": ros,
+
+            # Calculated Metrics - Liquidity
+            "current_ratio": current_ratio,
+            "quick_ratio": quick_ratio,
+            "cash_ratio": cash_ratio,
+            "working_capital": working_capital,
         }
 
         results.append(result)
@@ -568,7 +455,127 @@ def calculate_financial_metrics(data):
     return results
 
 
+def build_financial_table_output(
+        financial_metrics: list[dict],
+        mapping: dict
+) -> dict:
+    """
+    Generate DataFrame-like output from financial metrics and mapping configuration,
+    with rows ordered strictly by the order of fields in mapping.
+    """
+
+    # Extract periods from financial_metrics and sort descending (newest first)
+    periods = sorted(
+        [metric["report_date"][:4] for metric in financial_metrics],
+        reverse=True
+    )
+
+    # Create lookup dictionary by year
+    metrics_by_period = {
+        metric["report_date"][:4]: metric for metric in financial_metrics
+    }
+
+    # Generate column names
+    columns = ["Chỉ tiêu"]
+
+    # Determine if has proportion or difference
+    has_proportion = any(field.get("show_proportion", False) for field in mapping.get("fields", []))
+    has_difference = any(field.get("show_difference", False) for field in mapping.get("fields", []))
+
+    # Build columns for each period
+    for period in periods:
+        columns.append(f"Giá trị năm {period} \n (Số liệu trên bctc)")
+        if has_proportion:
+            columns.append(f"Tỷ trọng {period} \n (Đơn vị %)")
+
+    # Add difference columns
+    if has_difference:
+        for i in range(len(periods) - 1):
+            columns.append(f"Chênh lệch {periods[i]} - {periods[i + 1]} \n (Đơn vị %)")
+
+    # Build data rows
+    data = []
+
+    section_name = mapping.get("description", "")
+    if section_name:
+        header_row = [section_name] + [None] * (len(columns) - 1)
+        data.append(header_row)
+
+    # Duyệt fields theo đúng thứ tự trong mapping
+    for field in mapping.get("fields", []):
+        if field.get("is_group_header"):
+            group_row = [field.get("display_name", "")] + [None] * (len(columns) - 1)
+            data.append(group_row)
+            continue
+
+        row = [field.get("display_name", "")]
+        field_path = field.get("field_path", "")
+        proportion_base = field.get("proportion_base")
+        show_proportion = field.get("show_proportion", False) or proportion_base
+        show_difference = field.get("show_difference", False)
+
+        # Extract values for each period
+        values = []
+        for period in periods:
+            metric = metrics_by_period.get(period)
+            value = None
+            if metric and field_path:
+                parts = field_path.split(".")
+                if len(parts) == 2:
+                    source, field_name = parts
+                    if source in metric:
+                        value = metric[source].get(field_name)
+                else:
+                    value = metric.get(field_path)
+
+            values.append(value)
+            row.append(value)
+
+            # Calculate proportion if enabled
+            if has_proportion:
+                proportion = None
+                if show_proportion and proportion_base and metric:
+                    base_parts = proportion_base.split(".")
+                    base_value = None
+                    if len(base_parts) == 2:
+                        base_source, base_field = base_parts
+                        if base_source in metric:
+                            base_value = metric[base_source].get(base_field)
+                    if value is not None and base_value is not None and base_value != 0:
+                        proportion = (value / base_value) * 100
+                row.append(proportion)
+
+        # Calculate differences if enabled
+        if has_difference:
+            for i in range(len(periods) - 1):
+                diff = None
+                if show_difference:
+                    current_val = values[i]
+                    prev_val = values[i + 1]
+                    if current_val is not None and prev_val is not None and prev_val != 0:
+                        diff = ((current_val - prev_val) / prev_val) * 100
+                row.append(diff)
+
+        data.append(row)
+
+    return {
+        "columns": columns,
+        "data": data
+    }
+
+
 mlflow.langchain.autolog()
 graph = BusinessLoanValidationGraphProvider().provide()
 chat_agent = AgentApplication.initialize(graph=graph)
+# incoming_message = ChatAgentMessage(role="user", content=SSI_TEST_QUESTION)
+# response = chat_agent.predict([incoming_message])
+# print(response)
 mlflow.models.set_model(chat_agent)
+
+# if __name__ == '__main__':
+#     documents = json.loads(SSI_TEST_QUESTION).get("documents")
+#     financial_metrics = calculate_financial_metrics(documents)
+#     mapping = DIMENSIONAL_MAPPING.get("income_statement_horizontal")
+#     financial_table_metrics = build_financial_table_output(financial_metrics=financial_metrics,
+#                                                            mapping=mapping)
+#     print(financial_table_metrics)

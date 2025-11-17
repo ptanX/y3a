@@ -5,7 +5,7 @@ import mlflow
 from mlflow import MlflowClient, MlflowException
 from mlflow.entities.model_registry import RegisteredModel
 
-from src.bidv.agent.documentation import DNSE_TEST_QUESTION
+from src.lending.agent.documentation import DNSE_TEST_QUESTION
 from src.config.settings import MODEL_NAME, MODEL_VERSION_ALIAS
 
 client = MlflowClient()

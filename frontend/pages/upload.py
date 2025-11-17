@@ -5,7 +5,7 @@ from datetime import datetime
 import streamlit as st
 
 from frontend.menu import menu_with_redirect
-from src.bidv import e2e_usecases
+from src.lending import e2e_usecases
 
 menu_with_redirect()
 

@@ -12,12 +12,12 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from src.bidv import email_handling
-from src.bidv.db.bidv_entity import DocumentationInformation
-from src.bidv.pdf_text_extractor import DocumentAIExtractor
-from src.bidv.services.data_validator_service import DataValidatorService
-from src.bidv.startup.environment_initialization import DATABASE_PATH
-from src.bidv.table_parsing import extract_information
+from src.lending import email_handling
+from src.lending.db.bidv_entity import DocumentationInformation
+from src.lending.pdf_text_extractor import DocumentAIExtractor
+from src.lending.services.data_validator_service import DataValidatorService
+from src.lending.startup.environment_initialization import DATABASE_PATH
+from src.lending.table_parsing import extract_information
 from src.dispatcher.executions_dispatcher import ExecutionDispatcherBuilder, ExecutionInput, ExecutionOutput
 from src.ocr.data.data_retriever import FinancialSecuritiesReportDataRetriever, BusinessRegistrationDataRetriever, \
     CompanyCharterDataRetriever
