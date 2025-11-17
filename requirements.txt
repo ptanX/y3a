@@ -42,3 +42,5 @@ google-auth==2.40.3
 transformers
 accelerate
 torch>=2.0.0  # ← Thêm torch explicit để tương thích numpy 1.x
+#Python TOON
+python-toon==0.1.3

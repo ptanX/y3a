@@ -7,10 +7,11 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph.state import CompiledStateGraph, StateGraph
-from pydantic import BaseModel, Field
+from mlflow.types.agent import ChatAgentMessage
 
 from src.agent.agent_application import AgentApplication
-from src.lending.agent.documentation import SSI_TEST_QUESTION
+from src.graph.graph_provider import GraphProvider
+from src.lending.agent.documentation import DNSE_TEST_QUESTION
 from src.lending.agent.lending_agent_model import BusinessLoanValidationState, LendingShortTermContext, \
     OrchestrationInformation
 from src.lending.agent.lending_prompt import (
@@ -19,10 +20,9 @@ from src.lending.agent.lending_prompt import (
     TRENDING_ANALYSIS_PROMPT,
     DEEP_ANALYSIS_PROMPT,
 )
-from src.lending.agent.mapping import DIMENSIONAL_BASED_MAPPING, TABLE_BASED_MAPPING
+from src.lending.agent.mapping import DIMENSIONAL_MAPPING
 from src.lending.agent.short_term_context import InMemoryShortTermContextRepository
-from src.graph.graph_provider import GraphProvider
-from src.state.type import DefaultState
+from toon import encode
 
 load_dotenv()
 """
@@ -74,10 +74,18 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
                 if document_time in period_time:
                     filtered_documents.append(document)
         fined_grain_data = calculate_financial_metrics(filtered_documents)
+        financial_outputs = []
+        for query_scope in orchestration_information.query_scopes:
+            dimensional_mapping = DIMENSIONAL_MAPPING.get(query_scope)
+            financial_outputs.append(build_financial_table_output(
+                financial_metrics=fined_grain_data,
+                mapping=dimensional_mapping
+                )
+            )
         return {
             "question": question,
             "orchestration_information": orchestration_information,
-            "fined_grain_data": fined_grain_data,
+            "financial_outputs": financial_outputs,
         }
 
     def get_orchestration_information(self, document_id, question, documents):
@@ -87,7 +95,6 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         else:
             previous_context_json = "{}"
         available_time_period = []
-        # print(f"########### {previous_context_json} ########")
         for document in documents:
             report_date = document.get("report_date")
             available_time_period.append(report_date)
@@ -105,15 +112,13 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         )
         )
         orchestration_response = rag_chain.invoke(question)
-        print(orchestration_response)
+        # print(orchestration_response)
         current_context = LendingShortTermContext(
             previous_analysis_type=orchestration_response.analysis_type,
-            previous_dimensions=orchestration_response.dimensions,
+            previous_dimensions=orchestration_response.query_scopes,
             previous_period=orchestration_response.time_period
         )
         self.short_term_context_repository.put(thread_id=document_id, context=current_context)
-        # memory_context = self.short_term_context_repository.get("680314b8-14b8-1803-99ee-f8afe3e7b2de")[-1]
-        # print(f"########## {memory_context.model_dump_json()} #########")
         return orchestration_response
 
     def route_function(self, state):
@@ -159,8 +164,8 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         question = state["question"]
         orchestration_request = state["orchestration_information"]
         orchestration_request_json = orchestration_request.model_dump_json()
-        financial_data_input = state["fined_grain_data"]
-        financial_data_input_json = json.dumps(financial_data_input)
+        financial_outputs = state["financial_outputs"]
+        financial_data_input_toon = encode(financial_outputs)
         analysis_type = orchestration_request.analysis_type
         if analysis_type == "tabular":
             prompt_template = ChatPromptTemplate.from_template(TABULAR_RECEIVING_PROMPT)
@@ -174,7 +179,7 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
                 {
                     "question": RunnablePassthrough(),
                     "orchestration_request": lambda _: orchestration_request_json,
-                    "financial_data_input": lambda _: financial_data_input_json,
+                    "financial_data_input": lambda _: financial_data_input_toon,
                 }
                 | prompt_template
                 | self.llm
@@ -489,7 +494,7 @@ def build_financial_table_output(
     }
 
     # Generate column names
-    columns = ["indicator"]
+    columns = ["Chỉ tiêu"]
 
     # Determine if has proportion or difference
     has_proportion = any(field.get("show_proportion", False) for field in mapping.get("fields", []))
@@ -497,14 +502,14 @@ def build_financial_table_output(
 
     # Build columns for each period
     for period in periods:
-        columns.append(f"value_{period}")
+        columns.append(f"Giá trị năm {period} \n (Số liệu trên bctc)")
         if has_proportion:
-            columns.append(f"proportion_{period}")
+            columns.append(f"Tỷ trọng {period} \n (Đơn vị %)")
 
     # Add difference columns
     if has_difference:
         for i in range(len(periods) - 1):
-            columns.append(f"diff_{periods[i]}_{periods[i + 1]}")
+            columns.append(f"Chênh lệch {periods[i]} - {periods[i + 1]} \n (Đơn vị %)")
 
     # Build data rows
     data = []
@@ -577,15 +582,18 @@ def build_financial_table_output(
     }
 
 
-mlflow.langchain.autolog()
+# mlflow.langchain.autolog()
 graph = BusinessLoanValidationGraphProvider().provide()
 chat_agent = AgentApplication.initialize(graph=graph)
-mlflow.models.set_model(chat_agent)
+incoming_message = ChatAgentMessage(role="user", content=DNSE_TEST_QUESTION)
+response = chat_agent.predict([incoming_message])
+print(response)
+# mlflow.models.set_model(chat_agent)
 
 # if __name__ == '__main__':
 #     documents = json.loads(SSI_TEST_QUESTION).get("documents")
 #     financial_metrics = calculate_financial_metrics(documents)
-#     mapping = json.loads(TABLE_BASED_MAPPING).get("income_statement_horizontal")
+#     mapping = DIMENSIONAL_MAPPING.get("income_statement_horizontal")
 #     financial_table_metrics = build_financial_table_output(financial_metrics=financial_metrics,
 #                                                            mapping=mapping)
 #     print(financial_table_metrics)

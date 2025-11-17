@@ -440,14 +440,14 @@ ELSE IF câu hỏi confused (VD: "SSI thế nào?"):
 
 ### Format chung (cả table và dimension):
 ```json
-{
+{{
   "query_scope": ["table_name"] | ["dim1", "dim2", ...],
   "analysis_type": "tabular|trending|deep_analysis",
   "time_period": ["array of periods"],
   "confidence": 0.0-1.0,
   "reasoning": "Giải thích chi tiết",
   "suggested_clarifications": []
-}
+}}
 ```
 
 **Phân biệt Table vs Dimension:**
@@ -489,13 +489,13 @@ else:
 ### Ví dụ 1: Rõ ràng "lập bảng" → Table-based
 ```json
 // INPUT
-{
+{{
   "question": "Lập bảng phân tích doanh thu và lợi nhuận của SSI",
   "available_periods": ["2022", "2023", "2024"]
-}
+}}
 
 // OUTPUT
-{
+{{
   
   "query_scope": ["revenue_profit_table"],
   "analysis_type": "tabular",
@@ -503,19 +503,19 @@ else:
   "confidence": 0.95,
   "reasoning": "Có 'lập bảng' + match CHÍNH XÁC 'doanh thu và lợi nhuận' → revenue_profit_table. Analysis_type: 'lập bảng' → overall.",
   "suggested_clarifications": []
-}
+}}
 ```
 
 ### Ví dụ 2: Đơn giản KHÔNG có "bảng" → Dimension-based
 ```json
 // INPUT
-{
+{{
   "question": "Xem thanh khoản của SSI",
   "available_periods": ["2023", "2024"]
-}
+}}
 
 // OUTPUT
-{
+{{
   
   "query_scope": ["liquidity"],
   "analysis_type": "tabular",
@@ -523,19 +523,19 @@ else:
   "confidence": 0.90,
   "reasoning": "KHÔNG có 'lập bảng' → Dimension-based. Keyword 'thanh khoản' → dimension: liquidity. Analysis_type: 'xem' → overall.",
   "suggested_clarifications": []
-}
+}}
 ```
 
 ### Ví dụ 3: Chung chung → Dimension-based (nhiều dimensions)
 ```json
 // INPUT
-{
+{{
   "question": "Đánh giá tình hình tài chính SSI năm 2024",
   "available_periods": ["2022", "2023", "2024"]
-}
+}}
 
 // OUTPUT
-{
+{{
   
   "query_scope": ["capital_adequacy", "earnings", "liquidity"],
   "analysis_type": "deep_analysis",
@@ -543,19 +543,19 @@ else:
   "confidence": 0.85,
   "reasoning": "Câu hỏi CHUNG CHUNG 'tình hình tài chính' → Dimension-based với 3 dimensions quan trọng. Analysis_type: 'đánh giá' → deep_analysis.",
   "suggested_clarifications": []
-}
+}}
 ```
 
 ### Ví dụ 4: Confused → Dimension-based DEFAULT
 ```json
 // INPUT
-{
+{{
   "question": "SSI thế nào?",
   "available_periods": ["2023", "2024"]
-}
+}}
 
 // OUTPUT
-{
+{{
   
   "query_scope": ["earnings", "liquidity"],
   "analysis_type": "tabular",
@@ -566,19 +566,19 @@ else:
     "Bạn muốn phân tích khía cạnh nào của SSI?",
     "Gợi ý: Vốn (C), Tài sản (A), Quản lý (M), Lợi nhuận (E), Thanh khoản (L), Rủi ro (S)"
   ]
-}
+}}
 ```
 
 ### Ví dụ 5: So sánh ngang → Table-based
 ```json
 // INPUT
-{
+{{
   "question": "Lập bảng cân đối kế toán so sánh ngang 2022-2024",
   "available_periods": ["2022", "2023", "2024"]
-}
+}}
 
 // OUTPUT
-{
+{{
   
   "query_scope": ["balance_sheet_horizontal"],
   "analysis_type": "tabular",
@@ -586,19 +586,19 @@ else:
   "confidence": 0.95,
   "reasoning": "Match trigger 'bảng cân đối' + 'so sánh ngang' → balance_sheet_horizontal.",
   "suggested_clarifications": []
-}
+}}
 ```
 
 ### Ví dụ 6: Nhiều chỉ tiêu → Dimension-based
 ```json
 // INPUT
-{
+{{
   "question": "Phân tích lợi nhuận, thanh khoản và cơ cấu vốn của SSI",
   "available_periods": ["2023", "2024"]
-}
+}}
 
 // OUTPUT
-{
+{{
   
   "query_scope": ["earnings", "liquidity", "capital_adequacy"],
   "analysis_type": "tabular",
@@ -606,19 +606,19 @@ else:
   "confidence": 0.85,
   "reasoning": "NHIỀU chỉ tiêu: 'lợi nhuận' (earnings), 'thanh khoản' (liquidity), 'cơ cấu vốn' (capital_adequacy) → Dimension-based.",
   "suggested_clarifications": []
-}
+}}
 ```
 
 ### Ví dụ 7: "Lập bảng" nhưng KHÔNG match → Dimension-based
 ```json
 // INPUT
-{
+{{
   "question": "Lập bảng phân tích toàn diện của SSI",
   "available_periods": ["2023", "2024"]
-}
+}}
 
 // OUTPUT
-{
+{{
   
   "query_scope": ["capital_adequacy", "earnings", "liquidity"],
   "analysis_type": "tabular",
@@ -626,24 +626,24 @@ else:
   "confidence": 0.85,
   "reasoning": "Có 'lập bảng' nhưng 'toàn diện' KHÔNG match table cụ thể → Dimension-based với 3 dimensions.",
   "suggested_clarifications": []
-}
+}}
 ```
 
 ### Ví dụ 8: Follow-up Table → Table (INHERIT period)
 ```json
 // INPUT
-{
+{{
   "question": "Còn bảng sinh lời thì sao?",
-  "previous_context": {
+  "previous_context": {{
     "previous_analysis_type": "tabular",
     "previous_query_scopes": ["liquidity_ratios_table"],
     "previous_period": ["2023", "2024"]
-  },
+  }},
   "available_periods": ["2022", "2023", "2024"]
-}
+}}
 
 // OUTPUT
-{
+{{
   
   "query_scope": ["profitability_table"],
   "analysis_type": "tabular",
@@ -651,24 +651,24 @@ else:
   "confidence": 0.90,
   "reasoning": "Follow-up có 'bảng sinh lời' → profitability_table. INHERIT: previous_analysis_type (overall) → analysis_type, previous_period ([2023, 2024]) → time_period. Previous_query_scopes[0] = 'liquidity_ratios_table' in TABLE_NAMES → previous là table.",
   "suggested_clarifications": []
-}
+}}
 ```
 
 ### Ví dụ 9: Follow-up Dimension → Dimension (INHERIT period)
 ```json
 // INPUT
-{
+{{
   "question": "Còn thanh khoản thì sao?",
-  "previous_context": {
+  "previous_context": {{
     "previous_analysis_type": "tabular",
     "previous_query_scopes": ["earnings"],
     "previous_period": ["2023", "2024"]
-  },
+  }},
   "available_periods": ["2022", "2023", "2024"]
-}
+}}
 
 // OUTPUT
-{
+{{
   
   "query_scope": ["liquidity"],
   "analysis_type": "tabular",
@@ -676,19 +676,19 @@ else:
   "confidence": 0.90,
   "reasoning": "Follow-up. ĐỔI query_scope: 'thanh khoản' → liquidity. INHERIT: previous_analysis_type (overall) → analysis_type, previous_period ([2023, 2024]) → time_period. Previous_query_scopes[0] = 'earnings' NOT in TABLE_NAMES → previous là dimension.",
   "suggested_clarifications": []
-}
+}}
 ```
 
 ### Ví dụ 10: ROE cụ thể → Dimension-based
 ```json
 // INPUT
-{
+{{
   "question": "Phân tích ROE của SSI năm 2024",
   "available_periods": ["2022", "2023", "2024"]
-}
+}}
 
 // OUTPUT
-{
+{{
   
   "query_scope": ["earnings"],
   "analysis_type": "tabular",
@@ -696,19 +696,19 @@ else:
   "confidence": 0.90,
   "reasoning": "Câu hỏi về chỉ tiêu cụ thể 'ROE' → Dimension-based với dimension: earnings. Period: '2024'.",
   "suggested_clarifications": []
-}
+}}
 ```
 
 ### Ví dụ 11: So sánh ngang KQKD đầy đủ → Table-based
 ```json
 // INPUT
-{
+{{
   "question": "Báo cáo kết quả kinh doanh so sánh ngang từ 2022 đến 2024",
   "available_periods": ["2022", "2023", "2024"]
-}
+}}
 
 // OUTPUT
-{
+{{
   
   "query_scope": ["income_statement_horizontal"],
   "analysis_type": "tabular",
@@ -716,24 +716,24 @@ else:
   "confidence": 0.95,
   "reasoning": "Match trigger 'báo cáo kết quả kinh doanh' + 'so sánh ngang' → income_statement_horizontal. Period: 'từ 2022 đến 2024'.",
   "suggested_clarifications": []
-}
+}}
 ```
 
 ### Ví dụ 12: Follow-up với INHERIT context đầy đủ
 ```json
 // INPUT
-{
+{{
   "question": "Còn bảng sinh lời thì sao?",
-  "previous_context": {
+  "previous_context": {{
     "previous_analysis_type": "tabular",
     "previous_query_scopes": ["liquidity_ratios_table"],
     "previous_period": ["2023", "2024"]
-  },
+  }},
   "available_periods": ["2022", "2023", "2024"]
-}
+}}
 
 // OUTPUT
-{
+{{
   
   "query_scope": ["profitability_table"],
   "analysis_type": "tabular",
@@ -741,24 +741,24 @@ else:
   "confidence": 0.90,
   "reasoning": "Follow-up có 'bảng sinh lời' → profitability_table (table). INHERIT từ LendingShortTermContext: previous_analysis_type → analysis_type, previous_period → time_period. Check previous_query_scopes[0] = 'liquidity_ratios_table' in TABLE_NAMES → previous cũng là table.",
   "suggested_clarifications": []
-}
+}}
 ```
 
 ### Ví dụ 13: Follow-up chuyển từ Table sang Dimension
 ```json
 // INPUT
-{
+{{
   "question": "Còn thanh khoản?",
-  "previous_context": {
+  "previous_context": {{
     "previous_analysis_type": "trending",
     "previous_query_scopes": ["revenue_profit_table"],
     "previous_period": ["2022", "2023", "2024"]
-  },
+  }},
   "available_periods": ["2022", "2023", "2024"]
-}
+}}
 
 // OUTPUT
-{
+{{
   
   "query_scope": ["liquidity"],
   "analysis_type": "trending",
@@ -766,7 +766,7 @@ else:
   "confidence": 0.85,
   "reasoning": "Follow-up KHÔNG có 'bảng' → dimension. ĐỔI query_scope: 'thanh khoản' → liquidity (dimension). INHERIT: previous_analysis_type (trending), previous_period. Previous_query_scopes[0] = 'revenue_profit_table' in TABLE_NAMES → previous là table, nhưng câu hỏi mới chuyển sang dimension.",
   "suggested_clarifications": []
-}
+}}
 ```
 
 ## QUY TẮC QUAN TRỌNG
@@ -828,13 +828,13 @@ else:
 ### Ví dụ 11: So sánh ngang KQKD đầy đủ → Table-based
 ```json
 // INPUT
-{
+{{
   "question": "Báo cáo kết quả kinh doanh so sánh ngang từ 2022 đến 2024",
   "available_periods": ["2022", "2023", "2024"]
-}
+}}
 
 // OUTPUT
-{
+{{
   
   "query_scope": ["income_statement_horizontal"],
   "analysis_type": "tabular",
@@ -842,70 +842,169 @@ else:
   "confidence": 0.95,
   "reasoning": "Match trigger 'báo cáo kết quả kinh doanh' + 'so sánh ngang' → income_statement_horizontal. Period: 'từ 2022 đến 2024'.",
   "suggested_clarifications": []
-}
+}}
 ```
 """
 
 TABULAR_RECEIVING_PROMPT = """
-# VAI TRÒ
-Bạn là Chuyên gia Trình bày Báo cáo Tài chính.
-
 # NHIỆM VỤ
-Tạo báo cáo TỔNG QUAN dạng BẢNG - CHỈ HIỂN THỊ dữ liệu có sẵn, KHÔNG tính toán, KHÔNG phân tích.
+Vẽ bảng từ dữ liệu TOON - KHÔNG tính toán, KHÔNG phân tích.
 
 ---
 
 ## INPUT
 
-### 1. Dữ liệu tài chính
-```json
-{financial_data_input}
-```
-
-### 2. Yêu cầu báo cáo
+### Orchestration Request
 ```json
 {orchestration_request}
 ```
 
+### Financial Data (TOON)
+```
+{financial_data_input}
+```
+
 ---
 
-## MAPPING TÊN TIẾNG VIỆT
-
-### Dimensions (Chiều phân tích)
+## MAPPING QUERY_SCOPE → TABLE_NAME
 ```python
-DIMENSION_VI = {{
-    "capital_adequacy": "Khả năng đảm bảo vốn",
-    "asset_quality": "Chất lượng tài sản", 
-    "management_quality": "Chất lượng quản trị",
-    "earnings": "Lợi nhuận",
-    "liquidity": "Thanh khoản"
+TABLE_NAMES = {{
+    "balance_sheet_horizontal": "Bảng cân đối kế toán so sánh ngang",
+    "income_statement_horizontal": "Báo cáo kết quả kinh doanh so sánh ngang",
+    "revenue_profit_table": "Bảng phân tích doanh thu và lợi nhuận",
+    "financial_overview_table": "Bảng tình hình tài chính cơ bản",
+    "liquidity_ratios_table": "Bảng chỉ số thanh khoản",
+    "operational_efficiency_table": "Bảng hiệu quả hoạt động",
+    "leverage_table": "Bảng cân nợ và cơ cấu vốn",
+    "profitability_table": "Bảng thu nhập và sinh lời",
+    "capital_adequacy": "C - Khả năng đủ vốn",
+    "asset_quality": "A - Chất lượng tài sản",
+    "management_quality": "M - Chất lượng quản lý",
+    "earnings": "E - Khả năng sinh lời",
+    "liquidity": "L - Thanh khoản",
+    "sensitivity_to_market_risk": "S - Độ nhạy rủi ro thị trường"
 }}
 ```
 
-### Sub-dimensions (Nhóm chỉ tiêu)
-```python
-SUB_DIMENSION_VI = {{
-    "capital_structure": "Cấu trúc vốn",
-    "debt_management": "Quản lý nợ",
-    "operating_revenue": "Doanh thu hoạt động",
-    "profit_and_tax": "Lợi nhuận và thuế",
-    "profitability_ratios": "Tỷ suất sinh lời",
-    "liquidity_ratios": "Tỷ số thanh khoản"
+---
+
+## QUY TẮC VẼ BẢNG
+
+### Format giá trị
+- **VND (>1M)**: Dấu phẩy, không số thập phân (1,234,567,890)
+- **Ratio/Times**: 2 số thập phân (1.23)
+- **Percentage**: 2 số thập phân + "%" (12.34%)
+- **null/empty**: "-"
+
+### Cấu trúc
+- Cột đầu: Trái | Cột số: Phải
+- Row đầu text + các cột null → **IN ĐẬM** (section header)
+- Row chứa "TỔNG" → **IN ĐẬM** (total row)
+
+---
+
+## TEMPLATE
+```markdown
+# BÁO CÁO TÀI CHÍNH
+**Công ty:** {{company}} | **Kỳ:** {{periods}} | **Đơn vị:** VND
+
+---
+
+## {{TABLE_NAME}}
+
+| {{col[0]}} | {{col[1]}} | ... |
+|:---------|----------:|----:|
+| **{{section}}** | | |
+| {{row}} | {{val}} | ... |
+
+---
+
+[Lặp theo query_scopes]
+```
+
+---
+
+## VÍ DỤ
+
+**Orchestration:**
+```json
+{{
+  "analysis_type": "tabular",
+  "query_scopes": ["income_statement_horizontal"],
+  "time_period": ["2024", "2023", "2022"],
+  "confidence": 0.95
 }}
 ```
 
-### Fields (Chỉ tiêu)
+**Financial Data (TOON):**
+```
+item{{columns,data}}:
+  Chỉ tiêu,Giá trị năm 2024,Tỷ trọng 2024 (%),Giá trị năm 2023,Tỷ trọng 2023 (%),I. DOANH THU HOẠT ĐỘNG,,,,,1.1. Lãi từ FVTPL,1418748422649,16.63,1087667751126,15.20,1.2. Lãi từ HTM,327941173503,3.84,473679676164,6.62
+```
+
+**Output:**
+```markdown
+# BÁO CÁO TÀI CHÍNH
+**Công ty:** SSI | **Kỳ:** 2024, 2023, 2022 | **Đơn vị:** VND
+
+---
+
+## Báo cáo kết quả kinh doanh so sánh ngang
+
+| Chỉ tiêu | Giá trị năm 2024 | Tỷ trọng 2024 (%) | Giá trị năm 2023 | Tỷ trọng 2023 (%) |
+|:---------|------------------:|------------------:|------------------:|------------------:|
+| **I. DOANH THU HOẠT ĐỘNG** | | | | |
+| 1.1. Lãi từ FVTPL | 1,418,748,422,649 | 16.63 | 1,087,667,751,126 | 15.20 |
+| 1.2. Lãi từ HTM | 327,941,173,503 | 3.84 | 473,679,676,164 | 6.62 |
+```
+
+---
+
+CHỈ VẼ BẢNG - KHÔNG TEXT.
+"""
+
+TRENDING_ANALYSIS_PROMPT = """
+# NHIỆM VỤ
+Mô tả xu hướng từ dữ liệu TOON - CHỈ nhận xét biến động, KHÔNG giải thích nguyên nhân.
+
+---
+
+## INPUT
+
+### Orchestration Request
+```json
+{orchestration_request}
+```
+- `analysis_type`: "trending"
+- `query_scopes`: ["balance_sheet_horizontal", "earnings", ...]
+- `time_period`: ["2024", "2023", "2022"]
+
+### Financial Data (TOON)
+```
+{financial_data_input}
+```
+- Columns đã có: giá trị từng năm + cột Δ% giữa các năm
+- VD: "Chênh lệch 2024-2023 (%)", "Chênh lệch 2023-2022 (%)"
+
+---
+
+## MAPPING QUERY_SCOPE → TABLE_NAME
 ```python
-FIELD_VI = {{
-    "total_assets": "Tổng tài sản",
-    "owners_equity": "Vốn chủ sở hữu",
-    "debt_to_equity": "Hệ số nợ/vốn chủ",
-    "total_operating_revenue": "Tổng doanh thu hoạt động",
-    "net_profit_after_tax": "Lợi nhuận sau thuế",
-    "roe": "ROE (%)",
-    "roa": "ROA (%)",
-    "ros": "ROS (%)",
-    "current_ratio": "Hệ số thanh toán hiện hành"
+TABLE_NAMES = {{
+    "balance_sheet_horizontal": "Bảng cân đối kế toán so sánh ngang",
+    "income_statement_horizontal": "Báo cáo kết quả kinh doanh so sánh ngang",
+    "revenue_profit_table": "Bảng phân tích doanh thu và lợi nhuận",
+    "financial_overview_table": "Bảng tình hình tài chính cơ bản",
+    "liquidity_ratios_table": "Bảng chỉ số thanh khoản",
+    "operational_efficiency_table": "Bảng hiệu quả hoạt động",
+    "leverage_table": "Bảng cân nợ và cơ cấu vốn",
+    "profitability_table": "Bảng thu nhập và sinh lời",
+    "capital_adequacy": "C - Khả năng đủ vốn",
+    "asset_quality": "A - Chất lượng tài sản",
+    "management_quality": "M - Chất lượng quản lý",
+    "earnings": "E - Khả năng sinh lời",
+    "liquidity": "L - Thanh khoản",
+    "sensitivity_to_market_risk": "S - Độ nhạy rủi ro thị trường"
 }}
 ```
 
@@ -913,1612 +1012,490 @@ FIELD_VI = {{
 
 ## QUY TẮC
 
-### ✅ BẮT BUỘC
-1. CHỈ hiển thị dimensions/sub_dimensions trong `orchestration_request`
-2. CHỈ hiển thị periods trong `time_period`
-3. CHỈ hiển thị fields có ít nhất 1 giá trị khác null
-4. Giá trị null → hiển thị "-"
-5. Format số:
-   - Số tiền lớn: dấu phẩy ngăn cách (VD: 1,234,567,890)
-   - Tỷ số/hệ số: 2-4 chữ số thập phân (VD: 0.1234)
-   - Tỷ lệ %: 2 chữ số thập phân (VD: 12.34%)
+### Ngôn ngữ mô tả
+- **>20%**: "tăng/giảm mạnh"
+- **10-20%**: "tăng/giảm đáng kể"
+- **5-10%**: "tăng/giảm"
+- **2-5%**: "tăng/giảm nhẹ"
+- **0-2%**: "ổn định"
 
-### ❌ CẤM
-1. KHÔNG tính toán: Δ, %, tăng trưởng, trung bình
-2. KHÔNG thêm dimensions/sub_dimensions/periods ngoài yêu cầu
-3. KHÔNG viết: nhận xét, phân tích, giải thích, kết luận
-4. KHÔNG tạo bảng cho dimension/sub_dimension không có data
+### Format số
+- **VND**: Dấu phẩy (1,234,567 tỷ đồng)
+- **Ratio**: 2 số thập phân
+- **Percentage**: Lấy từ cột Δ% có sẵn
+
+### Cấm
+- ❌ KHÔNG tính toán Δ% mới (đã có sẵn)
+- ❌ KHÔNG giải thích nguyên nhân
+- ❌ KHÔNG đánh giá tốt/xấu
+- ❌ KHÔNG khuyến nghị
 
 ---
 
-## TEMPLATE OUTPUT
+## TEMPLATE
 ```markdown
-# BÁO CÁO TỔNG QUAN TÌNH HÌNH TÀI CHÍNH
-
-## 📋 THÔNG TIN BÁO CÁO
-- **Công ty:** [company]
-- **Kỳ báo cáo:** [time_period - VD: "2022, 2023, Q1/2024"]
-- **Đơn vị:** [currency] (Số tiền), Số lần (Tỷ số), % (Tỷ lệ)
-- **Ngày tạo:** [YYYY-MM-DD]
+# XU HƯỚNG TÀI CHÍNH
+**Công ty:** {{company}} | **Giai đoạn:** {{periods}} | **Đơn vị:** VND
 
 ---
 
-## [SECTION THEO DIMENSIONS ĐƯỢC YÊU CẦU]
+## {{TABLE_NAME}}
 
-### [DIMENSION_VI]
+### Chỉ tiêu nổi bật
 
-#### Bảng: [SUB_DIMENSION_VI]
+**{{Chỉ tiêu 1}}:**
+- {{Period_oldest}}: {{Value}}
+- {{Period_middle}}: {{Value}} ({{trend_word}} {{Δ%}} so với {{Period_oldest}})
+- {{Period_newest}}: {{Value}} ({{trend_word}} {{Δ%}} so với {{Period_middle}})
 
-| Chỉ tiêu | [Period 1] | [Period 2] | [Period 3] |
-|:---------|----------:|----------:|----------:|
-| [Field tiếng Việt] | [Value] | [Value] | [Value] |
-| [Field tiếng Việt] | [Value] | [Value] | [Value] |
+**Nhận xét:** {{Tổng quan xu hướng 1 câu}}.
 
-[Lặp lại cho các sub_dimensions khác trong dimension]
+**{{Chỉ tiêu 2}}:**
+[Tương tự]
 
----
-
-[Lặp lại cho các dimensions khác]
-
----
-
-## 📌 GHI CHÚ
-- Chỉ tiêu không có dữ liệu: "-"
-- Báo cáo chỉ hiển thị các chiều và kỳ được yêu cầu
-```
+### Tóm tắt
+- {{Xu hướng chung của bảng}}
+- Biến động lớn: {{Chỉ tiêu}} ({{±Δ%}})
+- Ổn định: {{Chỉ tiêu}} qua {{n}} kỳ
 
 ---
 
-## VÍ DỤ MINH HỌA
-
-### INPUT
-```json
-{{
-  "analysis_type": "overall",
-  "dimensions": [
-    {{
-      "dimension_name": "earnings",
-      "sub_dimension_name": ["profit_and_tax", "profitability_ratios"]
-    }}
-  ],
-  "time_period": ["2022", "2023", "Q1_2024"]
-}}
+[Lặp cho query_scopes còn lại]
 ```
-
-### OUTPUT
-```markdown
-# BÁO CÁO TỔNG QUAN TÌNH HÌNH TÀI CHÍNH
-
-## 📋 THÔNG TIN BÁO CÁO
-- **Công ty:** DNSE Securities Joint Stock Company
-- **Kỳ báo cáo:** 2022, 2023, Q1/2024
-- **Đơn vị:** VND (Số tiền), Số lần (Tỷ số), % (Tỷ lệ)
-- **Ngày tạo:** 2024-03-15
-
----
-
-## LỢI NHUẬN
-
-#### Bảng: Lợi nhuận và thuế
-
-| Chỉ tiêu | 2022 | 2023 | Q1/2024 |
-|:---------|-----:|-----:|--------:|
-| Lợi nhuận hoạt động | 84,954,159,411 | 92,345,678,900 | 25,123,456,789 |
-| Lợi nhuận trước thuế | 94,923,798,523 | 103,456,789,012 | 28,456,789,123 |
-| Lợi nhuận sau thuế | 77,762,818,412 | 84,567,890,123 | 23,456,789,012 |
-
-#### Bảng: Tỷ suất sinh lời
-
-| Chỉ tiêu | 2022 | 2023 | Q1/2024 |
-|:---------|-----:|-----:|--------:|
-| ROS (%) | 17.20 | 18.45 | 16.78 |
-| ROA (%) | - | 1.21 | 1.15 |
-| ROE (%) | - | 2.48 | 2.35 |
-
----
-
-## 📌 GHI CHÚ
-- Chỉ tiêu không có dữ liệu: "-"
-- Báo cáo chỉ hiển thị các chiều và kỳ được yêu cầu
-```
-
----
-
-## 🔑 ĐIỂM KHÁC BIỆT
-
-| Khía cạnh | Prompt cũ | Prompt mới |
-|:----------|:----------|:-----------|
-| **Độ dài** | ~200 dòng | ~120 dòng |
-| **Logic xử lý** | Chi tiết từng bước Python | Mô tả ngắn gọn |
-| **Format value** | Code phức tạp | Quy tắc đơn giản |
-| **Cấu trúc** | Nhiều section rời rạc | Template rõ ràng |
-| **Trọng tâm** | Hướng dẫn + Template | Template + Quy tắc |
-| **Ví dụ** | 1 ví dụ dài | 1 ví dụ ngắn gọn |
-
----
-
-## 💡 LƯU Ý QUAN TRỌNG
-
-1. **Loại bỏ logic xử lý**: LLM không cần code Python chi tiết
-2. **Tập trung template**: Template rõ ràng > Giải thích dài dòng  
-3. **Nhấn mạnh "CHỈ BẢNG"**: Lặp lại ở nhiều vị trí
-4. **Đơn giản hóa format**: Quy tắc ngắn gọn, dễ hiểu
-5. **Ví dụ thực tế**: Giúp LLM hiểu output mong muốn
-"""
-
-TRENDING_ANALYSIS_PROMPT = """
-## VAI TRÒ VÀ CHUYÊN MÔN
-───────────────────────────────────────────────────────────
-Bạn là Chuyên gia Trình bày Xu hướng Tài chính với 15+ năm kinh nghiệm.
-
-Nhiệm vụ: Mô tả XU HƯỚNG các chỉ tiêu qua nhiều kỳ. CHỈ trình bày số liệu, so sánh tăng/giảm. KHÔNG phân tích sâu, KHÔNG tính toán ngoài Δ và %.
-
-## INPUT 1: DỮ LIỆU (ARRAY)
-───────────────────────────────────────────────────────────
-```json
-{financial_data_input}
-```
-
-Array of objects: company, report_date, currency, dimensions
-
-## INPUT 2: ORCHESTRATION
-───────────────────────────────────────────────────────────
-```json
-{orchestration_request}
-```
-
-- analysis_type: "trending"
-- dimensions: [{{dimension_name, sub_dimension_name[]}}]
-- time_period: ["2022", "2023", "Q1_2024"]
-
-## FIELD MAPPING
-───────────────────────────────────────────────────────────
-
-DIMENSION_MAPPING = {{
-    "capital_adequacy": "Khả năng đảm bảo vốn",
-    "asset_quality": "Chất lượng tài sản",
-    "management_quality": "Chất lượng quản trị",
-    "earnings": "Lợi nhuận",
-    "liquidity": "Thanh khoản"
-}}
-
-SUB_DIMENSION_MAPPING = {{
-    "capital_structure": "Cấu trúc vốn",
-    "debt_management": "Quản lý nợ",
-    "operating_revenue": "Doanh thu hoạt động",
-    "operating_expenses": "Chi phí hoạt động",
-    "profit_and_tax": "Lợi nhuận và thuế",
-    "profitability_ratios": "Tỷ suất sinh lời",
-    "liquidity_ratios": "Tỷ số thanh khoản",
-    # [Thêm các mappings khác khi cần]
-}}
-
-FIELD_MAPPING = {{
-    "total_assets": "Tổng tài sản",
-    "owners_equity": "Vốn chủ sở hữu",
-    "debt_to_equity": "Hệ số nợ/vốn chủ",
-    "total_operating_revenue": "Tổng doanh thu hoạt động",
-    "net_profit_after_tax": "Lợi nhuận sau thuế",
-    "roe": "ROE",
-    "roa": "ROA",
-    "ros": "ROS",
-    "current_ratio": "Hệ số thanh toán hiện hành",
-    # [Thêm mappings khác khi cần]
-}}
-
-## QUY TRÌNH
-───────────────────────────────────────────────────────────
-
-### BƯỚC 1: PARSE DATA
-```python
-# Map report_date → period
-date_to_period = {{
-    "2022-12-31": "2022",
-    "2023-12-31": "2023",
-    "2024-03-31": "Q1_2024"
-}}
-
-data_by_period = {{}}
-for item in financial_data_input:
-    period = date_to_period[item["report_date"]]
-    data_by_period[period] = item
-
-# Validate: Cần ≥2 kỳ
-if len(time_period) < 2:
-    return "Cần ít nhất 2 kỳ để phân tích xu hướng"
-```
-
-### BƯỚC 2: TÍNH Δ VÀ %
-
-**CHỈ tính 2 giá trị:**
-```python
-for i in range(len(periods) - 1):
-    period_1 = periods[i]
-    period_2 = periods[i + 1]
-
-    value_1 = data[period_1][field]
-    value_2 = data[period_2][field]
-
-    # Chênh lệch
-    delta = value_2 - value_1
-
-    # %
-    if value_1 != 0:
-        percent = (delta / abs(value_1)) * 100
-    else:
-        percent = None
-```
-
-**LƯU Ý:**
-- ✅ CHỈ tính Δ và %
-- ❌ KHÔNG tính CAGR, trung bình, ratio mới
-
-### BƯỚC 3: MÔ TẢ XU HƯỚNG
-
-**Format:**
-```
-[Field TV] [kỳ 1] đạt [giá trị], [kỳ 2] đạt [giá trị], 
-tăng/giảm [Δ], tương đương [±%]% so với [kỳ 1].
-```
-
-**Format giá trị:**
-- Số tiền ≥1 tỷ: "X,XXX tỷ đồng"
-- Số tiền ≥1 triệu: "X,XXX triệu đồng"
-- Ratio: "X.XX" (2-4 số)
-- Percent: "±X.X%"
-
-**Ngôn ngữ:**
-- Có năm → "năm X"
-- Có quý → "quý X/YYYY"
-
-### BƯỚC 4: NHẬN XÉT
-
-**Sau mỗi sub_dimension:**
-
-1-2 câu nhận xét về xu hướng chung:
-```
-✅ "Doanh thu duy trì ổn định qua 3 kỳ"
-✅ "Tỷ số thanh khoản tăng nhẹ liên tục"
-```
-
-**CẤM:**
-```
-❌ Giải thích nguyên nhân
-❌ Đưa ra đánh giá tốt/xấu
-❌ Đưa ra khuyến nghị
-```
-
-## RÀNG BUỘC
-───────────────────────────────────────────────────────────
-
-### ✅ PHẢI:
-- Cần ≥2 kỳ
-- CHỈ tính Δ và %
-- CHỈ dùng giá trị có sẵn
-- CHỈ phân tích dimensions/sub_dimensions được yêu cầu
-- Null → "chưa có dữ liệu"
-
-### ❌ KHÔNG:
-- KHÔNG tính CAGR, trung bình, ratio mới
-- KHÔNG giải thích nguyên nhân
-- KHÔNG đánh giá tốt/xấu
-- KHÔNG khuyến nghị
-- KHÔNG so sánh đối thủ
-
-## TEMPLATE OUTPUT
-───────────────────────────────────────────────────────────
-
-# BÁO CÁO XU HƯỚNG TÀI CHÍNH
-**[company]**
-
----
-
-## 📋 THÔNG TIN
-
-- **Công ty:** [company]
-- **Giai đoạn:** [period[0]] đến [period[-1]]
-- **Số kỳ:** [n] kỳ
-- **Đơn vị:** [currency]
-
----
-
-[CHỈ TẠO CHO DIMENSIONS ĐƯỢC YÊU CẦU]
-
-## I. [DIMENSION_MAPPING[dim]]
-
-### 1. [SUB_DIMENSION_MAPPING[sub_dim]]
-
-#### 📊 Bảng số liệu:
-
-| Chỉ tiêu | 2022 | 2023 | Q1/2024 | Δ(22→23) | %(22→23) |
-|:---------|-----:|-----:|--------:|---------:|---------:|
-| [Field TV] | [Value] | [Value] | [Value] | [±Δ] | [±%] |
-
-#### 📝 Mô tả xu hướng:
-
-[Field 1] năm 2022 đạt [giá trị], năm 2023 đạt [giá trị], 
-tăng/giảm [Δ], tương đương [±%]% so với năm 2022.
-Quý I/2024 đạt [giá trị], tăng/giảm [Δ], tương đương [±%]% so với năm 2023.
-
-[Field 2] ...
-
-#### 💡 Nhận xét:
-
-[1-2 câu mô tả xu hướng chung - KHÔNG phân tích nguyên nhân]
-
----
-
-[LẶP CHO SUB_DIMENSIONS KHÁC]
-
----
-
-## 📊 TÓM TẮT
-
-**Xu hướng chính:**
-- [Dim 1]: [Tóm tắt với số liệu]
-- [Dim 2]: [Tóm tắt với số liệu]
-
-**Điểm đáng chú ý:**
-- Biến động lớn: [Chỉ tiêu] ±[%]%
-- Ổn định: [Chỉ tiêu] qua [n] kỳ
-
----
-
-## 📌 GHI CHÚ
-
-- Báo cáo CHỈ mô tả xu hướng, không phân tích nguyên nhân
-- Δ: chênh lệch tuyệt đối
-- %: tỷ lệ thay đổi so với kỳ trước
-- Để hiểu NGUYÊN NHÂN, xem báo cáo Deep Analysis
 
 ---
 
 ## VÍ DỤ
-───────────────────────────────────────────────────────────
 
-**Input:**
-- time_period: ["2022", "2023", "Q1_2024"]
-- dimension: earnings, sub: profitability_ratios
+**Orchestration:**
+```json
+{{
+  "analysis_type": "trending",
+  "query_scopes": ["earnings"],
+  "time_period": ["2024", "2023", "2022"],
+  "confidence": 0.95,
+  "reasoning": "Yêu cầu rõ ràng về xu hướng lợi nhuận"
+}}
+```
+
+**Financial Data (TOON):**
+```
+TABLE[0]: earnings
+  columns[6]: ["Chỉ tiêu", "2024", "2023", "2022", "Chênh lệch 2024-2023 (%)", "Chênh lệch 2023-2022 (%)"]
+  data[9]:
+    E - Khả năng sinh lời,,,,,
+    ROE,12.50,10.20,8.50,22.55,20.00
+    ROA,3.80,3.20,2.90,18.75,10.34
+    ROS,15.20,14.80,14.50,2.70,2.07
+```
 
 **Output:**
-
-## I. LỢI NHUẬN
-
-### 1. Tỷ suất sinh lời
-
-#### 📊 Bảng số liệu:
-
-| Chỉ tiêu | 2022 | 2023 | Q1/2024 | Δ(22→23) | %(22→23) |
-|:---------|-----:|-----:|--------:|---------:|---------:|
-| ROS | 0.17 | 0.17 | 0.17 | 0.00 | 0.0% |
-| ROA | - | 0.01 | 0.01 | +0.01 | N/A |
-| ROE | - | 0.02 | 0.02 | +0.02 | N/A |
-
-#### 📝 Mô tả xu hướng:
-
-ROS năm 2022 đạt 0.1720 (17.20%), năm 2023 duy trì 0.1720, 
-không thay đổi. Quý I/2024 tiếp tục 0.1720, không biến động.
-
-ROA năm 2022 chưa có dữ liệu. Năm 2023 đạt 0.0121 (1.21%). 
-Quý I/2024 duy trì 0.0121.
-
-ROE năm 2022 chưa có dữ liệu. Năm 2023 đạt 0.0248 (2.48%). 
-Quý I/2024 duy trì 0.0248.
-
-#### 💡 Nhận xét:
-
-Các tỷ suất sinh lời duy trì ổn định qua các kỳ. ROA và ROE 
-xuất hiện từ 2023 và không biến động trong Q1/2024.
+```markdown
+# XU HƯỚNG TÀI CHÍNH
+**Công ty:** SSI | **Giai đoạn:** 2024, 2023, 2022 | **Đơn vị:** VND
 
 ---
+
+## E - Khả năng sinh lời
+
+### Chỉ tiêu nổi bật
+
+**ROE:**
+- 2022: 8.50%
+- 2023: 10.20% (tăng đáng kể 20.00% so với 2022)
+- 2024: 12.50% (tăng mạnh 22.55% so với 2023)
+
+**Nhận xét:** ROE tăng liên tục và gia tăng tốc độ qua 3 năm.
+
+**ROA:**
+- 2022: 2.90%
+- 2023: 3.20% (tăng 10.34% so với 2022)
+- 2024: 3.80% (tăng mạnh 18.75% so với 2023)
+
+**Nhận xét:** ROA cải thiện đều đặn, tốc độ tăng nhanh hơn năm 2024.
+
+**ROS:**
+- 2022: 14.50%
+- 2023: 14.80% (tăng nhẹ 2.07% so với 2022)
+- 2024: 15.20% (tăng nhẹ 2.70% so với 2023)
+
+**Nhận xét:** ROS tăng trưởng ổn định qua 3 năm.
+
+### Tóm tắt
+- Khả năng sinh lời tăng đồng đều qua 3 kỳ
+- Biến động lớn: ROE (+22.55% năm 2024)
+- Ổn định: ROS dao động 14-15% qua 3 năm
+```
+
+---
+
+CHỈ MÔ TẢ XU HƯỚNG - KHÔNG GIẢI THÍCH NGUYÊN NHÂN.
 """
 
 DEEP_ANALYSIS_PROMPT = """
-## VAI TRÒ VÀ CHUYÊN MÔN
-───────────────────────────────────────────────────────────
-Bạn là Chuyên gia Thẩm định Tín dụng Senior với 20+ năm kinh nghiệm trong lĩnh vực tài chính ngân hàng.
+# NHIỆM VỤ
+Phân tích chuyên sâu tài chính - Giải thích NGUYÊN NHÂN, đánh giá RỦI RO, xếp hạng TÍN DỤNG.
 
-**NHIỆM VỤ CHÍNH:**
-1. Phân tích CHUYÊN SÂU tình hình tài chính dựa trên dữ liệu có sẵn
-2. Giải thích NGUYÊN NHÂN của các xu hướng qua mối quan hệ giữa các chỉ số
-3. Đánh giá ĐIỂM MẠNH/YẾU và RỦI RO với bằng chứng số liệu cụ thể
-4. So sánh với TIÊU CHUẨN ngành và ngân hàng
-5. Phân tích XU HƯỚNG thay đổi qua các kỳ
+---
 
-**NGUYÊN TẮC VÀNG:**
-✅ CHỈ dùng dữ liệu CÓ SẴN trong input - KHÔNG tự tính toán
-✅ CHỈ phân tích dimensions/sub_dimensions được yêu cầu
-✅ Giải thích mối quan hệ NHÂN-QUẢ giữa các số liệu
-✅ So sánh với tiêu chuẩn: ✅ Tốt / ⚠️ Chấp nhận / 🚩 Rủi ro
-✅ Đánh giá xu hướng: 📈 Cải thiện / 📉 Suy giảm / ➡️ Ổn định
+## INPUT
 
-❌ TUYỆT ĐỐI KHÔNG tính toán bất kỳ chỉ số nào
-❌ KHÔNG tính điểm số, score, weighted average
-❌ KHÔNG quyết định Chấp thuận/Từ chối
-❌ KHÔNG đề xuất hạn mức/lãi suất/kỳ hạn/điều kiện
-
-## INPUT DATA
-───────────────────────────────────────────────────────────
-
-### INPUT 1: DỮ LIỆU TÀI CHÍNH (JSON Array)
-
-{financial_data_input}
-
-
-**Cấu trúc:**
-- Mỗi object chứa: company, report_date, currency
-- reports: [balance_sheet, income_statement, cash_flow_statement]
-- Mỗi report có fields với "name" và "value"
-
-### INPUT 2: YÊU CẦU PHÂN TÍCH (Orchestration)
-
+### Orchestration Request
+```json
 {orchestration_request}
+```
+- `analysis_type`: "deep_analysis"
+- `query_scopes`: ["balance_sheet_horizontal", "capital_adequacy", ...]
+- `time_period`: ["2024", "2023", "2022"]
 
+### Financial Data (TOON)
+```
+{financial_data_input}
+```
+- Đã có: giá trị từng kỳ + Δ% + tỷ trọng
+- CHỈ sử dụng data có sẵn - KHÔNG tính toán thêm
 
-**Bao gồm:**
-- analysis_type: "deep_analysis"
-- dimensions: Array of {{dimension_name, sub_dimension_name[]}}
-- time_period: Array of dates ["2022-12-31", "2023-12-31", "2024-03-31"]
+---
 
-## TIÊU CHUẨN ĐÁNH GIÁ
-───────────────────────────────────────────────────────────
+## MAPPING
+```python
+TABLE_NAMES = {{
+    "balance_sheet_horizontal": "Bảng cân đối kế toán",
+    "income_statement_horizontal": "Báo cáo kết quả kinh doanh",
+    "revenue_profit_table": "Doanh thu và lợi nhuận",
+    "financial_overview_table": "Tình hình tài chính",
+    "liquidity_ratios_table": "Chỉ số thanh khoản",
+    "operational_efficiency_table": "Hiệu quả hoạt động",
+    "leverage_table": "Cân nợ và cơ cấu vốn",
+    "profitability_table": "Thu nhập và sinh lời",
+    "capital_adequacy": "C - Khả năng đủ vốn",
+    "asset_quality": "A - Chất lượng tài sản",
+    "management_quality": "M - Chất lượng quản lý",
+    "earnings": "E - Khả năng sinh lời",
+    "liquidity": "L - Thanh khoản",
+    "sensitivity_to_market_risk": "S - Độ nhạy rủi ro"
+}}
+```
 
-### TIÊU CHUẨN TÍN DỤNG NGÀNH CHỨNG KHOÁN
+---
 
-| CHỈ TIÊU | TỐT | CHẤP NHẬN | RỦI RO |
-|:---------|----:|----------:|-------:|
-| **A. THANH KHOẢN** | | | |
-| Current Ratio | ≥ 1.5 | 1.2-1.5 | < 1.2 |
-| Quick Ratio | ≥ 1.0 | 0.8-1.0 | < 0.8 |
-| Cash Ratio | ≥ 0.3 | 0.15-0.3 | < 0.15 |
-| Tiền mặt/Tổng tài sản | ≥ 15% | 8%-15% | < 8% |
-| Tiền mặt/Nợ ngắn hạn | ≥ 20% | 10%-20% | < 10% |
-| **B. CẤU TRÚC VỐN & ĐÒN BẨY** | | | |
-| Nợ/Vốn chủ (D/E) | ≤ 1.0 | 1.0-2.0 | > 2.0 |
-| Nợ/Tổng tài sản | ≤ 50% | 50%-65% | > 65% |
-| Vốn chủ/Tổng tài sản | ≥ 50% | 35%-50% | < 35% |
-| Nợ ngắn/Tổng nợ | ≤ 50% | 50%-70% | > 70% |
-| Vốn điều lệ (tỷ VND) | ≥ 2,000 | 1,000-2,000 | < 1,000 |
-| **C. KHẢ NĂNG SINH LỜI** | | | |
-| ROE (%) | ≥ 15% | 8%-15% | < 8% |
-| ROA (%) | ≥ 5% | 2%-5% | < 2% |
-| Biên lợi nhuận ròng (%) | ≥ 15% | 8%-15% | < 8% |
-| Biên lợi nhuận hoạt động(%) | ≥ 20% | 10%-20% | < 10% |
-| Tăng trưởng doanh thu YoY | ≥ 15% | 5%-15% | < 5% |
-| Tăng trưởng lợi nhuận YoY | ≥ 20% | 0%-20% | < 0% |
-| **D. CHẤT LƯỢNG TÀI SẢN** | | | |
-| Dự phòng/Tổng cho vay (%) | ≤ 2% | 2%-5% | > 5% |
-| Nợ quá hạn/Tổng phải thu(%) | ≤ 5% | 5%-10% | > 10% |
-| Cho vay/Tổng tài sản | 30%-50% | 20%-30% hoặc 50%-60% | < 20% hoặc > 60% |
-| **E. HIỆU QUẢ HOẠT ĐỘNG** | | | |
-| Chi phí/Thu nhập (%) | ≤ 60% | 60%-75% | > 75% |
-| Chi phí quản lý/Doanh thu(%) | ≤ 10% | 10%-15% | > 15% |
-| Doanh thu môi giới/Tổng DT | 30%-50% | 20%-30% hoặc 50%-70% | < 20% hoặc > 70% |
-| **F. DÒNG TIỀN** | | | |
-| CF hoạt động/Nợ ngắn hạn | ≥ 30% | 15%-30% | < 15% |
-| CF hoạt động/Tổng nợ | ≥ 25% | 10%-25% | < 10% |
-| CF hoạt động | Dương | Âm 1 kỳ | Âm 2+ kỳ |
+## TIÊU CHUẨN ĐÁNH GIÁ (NGÀNH CHỨNG KHOÁN)
 
-### CREDIT RATING MATRIX
+| Chỉ tiêu | ✅ Tốt | ⚠️ Chấp nhận | 🚩 Rủi ro |
+|:---------|-------:|-------------:|----------:|
+| **THANH KHOẢN** | | | |
+| Current Ratio | ≥1.5 | 1.2-1.5 | <1.2 |
+| Quick Ratio | ≥1.0 | 0.8-1.0 | <0.8 |
+| Cash Ratio | ≥0.3 | 0.15-0.3 | <0.15 |
+| Tiền/Tổng TS | ≥15% | 8-15% | <8% |
+| **CẤU TRÚC VỐN** | | | |
+| D/E Ratio | ≤1.0 | 1.0-2.0 | >2.0 |
+| Nợ/Tổng TS | ≤50% | 50-65% | >65% |
+| Vốn chủ/Tổng TS | ≥50% | 35-50% | <35% |
+| **SINH LỜI** | | | |
+| ROE (%) | ≥15 | 8-15 | <8 |
+| ROA (%) | ≥5 | 2-5 | <2 |
+| ROS (%) | ≥15 | 8-15 | <8 |
+| Tăng trưởng DT | ≥15% | 5-15% | <5% |
+| **CHẤT LƯỢNG TÀI SẢN** | | | |
+| Dự phòng/Cho vay | ≤2% | 2-5% | >5% |
+| Nợ quá hạn/Phải thu | ≤5% | 5-10% | >10% |
 
-**AAA (Outstanding - Xuất sắc):**
-- ≥ 90% chỉ số ở mức "Tốt"
-- Không có chỉ số "Rủi ro"
-- Xu hướng tích cực hoặc ổn định
+### 🚨 RED FLAGS
 
-**AA (Excellent - Rất tốt):**
-- ≥ 80% chỉ số ở mức "Tốt"
-- ≤ 5% chỉ số "Rủi ro"
-- Xu hướng tích cực hoặc ổn định
-
-**A (Very Good - Tốt):**
-- ≥ 70% chỉ số ở mức "Chấp nhận" trở lên
-- ≤ 10% chỉ số "Rủi ro"
-- Không có Red Flag nghiêm trọng
-
-**BBB (Good - Khá):**
-- ≥ 60% chỉ số ở mức "Chấp nhận"
-- ≤ 20% chỉ số "Rủi ro"
-- Tối đa 1 Red Flag
-
-**BB (Fair - Trung bình):**
-- 40-60% chỉ số "Chấp nhận"
-- 20-40% chỉ số "Rủi ro"
-- 1-2 Red Flags
-
-**B (Weak - Yếu):**
-- < 40% chỉ số "Chấp nhận"
-- > 40% chỉ số "Rủi ro"
-- 2-3 Red Flags
-
-**CCC (Very Weak - Rất yếu):**
-- ≥ 60% chỉ số "Rủi ro"
-- Xu hướng xấu đi liên tục
-- ≥ 3 Red Flags
-
-### 🚨 RED FLAGS (Cảnh báo đỏ)
-
-**Red Flag được kích hoạt khi:**
 - ❌ Lợi nhuận âm 2+ kỳ liên tiếp
-- ❌ Cash flow hoạt động âm 2+ kỳ liên tiếp
+- ❌ CF hoạt động âm 2+ kỳ liên tiếp
 - ❌ Current Ratio < 1.0
 - ❌ D/E Ratio > 3.0
-- ❌ Dự phòng/Cho vay > 5%
-- ❌ Vốn chủ giảm > 20% trong 1 năm
-- ❌ Tiền mặt giảm > 30% trong 1 năm
-- ❌ Lỗ lũy kế > 50% vốn điều lệ
-- ❌ Nợ quá hạn > 10% tổng phải thu
+- ❌ Vốn chủ giảm >20%/năm
+- ❌ Tiền mặt giảm >30%/năm
+- ❌ Dự phòng/Cho vay >5%
+- ❌ Nợ quá hạn >10%
+
+### CREDIT RATING
+
+- **AAA**: ≥90% Tốt, 0% Rủi ro, 0 Red Flag
+- **AA**: ≥80% Tốt, ≤5% Rủi ro, 0 Red Flag
+- **A**: ≥70% OK, ≤10% Rủi ro, 0 Red Flag
+- **BBB**: ≥60% OK, ≤20% Rủi ro, ≤1 Red Flag
+- **BB**: 40-60% OK, 20-40% Rủi ro, 1-2 Red Flags
+- **B**: <40% OK, >40% Rủi ro, 2-3 Red Flags
+- **CCC**: ≥60% Rủi ro, ≥3 Red Flags
+
+---
 
 ## PHƯƠNG PHÁP PHÂN TÍCH
-───────────────────────────────────────────────────────────
 
-### BƯỚC 1: XÁC ĐỊNH KỲ PHÂN TÍCH
+### 1. So sánh tiêu chuẩn
+- Lấy giá trị từ TOON
+- Tìm ngưỡng trong bảng
+- Đánh giá: ✅ / ⚠️ / 🚩
 
-**Phân loại các kỳ:**
-- Kỳ gần nhất (Latest): Kỳ chính để phân tích
-- Kỳ trước đó (Previous): So sánh xu hướng
-- Kỳ cũ nhất (Oldest): Đánh giá xu hướng dài hạn
-
-### BƯỚC 2: PHÂN TÍCH CẤU TRÚC
-
-#### 2.1. Cấu trúc Tài sản (Balance Sheet)
-
-**Phân tích:**
-- Tổng tài sản và xu hướng thay đổi
-- Tỷ trọng tài sản ngắn hạn vs dài hạn
-- Chi tiết tài sản ngắn hạn:
-  * Tiền mặt & tương đương tiền: Tỷ lệ, xu hướng
-  * Tài sản tài chính: Cơ cấu, biến động
-  * Cho vay: Quy mô, xu hướng, dự phòng
-  * Phải thu: Quy mô, nợ quá hạn
-
-**Chất lượng tài sản:**
-- So sánh dự phòng với tổng cho vay
-- Đánh giá nợ quá hạn/tổng phải thu
-- Xu hướng chất lượng: Cải thiện hay xấu đi?
-
-**Ví dụ phân tích:**
-"Tổng tài sản giảm 5.2% từ 6,409 tỷ xuống 6,150 tỷ VND. Nguyên nhân chính:
-- Tiền mặt giảm 18.4% (từ 432 tỷ → 353 tỷ), chỉ còn 5.7% tổng tài sản (< chuẩn 8%) 🚩
-- Tài sản tài chính giảm 25% do thanh lý
-- Đồng thời, cho vay tăng 8% lên 2,463 tỷ, nhưng dự phòng tăng 48% (39.6 tỷ → 58.7 tỷ) 
-  → Tỷ lệ dự phòng/cho vay tăng từ 1.7% lên 2.4% ⚠️"
-
-#### 2.2. Cấu trúc Nợ & Vốn
-
-**Phân tích nợ:**
-- Tổng nợ và biến động
-- Tỷ trọng nợ ngắn hạn (red flag nếu > 70%)
-- Chi tiết: Vay ngắn hạn, trái phiếu, nợ phải trả khác
-- Áp lực thanh toán lãi vay
-
-**Phân tích vốn:**
-- Vốn chủ sở hữu: Biến động, xu hướng
-- Vốn điều lệ vs vốn thực tế
-- Lợi nhuận giữ lại (âm/dương, xu hướng)
-- Tỷ lệ vốn chủ/tổng tài sản
-
-**Đánh giá đòn bẩy:**
-- So sánh Nợ/Vốn chủ với chuẩn
-- Phân tích nguyên nhân tăng/giảm đòn bẩy
-- Đánh giá rủi ro tài chính
-
-**Ví dụ:**
-"Đòn bẩy tăng từ 1.04 lên 1.21 do:
-- Nợ tăng 2.8% (3,273 tỷ → 3,364 tỷ): Vay tăng 6%, phát hành TP tăng 20%
-- Vốn chủ giảm 11.2% (3,136 tỷ → 2,787 tỷ) do lỗ 350 tỷ
-→ Cấu trúc vốn xấu đi, rủi ro tài chính tăng 🚩"
-
-#### 2.3. Kết quả Kinh doanh (Income Statement)
-
-**Phân tích doanh thu:**
-- Tổng doanh thu và tăng trưởng
-- Cơ cấu doanh thu theo nguồn:
-  * Môi giới chứng khoán
-  * Thu lãi từ cho vay
-  * Thu phí dịch vụ
-  * Khác
-- Đánh giá độ đa dạng/tập trung
-- So sánh với kỳ trước: % thay đổi từng khoản
-
-**Phân tích chi phí:**
-- Tổng chi phí và tăng trưởng
-- Chi phí chính:
-  * Dự phòng tín dụng (quan trọng!)
-  * Chi phí lãi vay
-  * Chi phí quản lý
-  * Chi phí môi giới
-- Tỷ lệ Chi phí/Doanh thu
-- So sánh hiệu quả với chuẩn
-
-**Phân tích lợi nhuận:**
-- Lợi nhuận hoạt động
-- Lợi nhuận trước thuế
-- Lợi nhuận sau thuế
-- Biên lợi nhuận (margins)
-- Xu hướng: Tăng/Giảm, lý do
-
-**Ví dụ:**
-"Doanh thu giảm 15% (452 tỷ → 384 tỷ):
-- Môi giới giảm 20% (85 tỷ → 68 tỷ) do thị trường giảm thanh khoản
-- Lãi cho vay giảm 5% dù cho vay tăng → lãi suất cho vay giảm
-
-Chi phí tăng 7.8%:
-- Dự phòng tăng 24% (142 tỷ → 177 tỷ) do chất lượng nợ xấu đi 🚩
-- Chi phí lãi vay tăng 29% (30 tỷ → 38 tỷ) do nợ vay tăng
-
-Kết quả: Lợi nhuận giảm từ 78 tỷ xuống LỖ 350 tỷ 🚩🚩"
-
-#### 2.4. Dòng Tiền (Cash Flow Statement)
-
-**Phân tích 3 luồng:**
-
-**CF Hoạt động (Operating):**
-- Dương/âm?
-- So với lợi nhuận: Phù hợp không?
-- Nguyên nhân chính tạo/tiêu hao tiền
-- Xu hướng qua các kỳ
-
-**CF Đầu tư (Investing):**
-- Mua/bán tài sản cố định
-- Đầu tư tài chính
-- Đánh giá chiến lược đầu tư
-
-**CF Tài trợ (Financing):**
-- Vay mới/trả nợ
-- Phát hành vốn/trả cổ tức
-- Đánh giá khả năng huy động vốn
-
-**Pattern phân tích:**
-- (+)(-)(-) = Công ty trưởng thành, sinh tiền tốt
-- (-)(-)( +) = Mở rộng, phụ thuộc tài trợ (cảnh báo nếu kéo dài)
-- (-)(-)(+) = Khủng hoảng thanh khoản 🚩
-
-**Ví dụ:**
-"Pattern CF: (-) (-) (+) = Dấu hiệu cảnh báo 🚩
-
-CF hoạt động: -2,856 tỷ (âm kỳ 2) do:
-- Tăng cho vay mạnh: -182 tỷ
-- Tăng đầu tư HTM: -291 tỷ
-- Nợ phải trả giảm: -98 tỷ
-
-CF đầu tư: -43 tỷ (mua TSCĐ)
-
-CF tài trợ: +2,820 tỷ từ:
-- Vay mới 10,574 tỷ
-- Trả nợ cũ -10,420 tỷ
-- Phát hành TP +30 tỷ
-
-→ Phụ thuộc hoàn toàn vào tài trợ bên ngoài, rủi ro thanh khoản CAO 🚩"
-
-### BƯỚC 3: PHÂN TÍCH XU HƯỚNG (Trend Analysis)
-
-**So sánh giữa các kỳ:**
-
-Với mỗi chỉ số quan trọng:
-1. Xác định giá trị qua các kỳ
-2. Tính % thay đổi
-3. Xác định xu hướng:
-   - 📈 Tăng mạnh (> +10%)
-   - ↗️ Tăng nhẹ (+5% đến +10%)
-   - ➡️ Ổn định (-5% đến +5%)
-   - ↘️ Giảm nhẹ (-10% đến -5%)
-   - 📉 Giảm mạnh (< -10%)
-
-4. Đánh giá ý nghĩa:
-   - Nếu chỉ số tích cực (VD: lợi nhuận, vốn chủ):
-     * Tăng = Tốt ✅
-     * Giảm = Xấu 🚩
-   - Nếu chỉ số tiêu cực (VD: nợ, dự phòng):
-     * Tăng = Xấu 🚩
-     * Giảm = Tốt ✅
-
-**Ví dụ xu hướng:**
-
+### 2. Phân tích nguyên nhân (NHÂN-QUẢ)
 ```
-TIỀN MẶT:
-Kỳ 1: 432 tỷ → Kỳ 2: 353 tỷ → Kỳ 3: 264 tỷ
-Biến động: -18.4% → -25.0%
-Xu hướng: 📉 Giảm liên tục và tăng tốc
-Đánh giá: Rủi ro thanh khoản TĂNG 🚩
-
-VỐN CHỦ SỞ HỮU:
-Kỳ 1: 3,136 tỷ → Kỳ 2: 2,787 tỷ → Kỳ 3: 2,241 tỷ
-Biến động: -11.2% → -19.6%
-Xu hướng: 📉 Suy giảm nghiêm trọng
-Đánh giá: Mất vốn nhanh, rủi ro phá sản CAO 🚩🚩
-
-DỰ PHÒNG/CHO VAY:
-Kỳ 1: 1.7% → Kỳ 2: 2.4% → Kỳ 3: 3.0%
-Xu hướng: 📈 Tăng liên tục
-Đánh giá: Chất lượng tài sản XẤU ĐI 🚩
-```
-
-### BƯỚC 4: SO SÁNH TIÊU CHUẨN
-
-**Với mỗi chỉ số:**
-
-1. Lấy giá trị từ data
-2. Tìm tiêu chuẩn tương ứng trong bảng
-3. So sánh:
-   - ✅ Tốt: Đạt ngưỡng "Tốt"
-   - ⚠️ Chấp nhận: Trong khoảng "Chấp nhận"
-   - 🚩 Rủi ro: Dưới ngưỡng "Rủi ro"
-
-4. Ghi nhận:
-   - Giá trị thực tế
-   - Chuẩn (benchmark range)
-   - Đánh giá (rating)
-   - Xu hướng (nếu có nhiều kỳ)
-
-**Ví dụ:**
-
-```
-Current Ratio = 1.36
-Chuẩn: Tốt ≥1.5 | Chấp nhận 1.2-1.5 | Rủi ro <1.2
-→ Đánh giá: ⚠️ CHẤP NHẬN (trong khoảng 1.2-1.5)
-→ Xu hướng: Giảm từ 1.66 → 1.54 → 1.36 📉
-→ Ý nghĩa: Khả năng thanh toán suy giảm, đang tiến gần vùng rủi ro
-
-D/E Ratio = 1.21
-Chuẩn: Tốt ≤1.0 | Chấp nhận 1.0-2.0 | Rủi ro >2.0
-→ Đánh giá: ⚠️ CHẤP NHẬN (trong khoảng 1.0-2.0)
-→ Xu hướng: Tăng từ 1.04 → 1.21 → 1.60 📈
-→ Ý nghĩa: Đòn bẩy tăng, rủi ro tài chính gia tăng
-```
-
-### BƯỚC 5: PHÂN TÍCH NGUYÊN NHÂN (Root Cause Analysis)
-
-**Nguyên tắc: Luôn giải thích TẠI SAO dựa trên mối quan hệ các số liệu**
-
-**Template phân tích nhân quả:**
-
-```
-HIỆN TƯỢNG: [Chỉ số] thay đổi [tăng/giảm X%]
-
-NGUYÊN NHÂN GỐC RỄ:
-1. [Yếu tố 1]:
-   - Số liệu cụ thể: [value 1] → [value 2]
-   - % thay đổi: [±X%]
-   - Đóng góp: [Giải thích tác động]
-
-2. [Yếu tố 2]:
-   - Số liệu: [...]
-   - Tác động: [...]
-
-3. [Yếu tố 3] (nếu có):
-   - ...
-
-KẾT QUẢ/TÁC ĐỘNG:
-- Tác động ngắn hạn: [...]
-- Rủi ro phát sinh: [...]
-- Xu hướng tiếp theo: [Dự báo định tính]
-```
-
-**Ví dụ cụ thể:**
-
-```
-HIỆN TƯỢNG: Current Ratio giảm từ 1.66 xuống 1.36 (-18%)
+HIỆN TƯỢNG: [Chỉ số] thay đổi [±X%]
 
 NGUYÊN NHÂN:
-1. Tài sản ngắn hạn giảm 5.2%:
-   - Tiền mặt giảm 79 tỷ (-18.4%): Do CF hoạt động âm, thanh lý để trả nợ
-   - Tài sản tài chính giảm 144 tỷ (-25%): Thanh lý để bù lỗ
-   - Tổng TSNH: 5,429 tỷ → 5,179 tỷ
+1. [Yếu tố 1]: [Value cũ] → [Value mới] (±X%)
+   - Đóng góp: [Tác động cụ thể]
 
-2. Nợ ngắn hạn tăng 2.8%:
-   - Vay ngắn hạn tăng 154 tỷ (+6%): Bù đắp thiếu hụt thanh khoản
-   - Phát hành trái phiếu tăng 30 tỷ (+20%): Huy động thêm vốn
-   - Tổng nợ NH: 3,273 tỷ → 3,364 tỷ
+2. [Yếu tố 2]: [...]
 
 KẾT QUẢ:
-- Tỷ lệ thanh khoản suy giảm từ mức "Tốt" xuống "Chấp nhận"
-- Áp lực thanh toán ngắn hạn gia tăng
-- Nếu xu hướng tiếp diễn, sẽ rơi vào vùng "Rủi ro" (< 1.2) trong 1-2 quý tới 🚩
+- Tác động ngắn hạn: [...]
+- Rủi ro: [...]
 ```
 
-### BƯỚC 6: ĐÁNH GIÁ RỦI RO ĐA CHIỀU
+### 3. Đánh giá rủi ro
+- Rủi ro thanh khoản: Tiền mặt, Current Ratio, CF
+- Rủi ro tín dụng: Dự phòng, nợ quá hạn
+- Rủi ro vốn: D/E, vốn chủ giảm, lỗ lũy kế
+- Mức độ: 🔴 Cao / 🟡 TB / 🟢 Thấp
 
-#### 6.1. Rủi ro Thanh khoản
-
-**Kiểm tra:**
-- □ Tiền mặt/Tổng TS < 8%?
-- □ Current Ratio < 1.2?
-- □ Cash flow hoạt động âm?
-- □ Tiền mặt giảm > 20% trong kỳ?
-- □ Nợ ngắn hạn > 70% tổng nợ?
-
-**Nếu có ≥2 điều kiện → Rủi ro thanh khoản**
-
-**Mức độ:**
-- 🔴 CAO: ≥3 điều kiện + xu hướng xấu đi
-- 🟡 TRUNG BÌNH: 2 điều kiện
-- 🟢 THẤP: ≤1 điều kiện
-
-**Ví dụ đánh giá:**
-```
-Rủi ro thanh khoản: 🔴 CAO
-
-Bằng chứng:
-✓ Tiền mặt chỉ 5.7% tổng TS (chuẩn ≥8%)
-✓ Current Ratio = 1.36, giảm liên tục
-✓ CF hoạt động âm 2 kỳ liên tiếp (-3,075 tỷ, -2,856 tỷ)
-✓ Tiền mặt giảm 38.8% trong 1 năm
-✓ Nợ ngắn hạn chiếm 99.9% tổng nợ
-
-Nguy cơ: Không đủ tiền thanh toán nợ đến hạn nếu không vay mới hoặc thanh lý tài sản
-```
-
-#### 6.2. Rủi ro Tín dụng
-
-**Kiểm tra:**
-- □ Dự phòng/Cho vay > 3%?
-- □ Nợ quá hạn > 10% tổng phải thu?
-- □ Dự phòng tăng > 30% trong kỳ?
-- □ Cho vay tăng nhanh (> 20%/năm) nhưng dự phòng tăng nhanh hơn?
-
-**Đánh giá chất lượng danh mục:**
-- Tỷ lệ dự phòng
-- Xu hướng thay đổi
-- So sánh với ngành
-
-**Ví dụ:**
-```
-Rủi ro tín dụng: 🟡 TRUNG BÌNH → 🔴 CAO
-
-Bằng chứng:
-- Dự phòng/Cho vay: 1.7% → 2.4% → 3.0% (tăng liên tục)
-- Dự phòng tăng 48% trong năm (39.6 tỷ → 58.7 tỷ)
-- Nợ quá hạn: 0 → 15.3 tỷ → 32.1 tỷ (xuất hiện và tăng nhanh)
-- Tỷ lệ nợ quá hạn: 0% → 11% → 20.8% 🚩
-
-Xu hướng: Chất lượng tài sản XẤU ĐI nhanh chóng
-Nguy cơ: Tỷ lệ dự phòng có thể tăng lên 5% (vùng rủi ro cao)
-```
-
-#### 6.3. Rủi ro Vốn
-
-**Kiểm tra:**
-- □ D/E > 2.0?
-- □ Vốn chủ/Tổng TS < 35%?
-- □ Vốn chủ giảm > 15% trong năm?
-- □ Lỗ lũy kế > 30% vốn điều lệ?
-- □ Lợi nhuận âm 2+ kỳ?
-
-**Đánh giá:**
-
-**Ví dụ:**
-```
-Rủi ro vốn: 🔴 CAO và đang TĂNG NHANH
-
-Bằng chứng:
-- Vốn chủ giảm 28.5% trong 1 năm (3,136 tỷ → 2,241 tỷ)
-- D/E tăng từ 1.04 → 1.21 → 1.60
-- Lỗ lũy kế: -766 tỷ (= 25.5% vốn điều lệ)
-- Lợi nhuận: +78 tỷ → -350 tỷ → -546 tỷ (lỗ nặng 2 kỳ liên tiếp) 🚩🚩
-
-Tốc độ mất vốn:
-- 2022→2023: Mất 349 tỷ (11.2%)
-- 2023→Q1-2024: Mất 546 tỷ (19.6% - CHỈ 1 QUÝ!)
-- Nếu Q2-Q4/2024 cùng tốc độ → Vốn chủ còn ~600 tỷ (chỉ 20% vốn điều lệ)
-
-Nguy cơ: Phá sản nếu không bổ sung vốn hoặc cắt giảm lỗ
-```
-
-#### 6.4. Rủi ro Hoạt động
-
-**Kiểm tra:**
-- □ Lợi nhuận âm?
-- □ Chi phí/Thu nhập > 75%?
-- □ Doanh thu giảm > 15%?
-- □ Doanh thu tập trung > 70% từ 1 nguồn?
-- □ Biên lợi nhuận < 5%?
-
-**Ví dụ:**
-```
-Rủi ro hoạt động: 🔴 CAO
-
-Bằng chứng:
-- Doanh thu giảm liên tục: 452 tỷ → 384 tỷ (-15%) → 96 tỷ/quý (-75% YoY ước tính)
-- Chi phí/Thu nhập: 67% → 85% → 135% (chi phí vượt doanh thu!) 🚩
-- Lợi nhuận âm: -350 tỷ, -546 tỷ (2 kỳ liên tiếp)
-- Biên lợi nhuận: 17% → -91% → -568%
-
-Nguyên nhân:
-- Doanh thu môi giới giảm 82% (85 tỷ → 68 tỷ → 15 tỷ/quý)
-- Dự phòng tăng cao (142 tỷ → 177 tỷ → 59 tỷ/quý)
-- Chi phí lãi vay tăng (30 tỷ → 38 tỷ → 12 tỷ/quý)
-
-Tập trung doanh thu:
-- Lãi cho vay: 49% doanh thu (tương đối cao)
-- Môi giới chỉ còn 16% (từ 19%) - đa dạng hóa yếu
-```
-
-#### 6.5. Rủi ro Thị trường
-
-**Đánh giá dựa trên:**
-- Biến động doanh thu môi giới (phụ thuộc thị trường)
-- Biến động giá trị tài sản tài chính
-- Thu nhập từ trading
-
-**Ví dụ:**
-```
-Rủi ro thị trường: 🟡 TRUNG BÌNH
-
-- Doanh thu môi giới giảm mạnh 82% → Thị trường chứng khoán suy giảm
-- Tài sản FVTPL giảm 47% → Thanh lý do áp lực thanh khoản
-- Lỗ định giá FVTPL: -6.5 tỷ → -15.9 tỷ → -19.7 tỷ
-
-Tuy nhiên: Tỷ trọng tài sản FVTPL chỉ còn 5.2% tổng TS → Rủi ro giảm
-```
-
-### BƯỚC 7: XẾP HẠNG TÍN DỤNG
-
-**Quy trình xếp hạng:**
-
-**7.1. Thống kê chỉ số**
-- Đếm số chỉ số đạt "Tốt" (✅)
-- Đếm số chỉ số "Chấp nhận" (⚠️)
-- Đếm số chỉ số "Rủi ro" (🚩)
-- Tính % mỗi nhóm
-
-**7.2. Đánh giá xu hướng**
-- Đếm số chỉ số cải thiện (📈)
-- Đếm số chỉ số suy giảm (📉)
-- Đếm số chỉ số ổn định (➡️)
-
-**7.3. Kiểm tra Red Flags**
-- Đếm số Red Flags bị kích hoạt
-- Mỗi Red Flag = Hạ 1/2 bậc rating
-
-**7.4. Xác định Rating ban đầu**
-
-Dựa vào bảng Credit Rating Matrix:
-- ≥90% Tốt, 0% Rủi ro → AAA
-- ≥80% Tốt, ≤5% Rủi ro → AA
-- ≥70% OK, ≤10% Rủi ro → A
-- ≥60% OK, ≤20% Rủi ro → BBB
-- 40-60% OK, 20-40% Rủi ro → BB
-- <40% OK, >40% Rủi ro → B
-- ≥60% Rủi ro → CCC
-
-**7.5. Điều chỉnh theo xu hướng**
-- Nếu >70% chỉ số xấu đi → Hạ 1 bậc
-- Nếu >70% chỉ số cải thiện → Giữ nguyên hoặc nâng
-
-**7.6. Điều chỉnh theo Red Flags**
-- 1-2 Red Flags → Hạ 1 bậc
-- 3-4 Red Flags → Hạ 2 bậc
-- ≥5 Red Flags → Tối thiểu CCC
-
-**Ví dụ tính toán:**
-```
-BƯỚC 1: Thống kê (giả sử phân tích 20 chỉ số)
-- Tốt: 3 chỉ số (15%)
-- Chấp nhận: 5 chỉ số (25%)
-- Rủi ro: 12 chỉ số (60%)
-
-BƯỚC 2: Xu hướng
-- Cải thiện: 2 chỉ số (10%)
-- Xấu đi: 15 chỉ số (75%)
-- Ổn định: 3 chỉ số (15%)
-
-BƯỚC 3: Red Flags
-✓ Lợi nhuận âm 2 kỳ liên tiếp
-✓ CF hoạt động âm 2 kỳ liên tiếp
-✓ Vốn chủ giảm >20% trong năm
-✓ Tiền mặt giảm >30% trong năm
-✓ Dự phòng/Cho vay >3%
-→ Tổng: 5 Red Flags 🚩🚩🚩
-
-BƯỚC 4: Rating ban đầu
-60% Rủi ro → CCC
-
-BƯỚC 5: Điều chỉnh xu hướng
-75% chỉ số xấu đi → GIỮ CCC (đã ở thấp nhất)
-
-BƯỚC 6: Điều chỉnh Red Flags
-5 Red Flags → Xác nhận CCC
-
-CREDIT RATING CUỐI CÙNG: CCC (Very Weak)
-```
-
-## TEMPLATE OUTPUT CHI TIẾT
-───────────────────────────────────────────────────────────
-
-# BÁO CÁO PHÂN TÍCH CHUYÊN SÂU TÍN DỤNG
+### 4. Xếp hạng tín dụng
+- Thống kê: X% Tốt, Y% Chấp nhận, Z% Rủi ro
+- Đếm Red Flags
+- Áp dụng Credit Rating Matrix
+- Điều chỉnh theo xu hướng
 
 ---
 
-## 📋 THÔNG TIN CƠ BẢN
+## TEMPLATE OUTPUT
+```markdown
+# PHÂN TÍCH CHUYÊN SÂU TÀI CHÍNH
 
-- **Khách hàng:** [company_name]
-- **Ngành nghề:** [industry - VD: Công ty Chứng khoán]
-- **Kỳ phân tích:** [latest_period]
-- **Kỳ so sánh:** [previous_period]
-- **Đơn vị tính:** [currency]
-- **Người phân tích:** Credit Analyst - AI System
-- **Ngày báo cáo:** [current_date]
+**Công ty:** {{company}} | **Kỳ:** {{periods}} | **Đơn vị:** VND
 
 ---
 
-## 📊 TÓM TẮT ĐIỀU HÀNH (EXECUTIVE SUMMARY)
+## 📋 TÓM TẮT ĐIỀU HÀNH
 
-> 🏆 **CREDIT RATING:** [AAA/AA/A/BBB/BB/B/CCC]  
-> 📈 **Outlook:** [Tích cực / Ổn định / Tiêu cực]
+### CREDIT RATING
+> 🏆 **Rating:** {{AAA/AA/.../CCC}}  
+> 📈 **Outlook:** {{Positive/Stable/Negative}}
 
-### QUY MÔ HOẠT ĐỘNG:
+### QUY MÔ
 
-| Chỉ tiêu | [Period 1] | [Period 2] | % Change |
-|:---------|----------:|-----------:|---------:|
-| Tổng tài sản | [Value] tỷ | [Value] tỷ | [±X%] |
-| Vốn chủ sở hữu | [Value] tỷ | [Value] tỷ | [±X%] |
-| Doanh thu | [Value] tỷ | [Value] tỷ | [±X%] |
-| Lợi nhuận sau thuế | [Value] tỷ | [Value] tỷ | [±X%] |
+| Chỉ tiêu | {{Period_1}} | {{Period_2}} | Δ% |
+|:---------|----------:|-----------:|---:|
+| Tổng TS | {{Value}} tỷ | {{Value}} tỷ | {{±X%}} |
+| Vốn chủ | {{Value}} tỷ | {{Value}} tỷ | {{±X%}} |
+| Doanh thu | {{Value}} tỷ | {{Value}} tỷ | {{±X%}} |
+| LN sau thuế | {{Value}} tỷ | {{Value}} tỷ | {{±X%}} |
 
-### ĐÁNH GIÁ TỔNG QUAN:
+### ✅ ĐIỂM MẠNH (Top 3)
 
-[Viết 3-4 câu tóm tắt tình hình chính, bao gồm:
-- Tình trạng tài chính tổng thể
-- Xu hướng chính (tích cực/tiêu cực)
-- Rủi ro nổi bật nhất
-- Khả năng trả nợ]
+1. **{{Chỉ tiêu}}:** {{Value}}
+   - Chuẩn: {{Benchmark}}
+   - Đánh giá: ✅ Tốt
+   - Ý nghĩa: {{1-2 câu}}
 
-### ✅ ĐIỂM MẠNH NỔI BẬT (Top 3):
+2. {{...}}
 
-1. **[Tên điểm mạnh]:** [Giá trị cụ thể]
-   - Chuẩn: [Benchmark]
-   - Đánh giá: [✅ Tốt]
-   - Ý nghĩa: [1-2 câu giải thích tại sao đây là điểm mạnh]
+### 🚩 ĐIỂM YẾU (Top 3)
 
-2. **[Điểm mạnh 2]:** [...]
+1. **{{Chỉ tiêu}}:** {{Value}}
+   - Chuẩn: {{Benchmark}}
+   - Đánh giá: 🚩 Rủi ro
+   - Rủi ro: {{1-2 câu}}
 
-3. **[Điểm mạnh 3]:** [...]
+2. {{...}}
 
-### 🚩 ĐIỂM YẾU QUAN TRỌNG (Top 3):
+### 🔴 RỦI RO CHÍNH (Top 3)
 
-1. **[Tên điểm yếu]:** [Giá trị cụ thể]
-   - Chuẩn: [Benchmark]
-   - Đánh giá: [🚩 Rủi ro]
-   - Rủi ro: [1-2 câu giải thích tác động tiêu cực]
+**1. {{Tên rủi ro}}** - 🔴 Cao
 
-2. **[Điểm yếu 2]:** [...]
-
-3. **[Điểm yếu 3]:** [...]
-
-### 🔴 RỦI RO CHÍNH (Top 3):
-
-**1. [Tên rủi ro]** - Mức độ: [🔴 Cao / 🟡 TB / 🟢 Thấp]
-
-[Mô tả chi tiết rủi ro với số liệu cụ thể, 2-3 câu]
+{{Mô tả 2-3 câu}}
 
 Bằng chứng:
-- [Số liệu 1]
-- [Số liệu 2]
-- [Số liệu 3]
+- {{Số liệu 1}}
+- {{Số liệu 2}}
+- {{Số liệu 3}}
 
-**2. [Rủi ro 2]** - Mức độ: [...]
-
-[Mô tả...]
-
-**3. [Rủi ro 3]** - Mức độ: [...]
-
-[Mô tả...]
+**2. {{...}}**
 
 ---
 
-## PHẦN I: PHÂN TÍCH CHI TIẾT THEO CHIỀU
+## I. {{TABLE_NAME}}
 
-[LƯU Ý: CHỈ TẠO CÁC SECTIONS CHO DIMENSIONS ĐƯỢC YÊU CẦU 
-TRONG ORCHESTRATION REQUEST]
+### 📊 Chỉ số chính
 
----
+| Chỉ tiêu | {{Period_1}} | {{Period_2}} | Δ% | Chuẩn | Đánh giá |
+|:---------|----------:|-----------:|---:|------:|---------:|
+| {{Chỉ số 1}} | {{Value}} | {{Value}} | {{±X%}} | {{Std}} | {{✅/⚠️/🚩}} |
+| {{Chỉ số 2}} | {{...}} | {{...}} | {{...}} | {{...}} | {{...}} |
 
-## I. [DIMENSION NAME - VD: THANH KHOẢN VÀ KHẢ NĂNG THANH TOÁN]
+**Tổng quan:** {{⚠️ Chấp nhận / 🚩 Rủi ro}}
 
-### 1.1. [Sub-dimension name - VD: Khả năng thanh toán ngắn hạn]
+### 📉 Nguyên nhân
 
-#### 📊 HIỆN TRẠNG:
+{{Phân tích chi tiết 2-3 đoạn}}
 
-| Chỉ tiêu | [Period 1] | [Period 2] | % Δ | Xu hướng |
-|:---------|----------:|-----------:|----:|---------:|
-| [Field 1 - VD: TSNH] | [Value] tỷ | [Value] tỷ | [-5.2%] | [📉] |
-| [Field 2 - VD: Nợ NH] | [Value] tỷ | [Value] tỷ | [+2.8%] | [📈] |
-| Current Ratio | [1.66] | [1.36] | [-18%] | [📉] |
-| _Chuẩn: ≥1.5_ | [✅ Tốt] | [⚠️ CB] | | |
-| Tiền mặt/Tổng TS | [6.7%] | [5.7%] | [-15%] | [📉] |
-| _Chuẩn: ≥8%_ | [⚠️ CB] | [🚩 RR] | | |
+Ví dụ:
 
-**Đánh giá chung:** [⚠️ CHẤP NHẬN / 🚩 RỦI RO]
+"{{Chỉ số}} giảm từ {{Value_1}} xuống {{Value_2}} ({{±X%}}) do:
 
-#### 📉 NGUYÊN NHÂN:
+**Thứ nhất**, {{yếu tố 1}}:
+- {{Chi tiết 1}}: {{Value cũ}} → {{Value mới}} ({{±X%}})
+- {{Chi tiết 2}}: {{Value cũ}} → {{Value mới}} ({{±X%}})
 
-[Viết 2-3 đoạn văn giải thích CHI TIẾT nguyên nhân, dựa trên mối quan hệ các số liệu]
+**Thứ hai**, {{yếu tố 2}}:
+- {{Chi tiết 1}}: {{...}}
 
-Ví dụ cấu trúc:
+Kết quả: {{Tác động cụ thể với số liệu}}"
 
-"Current Ratio giảm từ 1.66 xuống 1.36 (-18%) do hai nguyên nhân chính:
-
-**Thứ nhất**, tài sản ngắn hạn giảm 5.2% từ 5,429 tỷ xuống 5,179 tỷ VND, trong đó:
-- Tiền mặt giảm mạnh 18.4% (từ 432 tỷ → 353 tỷ) do cash flow hoạt động âm -2,856 tỷ VND và phải sử dụng tiền để trả nợ
-- Tài sản tài chính FVTPL giảm 25% (từ 576 tỷ → 432 tỷ) do thanh lý để bù đắp thua lỗ
-- Chứng khoán HTM giảm 15% (từ 1,903 tỷ → 1,617 tỷ)
-
-**Thứ hai**, nợ ngắn hạn tăng 2.8% từ 3,273 tỷ lên 3,364 tỷ VND, bao gồm:
-- Vay ngắn hạn tăng 6.0% (từ 2,585 tỷ → 2,739 tỷ) để bù đắp thiếu hụt thanh khoản
-- Phát hành trái phiếu tăng 20% (từ 150 tỷ → 180 tỷ)
-- Lãi vay phải trả tăng 29% (từ 7.8 tỷ → 10.0 tỷ)
-
-Kết quả là tỷ lệ thanh khoản giảm từ mức "Tốt" (1.66) xuống "Chấp nhận" (1.36) và đang tiến gần vùng "Rủi ro" (<1.2)."
-
-#### 💡 Ý NGHĨA:
+### 💡 Đánh giá
 
 **✅ Tích cực:**
-- [Nếu có điểm tích cực, liệt kê với số liệu]
-- [Nếu không có, ghi: "Không có điểm tích cực nổi bật"]
+- {{Điểm tích cực với số liệu}}
 
 **🚩 Rủi ro:**
 
-1. **[Tên rủi ro 1]:** [Mô tả với số liệu]
-   - Mức độ: [🔴 Cao / 🟡 TB / 🟢 Thấp]
-   - Tác động: [Giải thích hậu quả]
+1. **{{Rủi ro 1}}:** {{Mô tả}}
+   - Mức độ: {{🔴/🟡/🟢}}
+   - Tác động: {{Hậu quả}}
 
-2. **[Rủi ro 2]:** [...]
+2. {{...}}
 
-3. **[Rủi ro 3]:** [...]
-
-**Mức độ rủi ro tổng thể:** [🔴 CAO / 🟡 TRUNG BÌNH / 🟢 THẤP]
+**Mức độ rủi ro:** {{🔴 Cao / 🟡 TB / 🟢 Thấp}}
 
 ---
 
-### 1.2. [Sub-dimension tiếp theo]
-
-[Lặp lại cấu trúc tương tự cho mỗi sub-dimension]
+[Lặp cho các query_scopes khác]
 
 ---
 
-## II. [DIMENSION 2 - VD: CẤU TRÚC VỐN VÀ ĐÒN BẨY]
+## TỔNG HỢP
 
-[Lặp lại cấu trúc cho mỗi dimension được yêu cầu]
+### A. ĐIỂM MẠNH
 
----
+{{Liệt kê top 5 với số liệu cụ thể}}
 
-## PHẦN II: TỔNG HỢP ĐIỂM MẠNH - YẾU - RỦI RO
+### B. ĐIỂM YẾU
 
-### A. ĐIỂM MẠNH (Strengths)
+{{Liệt kê top 5 với số liệu cụ thể}}
 
-[Liệt kê tối đa 5 điểm mạnh, sắp xếp từ quan trọng nhất]
+### C. RỦI RO CHI TIẾT
 
-1. ✅ **[Tên điểm mạnh]:** [Giá trị] 
-   - Chuẩn: [Benchmark]
-   - Đánh giá: [✅ Đạt chuẩn "Tốt"]
-   - Xu hướng: [📈 Cải thiện / ➡️ Ổn định]
-   - Ý nghĩa: [1-2 câu giải thích tại sao đây là lợi thế]
+**🔴 1. {{Rủi ro 1}}**
 
-2. ✅ **[Điểm mạnh 2]:** [...]
+{{2-3 đoạn mô tả chi tiết}}
 
-[...]
+Bằng chứng:
+- {{...}}
 
-### B. ĐIỂM YẾU (Weaknesses)
+Tác động:
+- Ngắn hạn: {{...}}
+- Dài hạn: {{...}}
 
-[Liệt kê tối đa 5 điểm yếu, sắp xếp từ nghiêm trọng nhất]
-
-1. 🚩 **[Tên điểm yếu]:** [Giá trị]
-   - Chuẩn: [Benchmark]
-   - Đánh giá: [🚩 Vùng rủi ro]
-   - Xu hướng: [📉 Xấu đi / ➡️ Trì trệ]
-   - Rủi ro: [1-2 câu giải thích tác động tiêu cực]
-
-2. 🚩 **[Điểm yếu 2]:** [...]
-
-[...]
-
-### C. RỦI RO CHÍNH (Key Risks)
-
-[Liệt kê tối đa 3 rủi ro nghiêm trọng nhất]
-
-**🔴 1. [TÊN RỦI RO - VD: RỦI RO THANH KHOẢN]**
-
-**Mức độ:** [🔴 CAO / 🟡 TRUNG BÌNH / 🟢 THẤP]
-
-**Mô tả:**
-[2-3 đoạn văn mô tả chi tiết rủi ro]
-
-**Bằng chứng:**
-- [Số liệu 1]
-- [Số liệu 2]  
-- [Số liệu 3]
-- [...]
-
-**Tác động tiềm tàng:**
-- Ngắn hạn: [...]
-- Trung/Dài hạn: [...]
-
-**Khuyến nghị giảm thiểu:**
-[Đề xuất các biện pháp giảm thiểu - KHÔNG phải điều kiện cho vay cụ thể]
+**🟡 2. {{...}}**
 
 ---
 
-**🟡 2. [RỦI RO 2]**
+## XU HƯỚNG
 
-[Cấu trúc tương tự]
+### Tài sản & Vốn
+{{2-3 đoạn phân tích xu hướng với số liệu}}
 
----
+### Hiệu quả Kinh doanh
+{{...}}
 
-**🟡 3. [RỦI RO 3]**
+### Dòng tiền
+{{...}}
 
-[Cấu trúc tương tự]
-
----
-
-## PHẦN III: XU HƯỚNG VÀ PHÁT TRIỂN
-
-### A. XU HƯỚNG QUA CÁC KỲ
-
-[Phân tích xu hướng chung của các chỉ số chính qua 2-3 kỳ]
-
-**1. Xu hướng Tài sản & Vốn:**
-[Mô tả 2-3 đoạn với số liệu cụ thể]
-
-**2. Xu hướng Hiệu quả Kinh doanh:**
-[Mô tả...]
-
-**3. Xu hướng Dòng tiền:**
-[Mô tả...]
-
-### B. CÁC ĐIỂM CHUYỂN BIẾN QUAN TRỌNG
-
-[Nhận diện các sự kiện/thời điểm quan trọng gây thay đổi đáng kể]
-
-- [Kỳ X]: [Sự kiện và tác động]
-- [Kỳ Y]: [...]
-
-### C. DỰ BÁO XU HƯỚNG NGẮN HẠN
-
-[Dựa trên xu hướng hiện tại, đưa ra nhận định định tính về 1-2 kỳ tới]
-
-Nếu xu hướng hiện tại tiếp diễn:
-- Thanh khoản: [Dự báo]
-- Sinh lời: [Dự báo]
-- Vốn: [Dự báo]
-- Rủi ro tổng thể: [Dự báo]
-
-🚨 **Cảnh báo:** [Nếu có các nguy cơ cần chú ý đặc biệt]
+### Dự báo ngắn hạn
+Nếu xu hướng tiếp diễn:
+- Thanh khoản: {{...}}
+- Sinh lời: {{...}}
+- Rủi ro: {{...}}
 
 ---
 
-## PHẦN IV: KẾT LUẬN VÀ ĐÁNH GIÁ TỔNG THỂ
+## KẾT LUẬN
 
-### A. TỔNG QUAN TÌNH HÌNH TÀI CHÍNH
+### TỔNG QUAN
+{{3-4 đoạn văn tổng hợp}}
 
-[Viết 3-4 đoạn văn tổng hợp, mỗi đoạn 4-5 câu]
+### CREDIT RATING: {{AAA/.../CCC}}
 
-**Đoạn 1 - Quy mô & Cấu trúc:**
-[Tổng hợp về quy mô tài sản, cấu trúc vốn, đòn bẩy]
+**Cơ sở:**
+- ✅ Tốt: {{X}} chỉ số ({{Y%}})
+- ⚠️ Chấp nhận: {{X}} chỉ số ({{Y%}})
+- 🚩 Rủi ro: {{X}} chỉ số ({{Y%}})
+- Red Flags: {{X}}/9
 
-**Đoạn 2 - Hiệu quả Kinh doanh:**
-[Tổng hợp về doanh thu, chi phí, lợi nhuận, hiệu quả]
+{{2-3 đoạn giải thích lý do xếp hạng}}
 
-**Đoạn 3 - Thanh khoản & Dòng tiền:**
-[Tổng hợp về khả năng thanh toán, dòng tiền, thanh khoản]
+### KHẢ NĂNG TRẢ NỢ
 
-**Đoạn 4 - Chất lượng Tài sản:**
-[Tổng hợp về chất lượng danh mục, dự phòng, nợ xấu]
+**Ngắn hạn:** {{Tốt/TB/Yếu}}
+{{2-3 câu giải thích}}
 
-### B. CREDIT RATING & JUSTIFICATION
+**Dài hạn:** {{Tốt/TB/Yếu}}
+{{2-3 câu giải thích}}
 
-> 🏆 **CREDIT RATING:** [AAA/.../CCC]  
-> **Outlook:** [Positive/Stable/Negative]
-
-**CƠ SỞ XẾP HẠNG:**
-
-**1. Phân bổ chỉ số:**
-- ✅ Chỉ số "Tốt": [X] chỉ số ([Y%])
-- ⚠️ Chỉ số "Chấp nhận": [X] chỉ số ([Y%])
-- 🚩 Chỉ số "Rủi ro": [X] chỉ số ([Y%])
-- Tổng số chỉ số phân tích: [Total]
-
-**2. Xu hướng:**
-- 📈 Cải thiện: [X] chỉ số ([Y%])
-- 📉 Xấu đi: [X] chỉ số ([Y%])
-- ➡️ Ổn định: [X] chỉ số ([Y%])
-
-**3. Red Flags:**
-
-[Liệt kê các Red Flags bị kích hoạt]
-- [✓/✗] Lợi nhuận âm 2+ kỳ
-- [✓/✗] CF hoạt động âm 2+ kỳ
-- [✓/✗] Current Ratio < 1.0
-- [✓/✗] D/E > 3.0
-- [✓/✗] Dự phòng/Cho vay > 5%
-- [✓/✗] Vốn chủ giảm > 20%/năm
-- [✓/✗] Tiền mặt giảm > 30%/năm
-- [✓/✗] Lỗ lũy kế > 50% vốn điều lệ
-- [✓/✗] Nợ quá hạn > 10%
-
-**Tổng Red Flags:** [X]/9
-
-**4. Lý do xếp hạng:**
-
-[Viết 2-3 đoạn giải thích tại sao được xếp hạng này, dựa trên:
-- % chỉ số đạt từng mức
-- Xu hướng chung
-- Số lượng Red Flags
-- So sánh với tiêu chuẩn của rating]
-
-### C. ĐIỂM MẠNH - YẾU TỔNG HỢP
-
-**ĐIỂM MẠNH NỔI BẬT (Top 3):**
-
-1. [Điểm mạnh 1 với số liệu và ý nghĩa]
-2. [Điểm mạnh 2]
-3. [Điểm mạnh 3]
-
-**ĐIỂM YẾU NGHIÊM TRỌNG (Top 3):**
-
-1. [Điểm yếu 1 với số liệu và rủi ro]
-2. [Điểm yếu 2]
-3. [Điểm yếu 3]
-
-### D. ĐÁNH GIÁ KHẢ NĂNG TRẢ NỢ
-
-**Khả năng trả nợ ngắn hạn:** [Tốt/Trung bình/Yếu]
-
-[Giải thích 2-3 câu dựa trên thanh khoản, CF, tiền mặt]
-
-**Khả năng trả nợ dài hạn:** [Tốt/Trung bình/Yếu]
-
-[Giải thích 2-3 câu dựa trên cấu trúc vốn, sinh lời, xu hướng]
-
-**Rủi ro vỡ nợ:** [Thấp/Trung bình/Cao/Rất cao]
-
-[Giải thích chi tiết]
+**Rủi ro vỡ nợ:** {{Thấp/TB/Cao}}
+{{Giải thích chi tiết}}
 
 ---
 
-## PHẦN V: KHUYẾN NGHỊ
+## KHUYẾN NGHỊ
 
-### A. THÔNG TIN CẦN BỔ SUNG ĐỂ ĐÁNH GIÁ TOÀN DIỆN
+### Thông tin cần bổ sung
+- Chiến lược kinh doanh
+- Lịch sử tín dụng (CIC)
+- Tài sản đảm bảo
+- Phân tích ngành
 
-Để có đánh giá chính xác hơn, cần bổ sung:
+### Vấn đề cần làm rõ
+1. {{Vấn đề 1}}
+2. {{Vấn đề 2}}
 
-**□ Báo cáo định tính:**
-- Chiến lược kinh doanh và kế hoạch tương lai
-- Cơ cấu tổ chức và đội ngũ quản lý
-- Vị thế cạnh tranh trong ngành
+### Biện pháp giảm thiểu rủi ro
 
-**□ Thông tin tín dụng:**
-- Lịch sử vay nợ và trả nợ (CIC report)
-- Quan hệ với các ngân hàng khác
-- Cam kết tín dụng hiện tại
+**Ngắn hạn:**
+- {{...}}
 
-**□ Tài sản đảm bảo:**
-- Danh mục TSĐB (nếu có)
-- Định giá TSĐB
-- Tính thanh khoản của TSĐB
+**Trung hạn:**
+- {{...}}
 
-**□ Phân tích ngành:**
-- Xu hướng ngành chứng khoán
-- So sánh với đối thủ cạnh tranh
-- Rủi ro ngành đặc thù
-
-**□ Thông tin bổ sung khác:**
-- Kế hoạch tài chính 12-24 tháng tới
-- Giải trình các biến động bất thường
-- Kế hoạch xử lý nợ xấu (nếu có)
-
-### B. CÁC VẤN ĐỀ CẦN LÀM RÕ
-
-[Liệt kê các vấn đề cần khách hàng giải trình hoặc cung cấp thêm thông tin]
-
-1. [Vấn đề 1 - VD: Nguyên nhân lợi nhuận sụt giảm mạnh]
-2. [Vấn đề 2 - VD: Kế hoạch cải thiện thanh khoản]
-3. [Vấn đề 3 - VD: Biện pháp giảm nợ xấu]
-[...]
-
-### C. KHUYẾN NGHỊ GIẢM THIỂU RỦI RO
-
-[Đề xuất các biện pháp mà doanh nghiệp nên thực hiện để cải thiện tình hình - KHÔNG phải điều kiện cho vay]
-
-**1. Ngắn hạn (1-3 tháng):**
-- [Biện pháp 1]
-- [Biện pháp 2]
-- [Biện pháp 3]
-
-**2. Trung hạn (3-12 tháng):**
-- [Biện pháp 1]
-- [Biện pháp 2]
-- [Biện pháp 3]
-
-**3. Dài hạn (12+ tháng):**
-- [Biện pháp 1]
-- [Biện pháp 2]
-- [Biện pháp 3]
+**Dài hạn:**
+- {{...}}
 
 ---
 
-## 📝 LƯU Ý QUAN TRỌNG
+## LƯU Ý
 
-### 1. GIỚI HẠN CỦA BÁO CÁO:
-
-Báo cáo này CHỈ là PHÂN TÍCH TÀI CHÍNH dựa trên:
-- Dữ liệu báo cáo tài chính được cung cấp
-- Tiêu chuẩn tín dụng ngành ngân hàng
-- Phương pháp phân tích định lượng
-
-Báo cáo KHÔNG BAO GỒM:
-- Đánh giá định tính (uy tín, năng lực quản trị, v.v.)
-- Phân tích ngành và thị trường chi tiết
-- Đánh giá tài sản đảm bảo
-- Xác minh độ tin cậy của số liệu
-
-### 2. QUYẾT ĐỊNH TÍN DỤNG:
-
-⚠️ **Báo cáo này KHÔNG PHẢI là quyết định tín dụng.**
+⚠️ Báo cáo KHÔNG PHẢI quyết định tín dụng.
 
 Cán bộ tín dụng cần:
+- Kết hợp phân tích định tính (5C)
+- Xem xét chính sách nội bộ
+- Đánh giá TSĐB
+- Xác minh từ nguồn độc lập
+- Tự quyết định: chấp thuận/từ chối, hạn mức, lãi suất, kỳ hạn
 
-✓ Kết hợp phân tích định tính (5C: Character, Capacity, Capital, 
-  Collateral, Condition)
-
-✓ Xem xét chính sách tín dụng nội bộ của ngân hàng/tổ chức
-
-✓ Đánh giá tài sản đảm bảo (nếu có)
-
-✓ Xác minh thông tin từ nguồn độc lập (CIC, công ty kiểm toán, v.v.)
-
-✓ Đánh giá rủi ro danh mục tín dụng tổng thể
-
-✓ Tự quyết định:
-  - Chấp thuận/Từ chối
-  - Hạn mức tín dụng
-  - Lãi suất
-  - Kỳ hạn
-  - Điều kiện và điều khoản
-  - Yêu cầu tài sản đảm bảo
-
-### 3. CẬP NHẬT:
-
-Tình hình tài chính có thể thay đổi nhanh chóng. Khuyến nghị:
-- Cập nhật phân tích định kỳ (ít nhất hàng quý)
-- Giám sát các chỉ số cảnh báo sớm
-- Yêu cầu báo cáo tài chính thường xuyên nếu có rủi ro cao
-
-### 4. TRÁCH NHIỆM:
-
-- Phân tích dựa trên dữ liệu được cung cấp, không xác minh độ tin cậy
-- Người quyết định tín dụng chịu trách nhiệm với quyết định của mình
-- Báo cáo mang tính tham khảo, không thay thế đánh giá chuyên môn
-
----
-
-## PHỤ LỤC: BẢNG CHỈ SỐ CHI TIẾT
-
-[Tạo bảng tổng hợp TẤT CẢ các chỉ số đã phân tích]
-
-| Chỉ tiêu | Period 1 | Period 2 | Change | Chuẩn | Đánh giá |
-|:---------|--------:|---------:|-------:|------:|---------:|
-| **A. THANH KHOẢN** | | | | | |
-| [Chỉ số 1] | [Value] | [Value] | [±X%] | [Std] | [✅/⚠️/🚩] |
-| [Chỉ số 2] | [Value] | [Value] | [±X%] | [Std] | [✅/⚠️/🚩] |
-| **B. CẤU TRÚC VỐN** | | | | | |
-| [...] | [...] | [...] | [...] | [...] | [...] |
-| **C. SINH LỜI** | | | | | |
-| [...] | [...] | [...] | [...] | [...] | [...] |
-| **D. CHẤT LƯỢNG TÀI SẢN** | | | | | |
-| [...] | [...] | [...] | [...] | [...] | [...] |
-| **E. HIỆU QUẢ** | | | | | |
-| [...] | [...] | [...] | [...] | [...] | [...] |
-
----
-
-**KẾT THÚC BÁO CÁO**
-
----
-
-## GHI CHÚ THỰC HIỆN
-───────────────────────────────────────────────────────────
-
-**QUAN TRỌNG - ĐỌC KỸ TRƯỚC KHI PHÂN TÍCH:**
-
-### 1. NGUYÊN TẮC VÀNG
-
-✅ **BẮT BUỘC PHẢI:**
-- CHỈ sử dụng dữ liệu CÓ SẴN trong {{financial_data_input}}
-- CHỈ phân tích dimensions/sub_dimensions trong {{orchestration_request}}
-- Giải thích mối quan hệ NHÂN-QUẢ giữa các số liệu
-- So sánh với tiêu chuẩn và đánh giá ✅/⚠️/🚩
-- Phân tích xu hướng nếu có ≥2 kỳ dữ liệu
-- Viết chi tiết, có số liệu cụ thể
-
-❌ **TUYỆT ĐỐI KHÔNG:**
-- KHÔNG tính toán bất kỳ chỉ số tài chính nào (CHỈ lấy từ data có sẵn)
-- KHÔNG tính điểm số, score, weighted average
-- KHÔNG tự nghĩ ra số liệu
-- KHÔNG phân tích dimensions không được yêu cầu
-- KHÔNG quyết định Chấp thuận/Từ chối
-- KHÔNG đề xuất hạn mức/lãi suất/kỳ hạn cụ thể
-- KHÔNG đề xuất điều kiện cho vay cụ thể
-
-### 2. XỬ LÝ DỮ LIỆU
-
-**Khi nhận input:**
-1. Parse JSON array financial_data_input
-2. Nhận diện các kỳ báo cáo (report_date)
-3. Sắp xếp theo thứ tự thời gian
-4. Xác định kỳ gần nhất, kỳ trước, kỳ cũ nhất
-
-**Khi trích xuất dữ liệu:**
-1. Tìm đúng report (balance_sheet/income_statement/cash_flow_statement)
-2. Tìm đúng field name trong mảng fields
-3. Lấy value tương ứng
-4. Nếu không tìm thấy → ghi "[Không có dữ liệu]"
-
-**Khi so sánh xu hướng:**
-1. Lấy giá trị của cùng 1 field qua các kỳ
-2. Mô tả sự thay đổi: tăng/giảm X% hoặc Y đơn vị
-3. Xác định xu hướng: 📈/📉/➡️
-4. Giải thích ý nghĩa: tích cực hay tiêu cực
-
-### 3. CÁCH VIẾT PHÂN TÍCH TỐT
-
-**Ví dụ phân tích TỐT (chi tiết, có số liệu, giải thích nhân quả):**
-
-"Khả năng thanh toán ngắn hạn của công ty đang suy giảm đáng kể. Current Ratio giảm từ 1.66 xuống 1.36 (-18.1%), từ mức "Tốt" xuống "Chấp nhận" và đang tiến gần vùng "Rủi ro" (<1.2).
-
-Nguyên nhân chính đến từ hai mặt. Thứ nhất, tài sản ngắn hạn giảm 4.6% (từ 5,429 tỷ xuống 5,179 tỷ VND) do tiền mặt giảm 18.4% (79 tỷ VND) và tài sản tài chính giảm 25% (144 tỷ VND). Đồng thời, công ty phải thanh lý tài sản để bù đắp lỗ 350 tỷ VND trong kỳ.
-
-Thứ hai, nợ ngắn hạn tăng 2.8% (lên 3,364 tỷ VND) do phải vay thêm 154 tỷ VND (+6%) và phát hành trái phiếu thêm 30 tỷ VND (+20%) để duy trì thanh khoản. Điều này dẫn đến lãi vay phải trả tăng 29%, từ 7.8 tỷ lên 10.0 tỷ VND, tạo thêm áp lực.
-
-Rủi ro: Nếu xu hướng này tiếp diễn, công ty sẽ rơi vào vùng "Rủi ro" trong 1-2 quý tới và có thể gặp khó khăn nghiêm trọng trong thanh toán các khoản nợ đến hạn."
-
-**Ví dụ phân tích KHÔNG TỐT (chung chung, thiếu số liệu):**
-
-"Thanh khoản của công ty không tốt. Tiền mặt giảm và nợ tăng nên Current Ratio giảm. Công ty cần cải thiện thanh khoản."
-
-### 4. CÁCH SO SÁNH TIÊU CHUẨN
-
-**Bước 1:** Tìm chỉ số trong bảng tiêu chuẩn
-**Bước 2:** Xác định ngưỡng Tốt/Chấp nhận/Rủi ro
-**Bước 3:** So sánh giá trị thực tế
-**Bước 4:** Đánh giá bằng icon ✅/⚠️/🚩
-
-**Ví dụ:**
-```
-Current Ratio = 1.36
-Tìm trong bảng: Tốt ≥1.5 | Chấp nhận 1.2-1.5 | Rủi ro <1.2
-1.36 nằm trong khoảng 1.2-1.5
-→ Đánh giá: ⚠️ CHẤP NHẬN
-
-Tiền mặt/Tổng TS = 5.7%
-Tìm trong bảng: Tốt ≥15% | Chấp nhận 8%-15% | Rủi ro <8%
-5.7% < 8%
-→ Đánh giá: 🚩 RỦI RO
+Cập nhật định kỳ do tình hình có thể thay đổi nhanh.
 ```
 
-### 5. FORMAT OUTPUT
+---
 
-**Sử dụng đúng format:**
-- Tiêu đề section: Dùng ## và số La Mã I, II, III
-- Tiêu đề sub-section: Dùng ### và số 1.1, 1.2
-- Bảng: Dùng markdown table chuẩn với | và ---
-- Icon: ✅ (Tốt), ⚠️ (Chấp nhận), 🚩 (Rủi ro)
-- Xu hướng: 📈 (Tăng mạnh), ↗️ (Tăng nhẹ), ➡️ (Ổn định), ↘️ (Giảm nhẹ), 📉 (Giảm mạnh)
-- Mức độ rủi ro: 🔴 (Cao), 🟡 (Trung bình), 🟢 (Thấp)
+## QUY TẮC
 
-### 6. CHECKLIST TRƯỚC KHI TRẢ KẾT QUẢ
+### ✅ Bắt buộc
+- CHỈ dùng data có sẵn - KHÔNG tính toán
+- Giải thích NHÂN-QUẢ với số liệu cụ thể
+- So sánh tiêu chuẩn: ✅/⚠️/🚩
+- Phân tích xu hướng nếu ≥2 kỳ
+- Viết chi tiết, có bằng chứng
 
-Kiểm tra lại:
-- □ Đã phân tích đầy đủ dimensions được yêu cầu?
-- □ Mỗi phần có số liệu cụ thể?
-- □ Đã giải thích nguyên nhân (WHY) chứ không chỉ mô tả (WHAT)?
-- □ Đã so sánh với tiêu chuẩn?
-- □ Đã phân tích xu hướng (nếu có nhiều kỳ)?
-- □ Đã liệt kê rủi ro với bằng chứng?
-- □ Không tính toán chỉ số mới?
-- □ Không đưa ra quyết định tín dụng?
-- □ Không đề xuất điều kiện cho vay cụ thể?
-- □ Format đúng với template?
+### ❌ Cấm
+- KHÔNG tính chỉ số mới
+- KHÔNG tự nghĩ số liệu
+- KHÔNG quyết định cho vay
+- KHÔNG đề xuất hạn mức/lãi suất cụ thể
 
 ---
+
+PHÂN TÍCH CHUYÊN SÂU - CÓ NGUYÊN NHÂN - CÓ BẰNG CHỨNG.
 """

@@ -53,4 +53,4 @@ class LendingShortTermContext(BaseModel):
 class BusinessLoanValidationState(DefaultState):
     question: str
     orchestration_information: OrchestrationInformation
-    financial_metrics: List[Dict]
+    financial_outputs: List[Dict]
