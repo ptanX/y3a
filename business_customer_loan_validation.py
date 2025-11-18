@@ -7,10 +7,12 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph.state import CompiledStateGraph, StateGraph
+from mlflow.types.agent import ChatAgentMessage
 from toon import encode
 
 from src.agent.agent_application import AgentApplication
 from src.graph.graph_provider import GraphProvider
+from src.lending.agent.documentation import SSI_TEST_QUESTION
 from src.lending.agent.lending_agent_model import BusinessLoanValidationState, LendingShortTermContext, \
     OrchestrationInformation
 from src.lending.agent.lending_prompt import (
@@ -266,9 +268,9 @@ def calculate_financial_metrics(data):
             return result_dict
 
         # ============ LẤY TOÀN BỘ FINANCIAL_STATEMENT & INCOME_STATEMENT ============
+
         financial_statement_data = get_all_fields("financial_statement")
         income_statement_data = get_all_fields("income_statement")
-
         # ============ LẤY GIÁ TRỊ ĐỂ TÍNH TOÁN ============
         total_assets = financial_statement_data.get("total_assets")
         total_liabilities = financial_statement_data.get("liabilities")
@@ -361,6 +363,7 @@ def calculate_financial_metrics(data):
             else None
         )
 
+
         # 6. ATO (ĐÃ SỬA)
         # ATO = Tổng doanh thu hoạt động / Tổng tài sản bình quân
         avg_total_assets = (
@@ -445,6 +448,12 @@ def calculate_financial_metrics(data):
             else None
         )
 
+        gross_profit_margin = (
+            net_profit_after_tax / total_operating_revenue
+            if net_profit_after_tax and total_operating_revenue and total_operating_revenue != 0
+            else None
+        )
+
         # ============ OUTPUT: METADATA + RAW DATA + METRICS ============
         result = {
             # Metadata
@@ -455,37 +464,39 @@ def calculate_financial_metrics(data):
             # Raw data components
             "financial_statement": financial_statement_data,
             "income_statement": income_statement_data,
+            "calculated_metrics" : {
+                # Calculated Metrics - Debt Management
+                "debt_to_equity": debt_to_equity,
+                "leverage_ratio": leverage_ratio,
+                "debt_ratio": debt_ratio,
+                "long_term_debt_to_equity": long_term_debt_to_equity,
+                "interest_coverage_ratio": interest_coverage_ratio,
 
-            # Calculated Metrics - Debt Management
-            "debt_to_equity": debt_to_equity,
-            "leverage_ratio": leverage_ratio,
-            "debt_ratio": debt_ratio,
-            "long_term_debt_to_equity": long_term_debt_to_equity,
-            "interest_coverage_ratio": interest_coverage_ratio,
+                # Calculated Metrics - Growth
+                "asset_growth_rate": asset_growth_rate,
+                "net_profit_growth_rate": net_profit_growth_rate,
 
-            # Calculated Metrics - Growth
-            "asset_growth_rate": asset_growth_rate,
-            "net_profit_growth_rate": net_profit_growth_rate,
+                # Calculated Metrics - Efficiency
+                "receivables_turnover": receivables_turnover,
+                "ato": ato,
+                "fixed_asset_turnover": fixed_asset_turnover,
 
-            # Calculated Metrics - Efficiency
-            "receivables_turnover": receivables_turnover,
-            "ato": ato,
-            "fixed_asset_turnover": fixed_asset_turnover,
+                # Calculated Metrics - Profitability
+                "ebit": ebit,
+                "ebitda": ebitda,
+                "ebit_margin": ebit_margin,
+                "operating_profit_margin": operating_profit_margin,
+                "roa": roa,
+                "roe": roe,
+                "ros": ros,
 
-            # Calculated Metrics - Profitability
-            "ebit": ebit,
-            "ebitda": ebitda,
-            "ebit_margin": ebit_margin,
-            "operating_profit_margin": operating_profit_margin,
-            "roa": roa,
-            "roe": roe,
-            "ros": ros,
-
-            # Calculated Metrics - Liquidity
-            "current_ratio": current_ratio,
-            "quick_ratio": quick_ratio,
-            "cash_ratio": cash_ratio,
-            "working_capital": working_capital,
+                # Calculated Metrics - Liquidity
+                "current_ratio": current_ratio,
+                "quick_ratio": quick_ratio,
+                "cash_ratio": cash_ratio,
+                "working_capital": working_capital,
+                "gross_profit_margin": gross_profit_margin
+            }
         }
 
         results.append(result)
@@ -655,10 +666,10 @@ def build_financial_table_output(
     }
 
 
-mlflow.langchain.autolog()
+# mlflow.langchain.autolog()
 graph = BusinessLoanValidationGraphProvider().provide()
 chat_agent = AgentApplication.initialize(graph=graph)
-# incoming_message = ChatAgentMessage(role="user", content=SSI_TEST_QUESTION)
+incoming_message = ChatAgentMessage(role="user", content=SSI_TEST_QUESTION)
 # response = chat_agent.predict([incoming_message])
 # print(response)
 mlflow.models.set_model(chat_agent)
