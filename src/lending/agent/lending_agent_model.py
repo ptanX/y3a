@@ -54,3 +54,4 @@ class BusinessLoanValidationState(DefaultState):
     question: str
     orchestration_information: OrchestrationInformation
     financial_outputs: List[Dict]
+    company: str
