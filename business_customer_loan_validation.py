@@ -666,10 +666,10 @@ def build_financial_table_output(
     }
 
 
-# mlflow.langchain.autolog()
+mlflow.langchain.autolog()
 graph = BusinessLoanValidationGraphProvider().provide()
 chat_agent = AgentApplication.initialize(graph=graph)
-incoming_message = ChatAgentMessage(role="user", content=SSI_TEST_QUESTION)
+# incoming_message = ChatAgentMessage(role="user", content=SSI_TEST_QUESTION)
 # response = chat_agent.predict([incoming_message])
 # print(response)
 mlflow.models.set_model(chat_agent)
