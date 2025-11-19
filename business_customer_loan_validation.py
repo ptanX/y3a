@@ -7,17 +7,19 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph.state import CompiledStateGraph, StateGraph
+from mlflow.types.agent import ChatAgentMessage
 from toon import encode
 
 from src.agent.agent_application import AgentApplication
 from src.graph.graph_provider import GraphProvider
+from src.lending.agent.documentation import SSI_TEST_QUESTION
 from src.lending.agent.lending_agent_model import BusinessLoanValidationState, LendingShortTermContext, \
     OrchestrationInformation
 from src.lending.agent.lending_prompt import (
     INCOMING_QUESTION_ANALYSIS,
     TABULAR_RECEIVING_PROMPT,
     TRENDING_ANALYSIS_PROMPT,
-    DEEP_ANALYSIS_PROMPT,
+    DEEP_ANALYSIS_PROMPT, FALLBACK_PROMPT,
 )
 from src.lending.agent.mapping import DIMENSIONAL_MAPPING
 from src.lending.agent.short_term_context import InMemoryShortTermContextRepository
@@ -28,7 +30,7 @@ load_dotenv()
 class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationState]):
 
     def __init__(self):
-        self.llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
+        self.llm = ChatGoogleGenerativeAI(model="gemini-2.5-pro", temperature=0)
         self.short_term_context_repository = InMemoryShortTermContextRepository()
 
     def provide(self) -> CompiledStateGraph:
@@ -50,6 +52,9 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         documents = structured_message.get("documents")
         orchestration_information = self.get_orchestration_information(document_id, question, documents)
         filtered_documents = []
+        company = ""
+        if len(documents) > 0:
+            company = documents[0].get("company")
         for document in documents:
             document_time = document.get("report_date").split("-")[0]
             for period_time in orchestration_information.time_period:
@@ -68,6 +73,7 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
             "question": question,
             "orchestration_information": orchestration_information,
             "financial_outputs": financial_outputs,
+            "company": company
         }
 
     def get_orchestration_information(self, document_id, question, documents):
@@ -126,20 +132,52 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
             if clarifications is not None and len(clarifications) > 0
             else ""
         )
-        prompt = """Tôi chưa xác định được rõ yêu cầu của bạn. Bạn có thể làm rõ thêm câu hỏi sau không?
-        Câu hỏi: {question}
-        Làm rõ: {clarifications}
-        """
-        prompt_template = ChatPromptTemplate.from_template(prompt)
+
+        # Xác định logic phản hồi dựa trên confidence
+        confidence = (
+            0.0
+            if orchestration_information is None
+            else orchestration_information.confidence
+        )
+
+        if confidence == 0.0:
+            # Câu hỏi không liên quan hoặc không hợp lệ
+            response_logic = """Tôi nhận thấy câu hỏi của bạn không liên quan đến phân tích tài chính hoặc đánh giá doanh nghiệp.
+
+    Tôi được thiết kế để hỗ trợ các yêu cầu về:
+    - Phân tích báo cáo tài chính (bảng cân đối, kết quả kinh doanh, lưu chuyển tiền tệ)
+    - Đánh giá các chỉ tiêu tài chính (ROE, ROA, thanh khoản, đòn bẩy, v.v.)
+    - Phân tích xu hướng, biến động tài chính
+    - Đánh giá sức khỏe tài chính doanh nghiệp
+
+    Vui lòng đặt câu hỏi liên quan đến phân tích tài chính để tôi có thể hỗ trợ bạn tốt nhất."""
+        else:
+            # Câu hỏi liên quan nhưng chưa rõ ràng
+            response_logic = """Câu hỏi của bạn liên quan đến phân tích tài chính, nhưng tôi cần thêm thông tin để hiểu rõ yêu cầu cụ thể.
+
+    Bạn có thể làm rõ:
+    - Bạn muốn phân tích chỉ tiêu nào? (doanh thu, lợi nhuận, thanh khoản, ROE, v.v.)
+    - Bạn muốn xem dữ liệu dạng bảng, phân tích xu hướng, hay phân tích chuyên sâu?
+    - Khoảng thời gian phân tích? (năm, quý cụ thể)
+    """
+        clarifications_section = ""
+        if raw_clarifications:
+            clarifications_section = f"""
+                **Một số gợi ý cụ thể cho câu hỏi của bạn:**
+                {raw_clarifications}
+                """
+        prompt_template = ChatPromptTemplate.from_template(FALLBACK_PROMPT)
         rag_chain = (
                 {
                     "question": RunnablePassthrough(),
-                    "clarifications": lambda _: raw_clarifications,
+                    "response_logic": lambda _: response_logic,
+                    "clarifications_section": lambda _: clarifications_section,
                 }
                 | prompt_template
                 | self.llm
                 | StrOutputParser()
         )
+
         return {"message": rag_chain.invoke(question)}
 
     def handle_final_answer(self, state):
@@ -149,6 +187,7 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         financial_outputs = state["financial_outputs"]
         financial_data_input_toon = encode(financial_outputs)
         analysis_type = orchestration_request.analysis_type
+        company_name = state["company"]
         if analysis_type == "tabular":
             prompt_template = ChatPromptTemplate.from_template(TABULAR_RECEIVING_PROMPT)
         elif analysis_type == "trending":
@@ -161,7 +200,8 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
                 {
                     "question": RunnablePassthrough(),
                     "orchestration_request": lambda _: orchestration_request_json,
-                    "financial_data_input": lambda _: financial_data_input_toon,
+                    "company_name": lambda _: company_name,
+                    "financial_data_input": lambda _: financial_data_input_toon
                 }
                 | prompt_template
                 | self.llm
@@ -228,9 +268,9 @@ def calculate_financial_metrics(data):
             return result_dict
 
         # ============ LẤY TOÀN BỘ FINANCIAL_STATEMENT & INCOME_STATEMENT ============
+
         financial_statement_data = get_all_fields("financial_statement")
         income_statement_data = get_all_fields("income_statement")
-
         # ============ LẤY GIÁ TRỊ ĐỂ TÍNH TOÁN ============
         total_assets = financial_statement_data.get("total_assets")
         total_liabilities = financial_statement_data.get("liabilities")
@@ -323,6 +363,7 @@ def calculate_financial_metrics(data):
             else None
         )
 
+
         # 6. ATO (ĐÃ SỬA)
         # ATO = Tổng doanh thu hoạt động / Tổng tài sản bình quân
         avg_total_assets = (
@@ -407,6 +448,12 @@ def calculate_financial_metrics(data):
             else None
         )
 
+        gross_profit_margin = (
+            net_profit_after_tax / total_operating_revenue
+            if net_profit_after_tax and total_operating_revenue and total_operating_revenue != 0
+            else None
+        )
+
         # ============ OUTPUT: METADATA + RAW DATA + METRICS ============
         result = {
             # Metadata
@@ -417,37 +464,39 @@ def calculate_financial_metrics(data):
             # Raw data components
             "financial_statement": financial_statement_data,
             "income_statement": income_statement_data,
+            "calculated_metrics" : {
+                # Calculated Metrics - Debt Management
+                "debt_to_equity": debt_to_equity,
+                "leverage_ratio": leverage_ratio,
+                "debt_ratio": debt_ratio,
+                "long_term_debt_to_equity": long_term_debt_to_equity,
+                "interest_coverage_ratio": interest_coverage_ratio,
 
-            # Calculated Metrics - Debt Management
-            "debt_to_equity": debt_to_equity,
-            "leverage_ratio": leverage_ratio,
-            "debt_ratio": debt_ratio,
-            "long_term_debt_to_equity": long_term_debt_to_equity,
-            "interest_coverage_ratio": interest_coverage_ratio,
+                # Calculated Metrics - Growth
+                "asset_growth_rate": asset_growth_rate,
+                "net_profit_growth_rate": net_profit_growth_rate,
 
-            # Calculated Metrics - Growth
-            "asset_growth_rate": asset_growth_rate,
-            "net_profit_growth_rate": net_profit_growth_rate,
+                # Calculated Metrics - Efficiency
+                "receivables_turnover": receivables_turnover,
+                "ato": ato,
+                "fixed_asset_turnover": fixed_asset_turnover,
 
-            # Calculated Metrics - Efficiency
-            "receivables_turnover": receivables_turnover,
-            "ato": ato,
-            "fixed_asset_turnover": fixed_asset_turnover,
+                # Calculated Metrics - Profitability
+                "ebit": ebit,
+                "ebitda": ebitda,
+                "ebit_margin": ebit_margin,
+                "operating_profit_margin": operating_profit_margin,
+                "roa": roa,
+                "roe": roe,
+                "ros": ros,
 
-            # Calculated Metrics - Profitability
-            "ebit": ebit,
-            "ebitda": ebitda,
-            "ebit_margin": ebit_margin,
-            "operating_profit_margin": operating_profit_margin,
-            "roa": roa,
-            "roe": roe,
-            "ros": ros,
-
-            # Calculated Metrics - Liquidity
-            "current_ratio": current_ratio,
-            "quick_ratio": quick_ratio,
-            "cash_ratio": cash_ratio,
-            "working_capital": working_capital,
+                # Calculated Metrics - Liquidity
+                "current_ratio": current_ratio,
+                "quick_ratio": quick_ratio,
+                "cash_ratio": cash_ratio,
+                "working_capital": working_capital,
+                "gross_profit_margin": gross_profit_margin
+            }
         }
 
         results.append(result)
@@ -462,17 +511,65 @@ def build_financial_table_output(
     """
     Generate DataFrame-like output from financial metrics and mapping configuration,
     with rows ordered strictly by the order of fields in mapping.
+    Supports both annual and quarterly reports.
     """
 
-    # Extract periods from financial_metrics and sort descending (newest first)
-    periods = sorted(
-        [metric["report_date"][:4] for metric in financial_metrics],
-        reverse=True
-    )
+    def parse_period(report_date: str) -> tuple:
+        """
+        Parse report_date to (year, quarter).
+        Returns (year, 0) for annual reports, (year, quarter) for quarterly reports.
 
-    # Create lookup dictionary by year
+        Examples:
+        - "2022-12-31" -> ("2022", 0) - Annual
+        - "2022-03-31" -> ("2022", 1) - Q1
+        - "2022-06-30" -> ("2022", 2) - Q2
+        - "2022-09-30" -> ("2022", 3) - Q3
+        """
+        year = report_date[:4]
+        month = report_date[5:7]
+
+        # Determine if annual or quarterly
+        if month == "12":
+            return year, 0  # Annual report
+        elif month == "03":
+            return year, 1  # Q1
+        elif month == "06":
+            return year, 2  # Q2
+        elif month == "09":
+            return year, 3  # Q3
+        else:
+            return year, 0  # Default to annual
+
+    def format_period(year: str, quarter: int) -> str:
+        """Format period for display."""
+        if quarter == 0:
+            return f"Năm {year}"
+        else:
+            return f"Q{quarter}/{year}"
+
+    def format_period_short(year: str, quarter: int) -> str:
+        """Format period for column headers (shorter)."""
+        if quarter == 0:
+            return year
+        else:
+            return f"Q{quarter}/{year}"
+
+    # Parse and sort periods (newest first)
+    periods_raw = [
+        (metric["report_date"], *parse_period(metric["report_date"]))
+        for metric in financial_metrics
+    ]
+
+    # Sort: Year DESC, Quarter DESC
+    periods_raw.sort(key=lambda x: (x[1], x[2]), reverse=True)
+
+    # Extract sorted periods
+    periods = [(year, quarter) for _, year, quarter in periods_raw]
+
+    # Create lookup dictionary by (year, quarter)
     metrics_by_period = {
-        metric["report_date"][:4]: metric for metric in financial_metrics
+        parse_period(metric["report_date"]): metric
+        for metric in financial_metrics
     }
 
     # Generate column names
@@ -483,15 +580,20 @@ def build_financial_table_output(
     has_difference = any(field.get("show_difference", False) for field in mapping.get("fields", []))
 
     # Build columns for each period
-    for period in periods:
-        columns.append(f"Giá trị năm {period} \n (Số liệu trên bctc)")
+    for year, quarter in periods:
+        period_label = format_period_short(year, quarter)
+        columns.append(f"Giá trị {period_label}\n(Số liệu trên BCTC)")
         if has_proportion:
-            columns.append(f"Tỷ trọng {period} \n (Đơn vị %)")
+            columns.append(f"Tỷ trọng {period_label}\n(Đơn vị %)")
 
     # Add difference columns
     if has_difference:
         for i in range(len(periods) - 1):
-            columns.append(f"Chênh lệch {periods[i]} - {periods[i + 1]} \n (Đơn vị %)")
+            curr_year, curr_quarter = periods[i]
+            prev_year, prev_quarter = periods[i + 1]
+            curr_label = format_period_short(curr_year, curr_quarter)
+            prev_label = format_period_short(prev_year, prev_quarter)
+            columns.append(f"Chênh lệch {curr_label} - {prev_label}\n(Đơn vị %)")
 
     # Build data rows
     data = []
@@ -516,8 +618,8 @@ def build_financial_table_output(
 
         # Extract values for each period
         values = []
-        for period in periods:
-            metric = metrics_by_period.get(period)
+        for year, quarter in periods:
+            metric = metrics_by_period.get((year, quarter))
             value = None
             if metric and field_path:
                 parts = field_path.split(".")
@@ -564,10 +666,10 @@ def build_financial_table_output(
     }
 
 
-mlflow.langchain.autolog()
+# mlflow.langchain.autolog()
 graph = BusinessLoanValidationGraphProvider().provide()
 chat_agent = AgentApplication.initialize(graph=graph)
-# incoming_message = ChatAgentMessage(role="user", content=SSI_TEST_QUESTION)
+incoming_message = ChatAgentMessage(role="user", content=SSI_TEST_QUESTION)
 # response = chat_agent.predict([incoming_message])
 # print(response)
 mlflow.models.set_model(chat_agent)

@@ -352,19 +352,34 @@ DIMENSIONAL_MAPPING = {
     "operational_efficiency_table": {
         "fields": [
             {
-                "display_name": "Vòng quay các khoản phải thu",
-                "field_path": "calculated_metrics.receivables_turnover",
-                "data_type": "Times"
+                "display_name": "Gross Profit Margin %",
+                "field_path": "calculated_metrics.gross_profit_margin",
+                "data_type": "Percentage"
             },
             {
-                "display_name": "Hiệu quả sử dụng TSCĐ",
-                "field_path": "calculated_metrics.fixed_asset_turnover",
-                "data_type": "Times"
+                "display_name": "EBIT %",
+                "field_path": "calculated_metrics.ebit_margin",
+                "data_type": "Percentage"
             },
             {
-                "display_name": "DT thuần trên TS BQ",
+                "display_name": "ROS %",
+                "field_path": "calculated_metrics.ros",
+                "data_type": "Percentage"
+            },
+            {
+                "display_name": "ROA %",
+                "field_path": "calculated_metrics.roa",
+                "data_type": "Percentage"
+            },
+            {
+                "display_name": "ROE %",
+                "field_path": "calculated_metrics.roe",
+                "data_type": "Percentage"
+            },
+            {
+                "display_name": "ATO %",
                 "field_path": "calculated_metrics.ato",
-                "data_type": "Times"
+                "data_type": "Percentage"
             }
         ]
     },
