@@ -440,7 +440,8 @@ DIMENSIONAL_MAPPING = {
         "fields": [
             {
                 "display_name": "A. TÀI SẢN NGẮN HẠN",
-                "is_group_header": True
+                "is_group_header": True,
+                "is_section": True
             },
             {
                 "display_name": "I. Tài sản tài chính",
@@ -556,7 +557,8 @@ DIMENSIONAL_MAPPING = {
             },
             {
                 "display_name": "C. NỢ PHẢI TRẢ",
-                "is_group_header": True
+                "is_group_header": True,
+                "is_section": True
             },
             {
                 "display_name": "I. Nợ phải trả ngắn hạn",
@@ -638,7 +640,8 @@ DIMENSIONAL_MAPPING = {
             },
             {
                 "display_name": "VỐN CHỦ SỞ HỮU",
-                "is_group_header": True
+                "is_group_header": True,
+                "is_section": True
             },
             {
                 "display_name": "I. Vốn chủ sở hữu",
@@ -699,7 +702,8 @@ DIMENSIONAL_MAPPING = {
         "fields": [
             {
                 "display_name": "I. DOANH THU HOẠT ĐỘNG",
-                "is_group_header": True
+                "is_group_header": True,
+                "is_section": True
             },
             {
                 "display_name": "1.1. Lãi từ các tài sản tài chính ghi nhận thông qua lãi/lỗ (FVTPL)",
@@ -773,7 +777,8 @@ DIMENSIONAL_MAPPING = {
             },
             {
                 "display_name": "II. CHI PHÍ HOẠT ĐỘNG",
-                "is_group_header": True
+                "is_group_header": True,
+                "is_section": True
             },
             {
                 "display_name": "2.1. Lỗ các tài sản tài chính ghi nhận thông qua lãi/lỗ (FVTPL)",
@@ -904,7 +909,8 @@ DIMENSIONAL_MAPPING = {
             },
             {
                 "display_name": "V. CHI PHÍ BÁN HÀNG",
-                "is_group_header": True
+                "is_group_header": True,
+                "is_section": True
             },
             {
                 "display_name": "Chi phí bán hàng",
@@ -913,7 +919,8 @@ DIMENSIONAL_MAPPING = {
             },
             {
                 "display_name": "VI. CHI PHÍ QUẢN LÝ CÔNG TY CHỨNG KHOÁN",
-                "is_group_header": True
+                "is_group_header": True,
+                "is_section": True
             },
             {
                 "display_name": "Chi phí quản lý doanh nghiệp",
@@ -922,7 +929,8 @@ DIMENSIONAL_MAPPING = {
             },
             {
                 "display_name": "VII. KẾT QUẢ HOẠT ĐỘNG",
-                "is_group_header": True
+                "is_group_header": True,
+                "is_section": True
             },
             {
                 "display_name": "Lợi nhuận thuần từ hoạt động kinh doanh",
@@ -932,7 +940,8 @@ DIMENSIONAL_MAPPING = {
             },
             {
                 "display_name": "VIII. THU NHẬP KHÁC VÀ CHI PHÍ KHÁC",
-                "is_group_header": True
+                "is_group_header": True,
+                "is_section": True
             },
             {
                 "display_name": "8.1. Thu nhập khác",
@@ -946,7 +955,8 @@ DIMENSIONAL_MAPPING = {
             },
             {
                 "display_name": "IX. TỔNG LỢI NHUẬN KẾ TOÁN TRƯỚC THUẾ",
-                "is_group_header": True
+                "is_group_header": True,
+                "is_section": True
             },
             {
                 "display_name": "Tổng lợi nhuận kế toán trước thuế",
@@ -966,7 +976,8 @@ DIMENSIONAL_MAPPING = {
             },
             {
                 "display_name": "X. CHI PHÍ THUẾ TNDN",
-                "is_group_header": True
+                "is_group_header": True,
+                "is_section": True
             },
             {
                 "display_name": "Chi phí thuế thu nhập doanh nghiệp",
@@ -975,7 +986,9 @@ DIMENSIONAL_MAPPING = {
             },
             {
                 "display_name": "XI. LỢI NHUẬN SAU THUẾ",
-                "is_group_header": True
+                "is_group_header": True,
+                "is_section": True
+
             },
             {
                 "display_name": "Lợi nhuận kế toán sau thuế TNDN",

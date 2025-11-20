@@ -187,6 +187,11 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         financial_outputs = state["financial_outputs"]
         financial_data_input_toon = encode(financial_outputs)
         analysis_type = orchestration_request.analysis_type
+        # Get periods
+        periods = ", ".join(orchestration_request.time_period)
+
+        # ✅ STEP 1: Extract section guide (FAST - ~5ms)
+        section_guide = extract_section_guide(financial_outputs)
         company_name = state["company"]
         if analysis_type == "tabular":
             prompt_template = ChatPromptTemplate.from_template(TABULAR_RECEIVING_PROMPT)
@@ -201,7 +206,9 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
                     "question": RunnablePassthrough(),
                     "orchestration_request": lambda _: orchestration_request_json,
                     "company_name": lambda _: company_name,
-                    "financial_data_input": lambda _: financial_data_input_toon
+                    "periods": lambda _: periods,
+                    "financial_data_input": lambda _: financial_data_input_toon,
+                    "section_guide": lambda _: section_guide
                 }
                 | prompt_template
                 | self.llm
@@ -512,43 +519,28 @@ def build_financial_table_output(
     Generate DataFrame-like output from financial metrics and mapping configuration,
     with rows ordered strictly by the order of fields in mapping.
     Supports both annual and quarterly reports.
+
+    NEW: Extracts section structure for LLM guidance.
     """
 
     def parse_period(report_date: str) -> tuple:
-        """
-        Parse report_date to (year, quarter).
-        Returns (year, 0) for annual reports, (year, quarter) for quarterly reports.
-
-        Examples:
-        - "2022-12-31" -> ("2022", 0) - Annual
-        - "2022-03-31" -> ("2022", 1) - Q1
-        - "2022-06-30" -> ("2022", 2) - Q2
-        - "2022-09-30" -> ("2022", 3) - Q3
-        """
+        """Parse report_date to (year, quarter)."""
         year = report_date[:4]
         month = report_date[5:7]
 
-        # Determine if annual or quarterly
         if month == "12":
-            return year, 0  # Annual report
+            return year, 0
         elif month == "03":
-            return year, 1  # Q1
+            return year, 1
         elif month == "06":
-            return year, 2  # Q2
+            return year, 2
         elif month == "09":
-            return year, 3  # Q3
+            return year, 3
         else:
-            return year, 0  # Default to annual
-
-    def format_period(year: str, quarter: int) -> str:
-        """Format period for display."""
-        if quarter == 0:
-            return f"Năm {year}"
-        else:
-            return f"Q{quarter}/{year}"
+            return year, 0
 
     def format_period_short(year: str, quarter: int) -> str:
-        """Format period for column headers (shorter)."""
+        """Format period for column headers."""
         if quarter == 0:
             return year
         else:
@@ -559,14 +551,10 @@ def build_financial_table_output(
         (metric["report_date"], *parse_period(metric["report_date"]))
         for metric in financial_metrics
     ]
-
-    # Sort: Year DESC, Quarter DESC
     periods_raw.sort(key=lambda x: (x[1], x[2]), reverse=True)
-
-    # Extract sorted periods
     periods = [(year, quarter) for _, year, quarter in periods_raw]
 
-    # Create lookup dictionary by (year, quarter)
+    # Create lookup dictionary
     metrics_by_period = {
         parse_period(metric["report_date"]): metric
         for metric in financial_metrics
@@ -574,19 +562,15 @@ def build_financial_table_output(
 
     # Generate column names
     columns = ["Chỉ tiêu"]
-
-    # Determine if has proportion or difference
     has_proportion = any(field.get("show_proportion", False) for field in mapping.get("fields", []))
     has_difference = any(field.get("show_difference", False) for field in mapping.get("fields", []))
 
-    # Build columns for each period
     for year, quarter in periods:
         period_label = format_period_short(year, quarter)
         columns.append(f"Giá trị {period_label}\n(Số liệu trên BCTC)")
         if has_proportion:
             columns.append(f"Tỷ trọng {period_label}\n(Đơn vị %)")
 
-    # Add difference columns
     if has_difference:
         for i in range(len(periods) - 1):
             curr_year, curr_quarter = periods[i]
@@ -597,26 +581,40 @@ def build_financial_table_output(
 
     # Build data rows
     data = []
-
     section_name = mapping.get("description", "")
     if section_name:
         header_row = [section_name] + [None] * (len(columns) - 1)
         data.append(header_row)
 
-    # Duyệt fields theo đúng thứ tự trong mapping
+    # ========== NEW: EXTRACT SECTION STRUCTURE ==========
+    section_structure = []
+    current_section = None
+
     for field in mapping.get("fields", []):
+        if field.get("is_section"):
+            # This is a main section
+            current_section = {
+                "name": field.get("display_name", ""),
+                "subsections": []
+            }
+            section_structure.append(current_section)
+
         if field.get("is_group_header"):
             group_row = [field.get("display_name", "")] + [None] * (len(columns) - 1)
             data.append(group_row)
+
+            # Track subsection under current section
+            if current_section and not field.get("is_section"):
+                current_section["subsections"].append(field.get("display_name", ""))
             continue
 
+        # Data row
         row = [field.get("display_name", "")]
         field_path = field.get("field_path", "")
         proportion_base = field.get("proportion_base")
         show_proportion = field.get("show_proportion", False) or proportion_base
         show_difference = field.get("show_difference", False)
 
-        # Extract values for each period
         values = []
         for year, quarter in periods:
             metric = metrics_by_period.get((year, quarter))
@@ -633,7 +631,6 @@ def build_financial_table_output(
             values.append(value)
             row.append(value)
 
-            # Calculate proportion if enabled
             if has_proportion:
                 proportion = None
                 if show_proportion and proportion_base and metric:
@@ -647,7 +644,6 @@ def build_financial_table_output(
                         proportion = (value / base_value) * 100
                 row.append(proportion)
 
-        # Calculate differences if enabled
         if has_difference:
             for i in range(len(periods) - 1):
                 diff = None
@@ -662,17 +658,49 @@ def build_financial_table_output(
 
     return {
         "columns": columns,
-        "data": data
+        "data": data,
+        "section_structure": section_structure  # ← NEW: Section metadata
     }
 
 
-mlflow.langchain.autolog()
+def extract_section_guide(financial_outputs: list[dict]) -> str:
+    """
+    Extract simple section guide for LLM.
+    Returns human-readable string (NOT JSON for faster parsing).
+
+    Example output:
+    "Bảng cân đối kế toán: A. TÀI SẢN NGẮN HẠN, C. NỢ PHẢI TRẢ, VỐN CHỦ SỞ HỮU
+    Báo cáo kết quả kinh doanh: I. DOANH THU HOẠT ĐỘNG, II. CHI PHÍ HOẠT ĐỘNG, VII. KẾT QUẢ HOẠT ĐỘNG"
+    """
+    guides = []
+
+    for table in financial_outputs:
+        # Get table name (first row)
+        table_name = table["data"][0][0] if table["data"] else "Unknown"
+
+        # Extract sections (from section_structure if exists)
+        if "section_structure" in table and table["section_structure"]:
+            sections = [s["name"] for s in table["section_structure"]]
+        else:
+            # Fallback: extract all group headers
+            sections = [
+                row[0] for row in table["data"][1:]
+                if all(v is None for v in row[1:])
+            ]
+
+        if sections:
+            guides.append(f"{table_name}: {', '.join(sections)}")
+
+    return "\n".join(guides)
+
+
+# mlflow.langchain.autolog()
 graph = BusinessLoanValidationGraphProvider().provide()
 chat_agent = AgentApplication.initialize(graph=graph)
-# incoming_message = ChatAgentMessage(role="user", content=SSI_TEST_QUESTION)
-# response = chat_agent.predict([incoming_message])
-# print(response)
-mlflow.models.set_model(chat_agent)
+incoming_message = ChatAgentMessage(role="user", content=SSI_TEST_QUESTION)
+response = chat_agent.predict([incoming_message])
+print(response)
+# mlflow.models.set_model(chat_agent)
 
 # if __name__ == '__main__':
 #     documents = json.loads(SSI_TEST_QUESTION).get("documents")
