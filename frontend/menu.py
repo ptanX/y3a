@@ -1,7 +1,15 @@
+from pathlib import Path
+
 import streamlit as st
 
 from role_controller import ROLE_PERMISSIONS
+from PIL import Image
 
+
+def display_logo():
+    logo_path = Path(__file__).parent.absolute().joinpath("images").joinpath("logo.jpg")
+    logo_image = Image.open(str(logo_path))
+    st.logo(str(logo_path), size="large", icon_image=logo_image)
 
 def has_permission(page):
     if not st.session_state.logged_in:
@@ -19,10 +27,10 @@ def get_role_badge(role):
 
 
 def authenticated_menu():
-    st.sidebar.title("RawIQ")
-    st.sidebar.write(f"Xin chào **{st.session_state.full_name}**")
-
-    st.sidebar.divider()
+    # st.sidebar.title("RawIQ")
+    # st.sidebar.write(f"Xin chào **{st.session_state.full_name}**")
+    #
+    # st.sidebar.divider()
 
     # if has_permission("upload"):
     #     if st.sidebar.button("📤 Upload", use_container_width=True, key="nav_upload"):
@@ -45,14 +53,14 @@ def authenticated_menu():
         if st.sidebar.button("⚙️ Settings", use_container_width=True, key="nav_settings"):
             st.switch_page("pages/setting.py")
 
-    st.sidebar.divider()
-
-    if st.sidebar.button("🚪 Đăng xuất", use_container_width=True, key="nav_logout"):
-        st.session_state.logged_in = False
-        st.session_state.username = ""
-        st.session_state.role = ""
-        st.session_state.full_name = ""
-        st.switch_page("pages/login.py")
+    # st.sidebar.divider()
+    #
+    # if st.sidebar.button("🚪 Đăng xuất", use_container_width=True, key="nav_logout"):
+    #     st.session_state.logged_in = False
+    #     st.session_state.username = ""
+    #     st.session_state.role = ""
+    #     st.session_state.full_name = ""
+    #     st.switch_page("pages/login.py")
 
 
 def unauthenticated_menu():

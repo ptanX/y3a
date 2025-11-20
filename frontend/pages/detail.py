@@ -1,20 +1,24 @@
 import json
 import os
+from pathlib import Path
 
 import pandas as pd
 import streamlit as st
+from PIL import Image
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from frontend.menu import menu_with_redirect
+from frontend.menu import menu_with_redirect, display_logo
 from src.lending import e2e_usecases
 from src.lending.db.bidv_entity import DocumentationInformation
 from src.lending.startup.environment_initialization import DATABASE_PATH
 
 menu_with_redirect()
+logo_path = Path(__file__).parent.absolute().joinpath("logo.ico")
+logo_image = Image.open(logo_path)
 
 # Streamlit App
-st.set_page_config(page_title="Bảng Kiểm Tra Dữ Liệu", layout="wide")
+st.set_page_config(page_title="Bảng Kiểm Tra Dữ Liệu", page_icon=logo_image, layout="wide")
 st.title("📊 Kết Quả Bóc Tách Chi Tiết")
 
 document_id = st.session_state.document_id
@@ -40,10 +44,18 @@ field_labels_mapping = {
     "company_name_en": "Tên công ty (EN)",
     "company_abbr": "Tên viết tắt",
     "office_address": "Địa chỉ trụ sở",
+    "phone": "Số điện thoại",
+    "charter_capital": "Vốn điều lệ",
+    "legal_rep": "Người đại diện pháp luật",
+    "email": "Email công ty",
+    "par_value": "Mệnh giá (đồng)",
+    "total_shares": "Tổng số cổ phần",
+    "business_code": "Mã số thuế/Mã số doanh nghiệp"
 }
 
 field_columns_mapping = {
-    "field": "Chỉ tiêu",
+    "displayed_field": "Chỉ tiêu",
+    "field": "Chỉ tiêu (viết tắt)",
     "business_registration_cert": "Giấy phép ĐKKD",
     "company_charter": "Điều lệ",
     "database_value": "CSDL nội bộ (DB)",
@@ -53,10 +65,12 @@ field_columns_mapping = {
 }
 
 
-def json_to_dataframe(data):
+def build_extraction_data(data):
     rows = []
 
     for idx, item in enumerate(data):
+        if item["field_name"] not in field_labels_mapping.keys():
+            continue
         # Get values from origin_docs
         cert_value = ""
         charter_value = ""
@@ -70,6 +84,7 @@ def json_to_dataframe(data):
         coalesce = cert_value or charter_value or item["database_value"]
         row = {
             "field": item["field_name"],
+            "displayed_field": field_labels_mapping.get(item["field_name"]),
             "business_registration_cert": cert_value,
             "company_charter": charter_value,
             "database_value": item["database_value"],
@@ -81,7 +96,7 @@ def json_to_dataframe(data):
 
         rows.append(row)
 
-    return pd.DataFrame(rows)
+    return pd.DataFrame(rows, index=range(1, len(rows) + 1))
 
 
 def highlight_rows(row):
@@ -103,6 +118,8 @@ def get_column_config():
 
     column_config = {
         **cols,
+        "index": st.column_config.NumberColumn("STT", disabled=True),
+        "field": None,
         "coalesce": None,
         "is_consistent": None,
         "is_match_db": None,
@@ -115,8 +132,7 @@ def get_column_config():
 
 
 if "my_data" not in st.session_state:
-    df = json_to_dataframe(data)
-    st.session_state.my_data = df
+    st.session_state.my_data = build_extraction_data(data)
 
 
 def handle_data_change():

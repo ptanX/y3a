@@ -1,18 +1,22 @@
 import json
+from pathlib import Path
 
 import requests
 import streamlit as st
+from PIL import Image
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from frontend.menu import menu_with_redirect
+from frontend.menu import menu_with_redirect, display_logo
 from src.lending.db.bidv_entity import DocumentationInformation
 from src.lending.startup.environment_initialization import DATABASE_PATH
 from src.exceptions import EntityNotFound
 
 menu_with_redirect()
+logo_path = Path(__file__).parent.absolute().joinpath("logo.ico")
+logo_image = Image.open(logo_path)
 
-st.set_page_config(page_title="👥 Lending Chat Agent")
+st.set_page_config(page_title="👥 Lending Chat Agent", page_icon=logo_image)
 st.title("Lending Chat Agent")
 
 financial_document_id = st.session_state.financial_document_id

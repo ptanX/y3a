@@ -1,7 +1,15 @@
-import streamlit as st
+from pathlib import Path
 
-from frontend.menu import has_permission
+import streamlit as st
+from PIL import Image
+
+from frontend.menu import has_permission, display_logo
 from frontend.role_controller import USERS
+
+# display_logo()
+logo_path = Path(__file__).parent.absolute().joinpath("logo.ico")
+logo_image = Image.open(logo_path)
+st.set_page_config(page_title="Login", page_icon=logo_image)
 
 # LOGIN PAGE
 st.title("🔐 Login")
