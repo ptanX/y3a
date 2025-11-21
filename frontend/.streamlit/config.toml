@@ -1,4 +1,5 @@
 [client]
 showSidebarNavigation = false
+toolbarMode = "minimal"
 [theme]
 base="light"

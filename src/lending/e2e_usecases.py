@@ -10,6 +10,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from src.lending import email_handling
+from src.lending.constant import REQUIRED_FIELDS
 from src.lending.db.bidv_entity import DocumentationInformation
 from src.lending.full_flow import handle_heavy_tasks
 from src.lending.services.data_validator_service import DataValidatorService
@@ -40,7 +41,7 @@ def execute_upload_document(content):
 
     del content["files"]
     raw_data, financial_documents = asyncio.run(handle_heavy_tasks(file_paths))
-    document_data = _build_document_data(content, raw_data)
+    document_data = _build_document_data(content, raw_data, financial_documents)
 
     save_document(document_id, document_data)
 
@@ -62,7 +63,7 @@ def execute_submit_document(content):
     email_handling.send_verified_lending_email(**email_content)
 
 
-def _build_document_data(content, extracted_data):
+def _build_document_data(content, extracted_data, financial_documents):
     document_id = content["document_id"]
     financial_document_id = str(uuid.uuid4())
     validate_results = validate_with_database(extracted_data)
@@ -72,7 +73,11 @@ def _build_document_data(content, extracted_data):
         None
     )
 
-    total_fields = f"{len(validate_results)}/72 (theo bộ tiêu chuẩn hồ sơ vay DN chuẩn hóa)"
+    all_fields = get_all_field_names(validate_results, financial_documents)
+    missing_fields = REQUIRED_FIELDS - all_fields
+    print(missing_fields)
+
+    total_fields = f"{len(REQUIRED_FIELDS) - len(missing_fields)}/{len(REQUIRED_FIELDS)} (trường bắt buộc)"
     consistent_count = sum(1 for r in validate_results if r.validation_result.is_consistent_across_doc)
     none_count = sum(1 for r in validate_results if len(r.origin_docs) == 0 and not r.database_value)
     document_status = [f"{consistent_count} trường thông tin cần kiểm tra", f"{none_count} trường thông tin bị thiếu"]
@@ -90,6 +95,22 @@ def _build_document_data(content, extracted_data):
         "validation_results": validate_results,
     }
     return document_data
+
+
+def get_all_field_names(validate_results, financial_documents):
+    field_names = set()
+
+    for field in validate_results:
+        field_names.add(field.field_name)
+
+    for company_data in financial_documents:
+        if "reports" in company_data:
+            for report in company_data["reports"]:
+                if "fields" in report:
+                    for field in report["fields"]:
+                        if "name" in field:
+                            field_names.add(field["name"])
+    return field_names
 
 
 def validate_with_database(sample_data):

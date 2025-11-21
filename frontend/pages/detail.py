@@ -83,8 +83,8 @@ def build_extraction_data(data):
 
         coalesce = cert_value or charter_value or item["database_value"]
         row = {
-            "field": item["field_name"],
             "displayed_field": field_labels_mapping.get(item["field_name"]),
+            "field": item["field_name"],
             "business_registration_cert": cert_value,
             "company_charter": charter_value,
             "database_value": item["database_value"],
@@ -96,7 +96,7 @@ def build_extraction_data(data):
 
         rows.append(row)
 
-    return pd.DataFrame(rows, index=range(1, len(rows) + 1))
+    return pd.DataFrame(rows)
 
 
 def highlight_rows(row):
@@ -119,7 +119,6 @@ def get_column_config():
     column_config = {
         **cols,
         "index": st.column_config.NumberColumn("STT", disabled=True),
-        "field": None,
         "coalesce": None,
         "is_consistent": None,
         "is_match_db": None,
@@ -167,6 +166,7 @@ def submit():
         "recipient_email": recipient_email,
         "verification_time": document_data["verification_time"],
         "qhkh_name": document_data["recipient_name"],
+        "customer_name": customer_info_result["company_name_vn"],
         "customer_info_result": customer_info_result,
         "detail_url": detail_url
     }

@@ -5,6 +5,8 @@ from email.message import EmailMessage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+from src.lending.constant import REQUIRED_EXTRACTION_FIELDS
+
 
 def build_validation_table_html(document_id, data):
     """
@@ -464,8 +466,12 @@ def _build_verified_lending_content(**kwargs):
     loan_amount = kwargs.get("loan_amount")
     loan_term = kwargs.get("loan_term")
     verification_time = kwargs.get("verification_time")
-    document_classification = kwargs.get("document_classification")
-    required_fields = kwargs.get("required_fields")
+
+    customer_info_result = kwargs.get("customer_info_result")
+    all_keys = list(customer_info_result.keys())
+    missing_keys = set(REQUIRED_EXTRACTION_FIELDS) - set(all_keys)
+    none_keys = [key for key, value in customer_info_result.items() if value is None or value == ""]
+
     detail_url = kwargs.get("detail_url")
 
     content = f"""
@@ -481,8 +487,8 @@ def _build_verified_lending_content(**kwargs):
        - Ngày kiểm tra: {verification_time}
        - Người phụ trách: {qhkh_name}
     2. Tóm tắt kết quả kiểm tra:
-       - {document_classification}
-       - {required_fields}
+       - Hồ sơ đã được phân loại và bóc tách đầy đủ
+       - Các trường thông tin bắt buộc đã được xác minh, ngoại trừ {none_keys + list(missing_keys)}
     Anh/chị vui lòng truy cập đường dẫn bên dưới để ra soát và hoàn thiện thông tin phân tích tín dụng.
     Link truy cập hồ sơ: {detail_url}"""
     return content
