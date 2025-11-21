@@ -694,13 +694,13 @@ def extract_section_guide(financial_outputs: list[dict]) -> str:
     return "\n".join(guides)
 
 
-# mlflow.langchain.autolog()
+mlflow.langchain.autolog()
 graph = BusinessLoanValidationGraphProvider().provide()
 chat_agent = AgentApplication.initialize(graph=graph)
-incoming_message = ChatAgentMessage(role="user", content=SSI_TEST_QUESTION)
-response = chat_agent.predict([incoming_message])
-print(response)
-# mlflow.models.set_model(chat_agent)
+# incoming_message = ChatAgentMessage(role="user", content=SSI_TEST_QUESTION)
+# response = chat_agent.predict([incoming_message])
+# print(response)
+mlflow.models.set_model(chat_agent)
 
 # if __name__ == '__main__':
 #     documents = json.loads(SSI_TEST_QUESTION).get("documents")

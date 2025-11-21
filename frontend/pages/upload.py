@@ -1,8 +1,10 @@
 import time
 import uuid
 from datetime import datetime
+from pathlib import Path
 
 import streamlit as st
+from PIL import Image
 
 from frontend.menu import menu_with_redirect
 from src.lending import e2e_usecases
@@ -12,7 +14,8 @@ menu_with_redirect()
 # UPLOAD PAGE
 st.title("📤 Upload Tài liệu Thủ Tục Vay Vốn")
 st.divider()
-
+logo_path = Path(__file__).parent.absolute().joinpath("logo.ico")
+logo_image = Image.open(logo_path)
 
 def submit():
     document_id = str(uuid.uuid4())
