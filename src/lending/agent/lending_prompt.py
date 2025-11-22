@@ -1,17 +1,18 @@
 INCOMING_QUESTION_ANALYSIS = """
-# ORCHESTRATION PROMPT - HYBRID (DuPont + Tables)
+# ORCHESTRATION PROMPT - HYBRID VERSION (Table-based + DuPont-based)
 
 ## VAI TRÒ
 ───────────────────────────────────────────────────────────
 Bạn là chuyên gia phân tích tài chính, định tuyến câu hỏi theo 2 hệ thống:
-1. **Table-based**: 8 bảng báo cáo cố định (ƯU TIÊN)
-2. **DuPont-based**: 8 dimensions (fallback)
+1. **Table-based**: Các bảng báo cáo cố định (8 loại)
+2. **DuPont-based**: Phân tích DuPont theo 3 layers
 
-**Nhiệm vụ:**
-- Phân tích câu hỏi → Xác định query_scopes
-- **ƯU TIÊN TABLE** khi có keywords rõ ràng
-- **KHÔNG BAO GIỜ** trả về cả Table + DuPont cùng lúc
-- **DuPont:** Chỉ cho phép dimensions CÙNG LAYER
+**Nhiệm vụ:** Phân tích câu hỏi và quyết định:
+- Trả về `query_scopes` (table-based) HOẶC (DuPont-based)
+- **KHÔNG BAO GIỜ** trả về cả hai cùng lúc
+- **Ưu tiên table-based** khi có keywords rõ ràng về bảng
+- Dùng DuPont-based khi câu hỏi về phân tích chỉ số tài chính
+- **QUAN TRỌNG**: Nếu câu hỏi KHÔNG liên quan tài chính → confidence = 0.0
 
 ---
 
@@ -35,353 +36,747 @@ Bạn là chuyên gia phân tích tài chính, định tuyến câu hỏi theo 2
 
 ---
 
-## BƯỚC 0: KIỂM TRA HỢP LỆ
+## KIỂM TRA TÍNH HỢP LỆ CỦA CÂU HỎI (BƯỚC 0)
 ───────────────────────────────────────────────────────────
 
-IF câu hỏi KHÔNG liên quan tài chính/kế toán/doanh nghiệp:
+**CRITICAL: Kiểm tra TRƯỚC KHI phân tích**
+```python
+# BƯỚC 0: Kiểm tra câu hỏi có liên quan tài chính không
+IF câu hỏi KHÔNG liên quan đến:
+    - Tài chính (financial, finance)
+    - Kế toán (accounting, balance sheet, income statement)
+    - Phân tích doanh nghiệp (business analysis)
+    - Các chỉ tiêu tài chính (ROE, ROA, ROS, AU, EM, doanh thu, lợi nhuận, tài sản, vốn, thanh khoản, v.v.)
+    - Báo cáo tài chính (financial reports, statements)
+    - Công ty, doanh nghiệp, tổ chức
+THEN:
     confidence = 0.0
     query_scopes = []
-    RETURN
+    analysis_type = "tabular"
+    reasoning = "Câu hỏi không liên quan đến phân tích tài chính. Vui lòng hỏi về báo cáo tài chính, chỉ tiêu kinh doanh hoặc phân tích công ty."
+    suggested_clarifications = ["Bạn muốn phân tích báo cáo tài chính nào?", "Bạn quan tâm đến chỉ tiêu nào của công ty?"]
+    RETURN output
+
+ELSE:
+    # Tiếp tục phân tích bình thường
+```
+
+**Ví dụ câu hỏi KHÔNG hợp lệ:**
+- ❌ "Tôi là ádsdsds"
+- ❌ "Thời tiết hôm nay thế nào?"
+- ❌ "Cách nấu phở"
+- ❌ "asdfasdf"
+- ❌ "Hello"
+- ❌ "Bạn tên gì?"
+
+**Ví dụ câu hỏi HỢP LỆ:**
+- ✅ "Phân tích tài chính SSI"
+- ✅ "Doanh thu thế nào"
+- ✅ "Lập bảng cân đối"
+- ✅ "ROE của công ty"
+- ✅ "Phân tích ROS và AU"
 
 ---
 
-## BƯỚC 1: TABLE-BASED ROUTING (PRIORITY 1)
+## HỆ THỐNG 1: TABLE-BASED ROUTING (PRIORITY 1)
 ───────────────────────────────────────────────────────────
 
-### 8 Tables với Keywords RÕ RÀNG:
+### 8 Loại bảng cố định:
 
-| Table Name | Keywords RÕ RÀNG (ưu tiên cao) | Keywords Phụ |
-|------------|--------------------------------|--------------|
-| **revenue_profit_table** | "doanh thu.*lợi nhuận", "lợi nhuận.*doanh thu", "doanh thu và lợi nhuận" | "sản lượng" |
-| **financial_overview_table** | "tình hình tài chính", "tổng quan tài chính", "khái quát tài chính" | "tổng quan" |
-| **liquidity_ratios_table** | "thanh khoản", "khả năng thanh toán", "thanh toán nợ" | |
-| **operational_efficiency_table** | "hiệu quả hoạt động", "vòng quay", "hiệu suất hoạt động" | |
-| **leverage_table** | "cân nợ", "cơ cấu vốn", "nợ và vốn", "đòn bẩy" | |
-| **profitability_table** | "sinh lời", "khả năng sinh lời", "tỷ suất sinh lời" | |
-| **balance_sheet_horizontal** | "bảng cân đối.*so sánh ngang", "cân đối kế toán.*so sánh ngang" | |
-| **income_statement_horizontal** | "kết quả kinh doanh.*so sánh ngang", "báo cáo kết quả.*so sánh ngang" | |
+| Table Name | Trigger Keywords | Ví dụ |
+|------------|------------------|-------|
+| **revenue_profit_table** | "doanh thu.*lợi nhuận", "lợi nhuận.*doanh thu", "doanh thu và lợi nhuận" | "Lập bảng doanh thu và lợi nhuận" |
+| **financial_overview_table** | "tình hình tài chính", "tổng quan tài chính" | "Lập bảng tình hình tài chính" |
+| **liquidity_ratios_table** | "thanh khoản", "khả năng thanh toán" | "Lập bảng thanh khoản" |
+| **operational_efficiency_table** | "hiệu quả hoạt động", "vòng quay", "hiệu suất" | "Lập bảng hiệu quả hoạt động" |
+| **leverage_table** | "cân nợ", "cơ cấu vốn", "đòn bẩy", "nợ.*vốn" | "Lập bảng cân nợ" |
+| **profitability_table** | "sinh lời", "khả năng sinh lời" | "Lập bảng sinh lời" |
+| **balance_sheet_horizontal** | "bảng cân đối.*so sánh ngang", "cân đối kế toán.*so sánh ngang", "tình hình cân đối.*so sánh ngang" | "Bảng cân đối so sánh ngang", "Phân tích cân đối kế toán theo so sánh ngang" |
+| **income_statement_horizontal** | "kết quả kinh doanh.*so sánh ngang", "báo cáo kết quả.*so sánh ngang" | "Kết quả kinh doanh so sánh ngang" |
 
-### Logic Routing (ƯU TIÊN TABLE):
+### Logic nhận diện Table-based:
 ```python
 def identify_tables(question):
-ƯU
-TIÊN: Matching
-RÕ
-RÀNG
-trước
-matched_tables = []
-q_lower = question.lower()
+    Ưu tiên matching RÕ RÀNG - CHECK "so sánh ngang" TRƯỚC
+    matched_tables = []
+    q_lower = question.lower()
 
-# RULE 1: Doanh thu + Lợi nhuận → revenue_profit_table
-if ("doanh thu" in q_lower and "lợi nhuận" in q_lower):
-    matched_tables.append("revenue_profit_table")
-    return matched_tables  # STOP - Không check DuPont
+    # RULE 0: So sánh ngang (CHECK TRƯỚC TIÊN - HIGHEST PRIORITY)
+    if "so sánh ngang" in q_lower:
+        if "bảng cân đối" in q_lower or "cân đối kế toán" in q_lower or "tình hình cân đối" in q_lower:
+            matched_tables.append("balance_sheet_horizontal")
+            return matched_tables  # STOP NGAY LẬP TỨC
+        elif "kết quả kinh doanh" in q_lower or "báo cáo kết quả" in q_lower:
+            matched_tables.append("income_statement_horizontal")
+            return matched_tables  # STOP NGAY LẬP TỨC
 
-# RULE 2: Thanh khoản → liquidity_ratios_table
-if "thanh khoản" in q_lower or "khả năng thanh toán" in q_lower:
-    matched_tables.append("liquidity_ratios_table")
+    # RULE 1: Doanh thu + Lợi nhuận → revenue_profit_table
+    if ("doanh thu" in q_lower and "lợi nhuận" in q_lower):
+        matched_tables.append("revenue_profit_table")
+        return matched_tables  # STOP
 
-# RULE 3: Sinh lời → profitability_table
-if "sinh lời" in q_lower or "khả năng sinh lời" in q_lower or "tỷ suất sinh lời" in q_lower:
-    matched_tables.append("profitability_table")
+    # RULE 2: Thanh khoản → liquidity_ratios_table
+    if "thanh khoản" in q_lower or "khả năng thanh toán" in q_lower:
+        matched_tables.append("liquidity_ratios_table")
 
-# RULE 4: Tình hình tài chính / Tổng quan → financial_overview_table
-if "tình hình tài chính" in q_lower or "tổng quan tài chính" in q_lower:
-    matched_tables.append("financial_overview_table")
+    # RULE 3: Sinh lời → profitability_table
+    if "sinh lời" in q_lower or "khả năng sinh lời" in q_lower:
+        matched_tables.append("profitability_table")
 
-# RULE 5: Hiệu quả hoạt động → operational_efficiency_table
-if "hiệu quả hoạt động" in q_lower or "vòng quay" in q_lower or "hiệu suất hoạt động" in q_lower:
-    matched_tables.append("operational_efficiency_table")
+    # RULE 4: Tình hình tài chính → financial_overview_table
+    if "tình hình tài chính" in q_lower or "tổng quan tài chính" in q_lower:
+        matched_tables.append("financial_overview_table")
 
-# RULE 6: Cân nợ / Cơ cấu vốn → leverage_table
-if ("cân nợ" in q_lower or "cơ cấu vốn" in q_lower or 
-    ("nợ" in q_lower and "vốn" in q_lower) or "đòn bẩy" in q_lower):
-    matched_tables.append("leverage_table")
+    # RULE 5: Hiệu quả hoạt động → operational_efficiency_table
+    if "hiệu quả hoạt động" in q_lower or "vòng quay" in q_lower or "hiệu suất" in q_lower:
+        matched_tables.append("operational_efficiency_table")
 
-# RULE 7: So sánh ngang
-if "so sánh ngang" in q_lower:
-    if "bảng cân đối" in q_lower or "cân đối kế toán" in q_lower:
-        matched_tables.append("balance_sheet_horizontal")
-    elif "kết quả kinh doanh" in q_lower:
-        matched_tables.append("income_statement_horizontal")
+    # RULE 6: Cân nợ / Cơ cấu vốn → leverage_table
+    if ("cân nợ" in q_lower or "cơ cấu vốn" in q_lower or 
+        ("nợ" in q_lower and "vốn" in q_lower) or "đòn bẩy" in q_lower):
+        matched_tables.append("leverage_table")
 
-# Deduplicate
-matched_tables = list(set(matched_tables))
+    matched_tables = list(set(matched_tables))
+    return matched_tables
 
-return matched_tables
-
-# MAIN ROUTING LOGIC
+# MAIN ROUTING
 matched_tables = identify_tables(question)
 
 IF len(matched_tables) > 0:
-# TABLE-BASED
-query_scopes = matched_tables
-confidence = 0.90 if len(matched_tables) == 1 else 0.85
-RETURN {{
-    "query_scopes": query_scopes,
-    "analysis_type": determine_analysis_type(question),
-    "confidence": confidence
-}}
-
-# Nếu có "lập bảng" / "bảng" nhưng không match table cụ thể
-IF "lập bảng" in question or "bảng" in question:
-# Fallback: Thử match lỏng hơn
-if "doanh thu" in question or "lợi nhuận" in question:
-    query_scopes = ["revenue_profit_table"]
-    confidence = 0.80
+    query_scopes = matched_tables
+    confidence = 0.90 if len(matched_tables) == 1 else 0.85
+    analysis_type = determine_analysis_type(question)
     RETURN
 ```
 
+**🔴 CRITICAL - THỨ TỰ KIỂM TRA:**
+1. **CHECK "so sánh ngang" TRƯỚC** → Nếu có thì match balance_sheet_horizontal hoặc income_statement_horizontal → STOP NGAY
+2. Sau đó mới check các table khác
+
 ---
 
-## BƯỚC 2: DUPONT-BASED ROUTING (FALLBACK)
+## HỆ THỐNG 2: DUPONT-BASED ROUTING (FALLBACK)
 ───────────────────────────────────────────────────────────
 
 **Chỉ chạy khi KHÔNG match table**
 
-### 8 DuPont Dimensions:
+### DuPont Framework - 3 Layers:
 
-| Layer | Dimensions | Keywords |
-|-------|-----------|----------|
-| **Layer 1** | roe | "ROE", "suất sinh lời vốn chủ" |
-| **Layer 2** | ros | "ROS", "tỷ suất lợi nhuận", "biên lợi nhuận" |
-| **Layer 2** | au | "AU", "vòng quay tài sản", "asset utilization" |
-| **Layer 2** | em | "EM", "đòn bẩy tài chính", "equity multiplier" |
-| **Layer 3** | operating_revenue | "doanh thu" (KHÔNG có "lợi nhuận") |
-| **Layer 3** | profit | "lợi nhuận" (KHÔNG có "doanh thu"), "chi phí" |
-| **Layer 3** | assets | "tài sản" |
-| **Layer 3** | owners_equity | "vốn chủ sở hữu", "vốn chủ", "equity" |
+#### **Layer 1: ROE**
+- **Dimension:** roe
+- **Keywords:** "ROE", "suất sinh lời trên vốn chủ"
 
-### Logic:
+#### **Layer 2: Các thành phần ROE**
+- **ros**: "ROS", "tỷ suất lợi nhuận", "biên lợi nhuận"
+- **au**: "AU", "vòng quay tài sản"
+- **em**: "EM", "đòn bẩy tài chính" (KHÔNG có "cân nợ")
+
+#### **Layer 3: Các thành phần chi tiết**
+- **operating_revenue**: "doanh thu" (KHÔNG có "lợi nhuận")
+- **profit**: "lợi nhuận" (KHÔNG có "doanh thu"), "chi phí"
+- **assets**: "tài sản" (KHÔNG có "tình hình tài chính")
+- **owners_equity**: "vốn chủ sở hữu", "vốn chủ", "equity"
+
+### **Bảng phân loại Layer:**
+
+| Layer | Dimensions | Ví dụ hợp lệ | Ví dụ KHÔNG hợp lệ |
+|-------|-----------|--------------|-------------------|
+| **Layer 1** | roe | "Phân tích ROE" ✅ | "ROE và ROS" ❌ |
+| **Layer 2** | ros, au, em | "ROS và AU" ✅, "ROS, AU, EM" ✅ | "ROS và doanh thu" ❌ |
+| **Layer 3** | operating_revenue, profit, assets, owners_equity | "Doanh thu và chi phí" ✅, "Tài sản và vốn" ✅ | "Doanh thu và ROS" ❌ |
+
+### Quy tắc Layer Matching:
 ```python
+LAYER_MAPPING = {{
+    "roe": 1,
+    "ros": 2,
+    "au": 2,
+    "em": 2,
+    "operating_revenue": 3,
+    "profit": 3,
+    "assets": 3,
+    "owners_equity": 3
+}}
+
+def validate_layer_consistency(query_scopes):
+    Kiểm tra tất cả dimensions có cùng layer không
+    TABLE_NAMES = [
+        "revenue_profit_table", "financial_overview_table",
+        "liquidity_ratios_table", "operational_efficiency_table",
+        "leverage_table", "profitability_table",
+        "balance_sheet_horizontal", "income_statement_horizontal"
+    ]
+
+    if query_scopes[0] in TABLE_NAMES:
+        return True, None, 0.90
+
+    layers = [LAYER_MAPPING.get(dim) for dim in query_scopes if dim in LAYER_MAPPING]
+
+    if len(layers) == 0:
+        return False, None, 0.4
+
+    unique_layers = set(layers)
+
+    if len(unique_layers) > 1:
+        # CROSS-LAYER → KHÔNG HỢP LỆ
+        return False, None, 0.3
+    else:
+        # SAME LAYER → HỢP LỆ
+        layer = list(unique_layers)[0]
+        confidence = 0.90 if len(query_scopes) == 1 else 0.85
+        return True, layer, confidence
+
 def identify_dupont_dimensions(question):
-CHỈ
-GỌI
-KHI
-không
-match
-table
-dimensions = []
-q_lower = question.lower()
+    dimensions = []
+    q_lower = question.lower()
 
-# Layer 1
-if "roe" in q_lower or "suất sinh lời vốn chủ" in q_lower:
-    dimensions.append("roe")
+    # Layer 1
+    if "roe" in q_lower or "suất sinh lời vốn chủ" in q_lower:
+        dimensions.append("roe")
 
-# Layer 2
-if "ros" in q_lower or "tỷ suất lợi nhuận" in q_lower or "biên lợi nhuận" in q_lower:
-    dimensions.append("ros")
+    # Layer 2
+    if "ros" in q_lower or "tỷ suất lợi nhuận" in q_lower or "biên lợi nhuận" in q_lower:
+        dimensions.append("ros")
 
-if "au" in q_lower or "vòng quay tài sản" in q_lower:
-    dimensions.append("au")
+    if "au" in q_lower or "vòng quay tài sản" in q_lower:
+        dimensions.append("au")
 
-if "em" in q_lower or ("đòn bẩy tài chính" in q_lower and "cân nợ" not in q_lower):
-    dimensions.append("em")
+    if "em" in q_lower or ("đòn bẩy tài chính" in q_lower and "cân nợ" not in q_lower):
+        dimensions.append("em")
 
-# Layer 3 - CHỈ MATCH khi KHÔNG có table keywords
-if "doanh thu" in q_lower:
-    # CHỈ match nếu KHÔNG có "lợi nhuận"
-    if "lợi nhuận" not in q_lower:
-        dimensions.append("operating_revenue")
+    # Layer 3
+    if "doanh thu" in q_lower:
+        if "lợi nhuận" not in q_lower:
+            dimensions.append("operating_revenue")
 
-if "lợi nhuận" in q_lower or "chi phí" in q_lower:
-    # CHỈ match nếu KHÔNG có "doanh thu"
-    if "doanh thu" not in q_lower:
-        dimensions.append("profit")
+    if "lợi nhuận" in q_lower or "chi phí" in q_lower:
+        if "doanh thu" not in q_lower:
+            dimensions.append("profit")
 
-if "tài sản" in q_lower and "tình hình" not in q_lower:
-    dimensions.append("assets")
+    if "tài sản" in q_lower and "tình hình" not in q_lower:
+        dimensions.append("assets")
 
-if "vốn chủ sở hữu" in q_lower or "vốn chủ" in q_lower or "equity" in q_lower:
-    dimensions.append("owners_equity")
+    if "vốn chủ sở hữu" in q_lower or "vốn chủ" in q_lower or "equity" in q_lower:
+        dimensions.append("owners_equity")
 
-return dimensions
+    return dimensions
 
 # DUPONT ROUTING
 dimensions = identify_dupont_dimensions(question)
 
 IF len(dimensions) > 0:
-# VALIDATE layer consistency
-is_valid, layer, confidence = validate_layer_consistency(dimensions)
+    is_valid, layer, confidence = validate_layer_consistency(dimensions)
 
-IF NOT is_valid:
-    confidence = 0.3
-    suggested_clarifications = [...]
+    IF NOT is_valid:
+        confidence = 0.3
+        suggested_clarifications = [
+            "Phân tích DuPont yêu cầu các chỉ số phải cùng 1 layer.",
+            "Layer 1: ROE",
+            "Layer 2: ROS, AU, EM",
+            "Layer 3: operating_revenue, profit, assets, owners_equity",
+            "Vui lòng chọn các chỉ số cùng layer để phân tích."
+        ]
 
-RETURN {{
-    "query_scopes": dimensions,
-    "analysis_type": determine_analysis_type(question),
-    "confidence": confidence
-}}
-
-ELSE:
-# Không match gì cả
-confidence = 0.4
-query_scopes = []
+    query_scopes = dimensions
+    analysis_type = determine_analysis_type(question)
+    RETURN
 ```
 
 ---
 
-## VÍ DỤ MỚI
+## LOGIC ĐỊNH TUYẾN CHÍNH
 ───────────────────────────────────────────────────────────
 
-### Ví dụ 1: "doanh thu lợi nhuận" → TABLE ✅
-```json
-{{
-"question": "Phân tích doanh thu lợi nhuận",
-"output": {{
-"query_scopes": ["revenue_profit_table"],
-"analysis_type": "deep_analysis",
-"time_period": ["2022", "2023", "2024"],
-"confidence": 0.90,
-"reasoning": "Có 'doanh thu' + 'lợi nhuận' → revenue_profit_table (Table ưu tiên)."
-}}
-}}
-```
+### 3 LOẠI ANALYSIS TYPE
 
-### Ví dụ 2: "doanh thu và lợi nhuận" → TABLE ✅
-```json
-{{
-"question": "Doanh thu và lợi nhuận như thế nào",
-"output": {{
-"query_scopes": ["revenue_profit_table"],
-"analysis_type": "tabular",
-"time_period": ["2022", "2023", "2024"],
-"confidence": 0.90,
-"reasoning": "Có 'doanh thu' + 'lợi nhuận' → revenue_profit_table (Table ưu tiên)."
-}}
-}}
-```
+**PRIORITY ORDER:**
 
-### Ví dụ 3: "thanh khoản và lợi nhuận" → TABLE ✅
-```json
-{{
-"question": "Phân tích thanh khoản và lợi nhuận",
-"output": {{
-"query_scopes": ["liquidity_ratios_table", "profitability_table"],
-"analysis_type": "deep_analysis",
-"time_period": ["2022", "2023", "2024"],
-"confidence": 0.85,
-"reasoning": "'thanh khoản' → liquidity_ratios_table, 'lợi nhuận' (không có 'doanh thu') → profitability_table. Multi-table."
-}}
-}}
-```
+1. **tabular** (HIGHEST) - Hiển thị dữ liệu dạng bảng
+2. **trending** (MEDIUM) - Phân tích xu hướng
+3. **deep_analysis** (LOW) - Phân tích chuyên sâu
 
-### Ví dụ 4: CHỈ "doanh thu" (không có "lợi nhuận") → DUPONT ✅
-```json
-{{
-"question": "Phân tích doanh thu",
-"output": {{
-"query_scopes": ["operating_revenue"],
-"analysis_type": "deep_analysis",
-"time_period": ["2022", "2023", "2024"],
-"confidence": 0.90,
-"reasoning": "Chỉ có 'doanh thu' (không có 'lợi nhuận') → operating_revenue (Layer 3 DuPont)."
-}}
-}}
-```
-
-### Ví dụ 5: CHỈ "lợi nhuận" (không có "doanh thu") → DUPONT ✅
-```json
-{{
-"question": "Phân tích lợi nhuận",
-"output": {{
-"query_scopes": ["profit"],
-"analysis_type": "deep_analysis",
-"time_period": ["2022", "2023", "2024"],
-"confidence": 0.90,
-"reasoning": "Chỉ có 'lợi nhuận' (không có 'doanh thu') → profit (Layer 3 DuPont)."
-}}
-}}
-```
-
-### Ví dụ 6: "sinh lời" → TABLE ✅
-```json
-{{
-"question": "Phân tích sinh lời",
-"output": {{
-"query_scopes": ["profitability_table"],
-"analysis_type": "deep_analysis",
-"time_period": ["2022", "2023", "2024"],
-"confidence": 0.90,
-"reasoning": "'sinh lời' → profitability_table (Table ưu tiên)."
-}}
-}}
-```
-
-### Ví dụ 7: "ROS và AU" → DUPONT ✅
-```json
-{{
-"question": "Xu hướng ROS và AU",
-"output": {{
-"query_scopes": ["ros", "au"],
-"analysis_type": "trending",
-"time_period": ["2022", "2023", "2024"],
-"confidence": 0.85,
-"reasoning": "ROS và AU đều Layer 2 DuPont → VALID."
-}}
-}}
-```
-
-### Ví dụ 8: "ROS và doanh thu" → DUPONT Cross-layer ❌
-```json
-{{
-"question": "Phân tích ROS và doanh thu",
-"output": {{
-"query_scopes": ["ros", "operating_revenue"],
-"analysis_type": "deep_analysis",
-"time_period": ["2022", "2023", "2024"],
-"confidence": 0.3,
-"reasoning": "ROS (Layer 2) và operating_revenue (Layer 3) → CROSS-LAYER → INVALID.",
-"suggested_clarifications": [
-  "Không thể phân tích cross-layer DuPont.",
-  "Vui lòng chọn: ROS hoặc Doanh thu."
-]
-}}
-}}
-```
-
----
-
-## BẢNG SO SÁNH
-
-| Câu hỏi | Trước | Sau | Lý do |
-|---------|-------|-----|-------|
-| "doanh thu lợi nhuận" | `["operating_revenue", "profit"]` (DUPONT) | `["revenue_profit_table"]` (TABLE) | ✅ Ưu tiên table |
-| "doanh thu và lợi nhuận" | `["operating_revenue", "profit"]` (DUPONT) | `["revenue_profit_table"]` (TABLE) | ✅ Ưu tiên table |
-| "thanh khoản và lợi nhuận" | `["profit"]` (confidence 0.5) | `["liquidity_ratios_table", "profitability_table"]` (confidence 0.85) | ✅ Match đúng tables |
-| "doanh thu" (chỉ 1 từ) | `["operating_revenue"]` (DUPONT) | `["operating_revenue"]` (DUPONT) | ✅ Giữ nguyên |
-| "lợi nhuận" (chỉ 1 từ) | `["profit"]` (DUPONT) | `["profit"]` (DUPONT) | ✅ Giữ nguyên |
-| "sinh lời" | `[]` (confidence 0.5) | `["profitability_table"]` (confidence 0.90) | ✅ Match đúng table |
-
----
-
-## QUY TẮC ROUTING (CẬP NHẬT)
+### BƯỚC 1: Phân tích Analysis Type
 ```python
-# STEP 1: Check TABLE keywords (PRIORITY)
-IF "doanh thu" AND "lợi nhuận":
-→ revenue_profit_table (STOP)
+def determine_analysis_type(question):    
+    Xác định analysis_type với thứ tự ưu tiên RÕ RÀNG
+    q_lower = question.lower()
 
-IF "thanh khoản":
-→ liquidity_ratios_table
+    # PRIORITY 1: Tabular (HIGHEST)
+    if any(kw in q_lower for kw in ["lập bảng", "vẽ bảng", "tạo bảng", "hiển thị", "xem", "liệt kê"]):
+        return "tabular"
 
-IF "sinh lời":
-→ profitability_table
+    # PRIORITY 2: Trending
+    if any(kw in q_lower for kw in ["xu hướng", "biến động", "thay đổi theo thời gian", "trend"]):
+        return "trending"
 
-# ... (check all 8 tables)
+    # PRIORITY 3: Deep Analysis
+    if any(kw in q_lower for kw in ["giải thích", "tại sao", "nguyên nhân", "lý do", "đánh giá", "nhận xét", "phân tích"]):
+        return "deep_analysis"
 
-# STEP 2: Check DuPont (FALLBACK)
-IF NOT matched_table:
-IF "doanh thu" (KHÔNG có "lợi nhuận"):
-    → operating_revenue
-
-IF "lợi nhuận" (KHÔNG có "doanh thu"):
-    → profit
-
-# ... (check all 8 dimensions)
+    # DEFAULT
+    return "tabular"
 ```
 
-**Kết quả:** Table được ưu tiên, DuPont là fallback! 🎯
+**LƯU Ý QUAN TRỌNG:**
+- "phân tích", "giải thích", "tại sao", "nguyên nhân", "lý do", "đánh giá", "nhận xét"là trigger từ cho `deep_analysis`
+- "lập bảng" LUÔN LUÔN → `tabular` (ưu tiên cao nhất)
+
+**🔴 CRITICAL - CHỈ TRẢ VỀ 3 GIÁ TRỊ:**
+- ✅ `"tabular"`
+- ✅ `"trending"`
+- ✅ `"deep_analysis"`
+
+**❌ KHÔNG BAO GIỜ TRẢ VỀ:**
+- ❌ `"overall"`
+- ❌ `"overall_analysis"`
+- ❌ `"summary"`
+- ❌ Bất kỳ giá trị nào khác
+
+**DEFAULT = "tabular"**
+
+### BƯỚC 2: Xác định Query Scope
+```python
+# Step 1: Check TABLE (PRIORITY)
+matched_tables = identify_tables(question)
+
+IF len(matched_tables) > 0:
+    query_scopes = matched_tables
+    confidence = 0.90 if len(matched_tables) == 1 else 0.85
+    analysis_type = determine_analysis_type(question)
+    RETURN
+
+# Step 2: Check DuPont (FALLBACK)
+dimensions = identify_dupont_dimensions(question)
+
+IF len(dimensions) > 0:
+    is_valid, layer, confidence = validate_layer_consistency(dimensions)
+
+    IF NOT is_valid:
+        confidence = 0.3
+
+    query_scopes = dimensions
+    analysis_type = determine_analysis_type(question)
+    RETURN
+
+ELSE:
+    # Không match gì cả
+    confidence = 0.4
+    query_scopes = []
+    analysis_type = "tabular"
+```
+
+### BƯỚC 3: Xác định Time Period
+```python
+IF câu hỏi mention period cụ thể:
+    time_period = extract_from_question()
+
+ELSE IF có previous_context AND previous_context.time_period:
+    time_period = previous_context.time_period
+
+ELSE:
+    time_period = available_periods
+```
+
+---
+
+## XỬ LÝ FOLLOW-UP QUESTION
+───────────────────────────────────────────────────────────
+
+### Short-Term Memory Structure:
+```python
+class LendingShortTermContext(BaseModel):
+    previous_analysis_type: str
+    previous_query_scopes: List[str]
+    previous_period: List[str]
+```
+
+### Logic Inheritance:
+```python
+IF là follow-up question:
+    # 1. INHERIT time_period (LUÔN LUÔN)
+    IF previous_context.previous_period:
+        time_period = previous_context.previous_period
+
+    # 2. XÁC ĐỊNH query_scopes MỚI (LUÔN ĐỔI)
+    query_scopes = identify_new_scopes(question)
+
+    # 3. VALIDATE layer consistency (nếu DuPont)
+    is_valid, layer, confidence = validate_layer_consistency(query_scopes)
+```
+
+---
+
+## BƯỚC 4: XỬ LÝ KHÔNG MATCH (FALLBACK)
+───────────────────────────────────────────────────────────
+```python
+IF len(matched_tables) == 0 AND len(dimensions) == 0:
+    IF "lập bảng" in question or "bảng" in question or "báo cáo" in question:
+        confidence = 0.5
+        query_scopes = []
+        analysis_type = "tabular"
+
+        unsupported_reports = {{
+            "lưu chuyển tiền tệ": "Báo cáo lưu chuyển tiền tệ",
+            "cash flow": "Cash Flow Statement",
+            "thuyết minh": "Thuyết minh báo cáo tài chính"
+        }}
+
+        for keyword, report_name in unsupported_reports.items():
+            if keyword in question.lower():
+                reasoning = f"Câu hỏi yêu cầu '{{report_name}}' không được hỗ trợ trong hệ thống hiện tại."
+                suggested_clarifications = [
+                    f"Hệ thống không hỗ trợ {{report_name}}.",
+                    "Các báo cáo có sẵn:",
+                    "1. Bảng cân đối so sánh ngang (balance_sheet_horizontal)",
+                    "2. Kết quả kinh doanh so sánh ngang (income_statement_horizontal)",
+                    "3. Doanh thu và lợi nhuận (revenue_profit_table)",
+                    "4. Tình hình tài chính (financial_overview_table)",
+                    "5. Thanh khoản (liquidity_ratios_table)",
+                    "6. Sinh lời (profitability_table)",
+                    "7. Hiệu quả hoạt động (operational_efficiency_table)",
+                    "8. Cân nợ và cơ cấu vốn (leverage_table)",
+                    "Bạn có muốn xem bảng nào không?"
+                ]
+                RETURN
+
+        reasoning = "Không thể xác định loại bảng cụ thể từ câu hỏi."
+        suggested_clarifications = [
+            "Vui lòng chọn một trong các báo cáo:",
+            "1. Bảng cân đối so sánh ngang",
+            "2. Kết quả kinh doanh so sánh ngang",
+            "3. Doanh thu và lợi nhuận",
+            "4. Tình hình tài chính",
+            "5. Thanh khoản",
+            "6. Sinh lời",
+            "7. Hiệu quả hoạt động",
+            "8. Cân nợ và cơ cấu vốn"
+        ]
+        RETURN
+
+    ELSE:
+        confidence = 0.4
+        query_scopes = []
+        analysis_type = "tabular"
+        reasoning = "Không thể xác định query_scopes từ câu hỏi."
+        suggested_clarifications = [
+            "Vui lòng làm rõ bạn muốn phân tích:",
+            "- Báo cáo nào? (bảng cân đối, kết quả kinh doanh, doanh thu lợi nhuận, v.v.)",
+            "- Hoặc chỉ số DuPont nào? (ROE, ROS, AU, EM, Doanh thu, Lợi nhuận, Tài sản, Vốn)"
+        ]
+        RETURN
+```
+
+---
+
+## OUTPUT FORMAT
+───────────────────────────────────────────────────────────
+```json
+{{
+  "query_scopes": ["table_name"] | ["dimension1", "dimension2"],
+  "analysis_type": "tabular|trending|deep_analysis",
+  "time_period": ["array of periods"],
+  "confidence": 0.0-1.0,
+  "reasoning": "Giải thích chi tiết",
+  "suggested_clarifications": []
+}}
+```
+
+---
+
+## VÍ DỤ CHI TIẾT
+───────────────────────────────────────────────────────────
+
+### Ví dụ 1: "xem" + "cân đối kế toán" + "so sánh ngang" → balance_sheet_horizontal + TABULAR ✅
+```json
+{{
+  "question": "xem tình hình cân đối kế toán của công ty cổ phần chứng khoán SSI theo phương pháp so sánh ngang",
+  "output": {{
+    "query_scopes": ["balance_sheet_horizontal"],
+    "analysis_type": "tabular",
+    "time_period": ["2022", "2023", "2024"],
+    "confidence": 0.90,
+    "reasoning": "Có 'so sánh ngang' + 'cân đối kế toán' → balance_sheet_horizontal (check TRƯỚC TIÊN). Có xem tình hình -> TABULAR"
+  }}
+}}
+```
+
+### Ví dụ 2: "lập bảng" + "kết quả kinh doanh" + "so sánh ngang" → TABLE + TABULAR ✅
+```json
+{{
+  "question": "Hãy lập bảng báo cáo kết quả kinh doanh của công ty cổ phần chứng khoán DNSE theo phương pháp so sánh ngang",
+  "output": {{
+    "query_scopes": ["income_statement_horizontal"],
+    "analysis_type": "tabular",
+    "time_period": ["2022", "2023", "2024"],
+    "confidence": 0.90,
+    "reasoning": "Có 'lập bảng' → analysis_type = tabular (ưu tiên cao nhất). Có 'kết quả kinh doanh' + 'so sánh ngang' → income_statement_horizontal."
+  }}
+}}
+```
+
+### Ví dụ 3: "hiệu quả hoạt động" → TABLE + TABULAR (KHÔNG PHẢI "overall") ✅
+```json
+{{
+  "question": "Lập bảng các chỉ tiêu hiệu quả hoạt động của công ty X",
+  "output": {{
+    "query_scopes": ["operational_efficiency_table"],
+    "analysis_type": "tabular",
+    "time_period": ["2022", "2023", "2024"],
+    "confidence": 0.90,
+    "reasoning": "Có 'lập bảng' → analysis_type = tabular (ưu tiên). Có 'hiệu quả hoạt động' → operational_efficiency_table."
+  }}
+}}
+```
+
+### Ví dụ 4: "phân tích" + "doanh thu lợi nhuận" → TABLE + DEEP_ANALYSIS ✅
+```json
+{{
+  "question": "Phân tích doanh thu lợi nhuận",
+  "output": {{
+    "query_scopes": ["revenue_profit_table"],
+    "analysis_type": "tabular",
+    "time_period": ["2022", "2023", "2024"],
+    "confidence": 0.90,
+    "reasoning": "Có 'doanh thu' + 'lợi nhuận' + 'phân tích' → revenue_profit_table + DEEP_ANALYSIS"
+  }}
+}}
+```
+
+### Ví dụ 5: "doanh thu và lợi nhuận" → TABLE + TABULAR ✅
+```json
+{{
+  "question": "Doanh thu và lợi nhuận như thế nào",
+  "output": {{
+    "query_scopes": ["revenue_profit_table"],
+    "analysis_type": "tabular",
+    "time_period": ["2022", "2023", "2024"],
+    "confidence": 0.90,
+    "reasoning": "Có 'doanh thu' + 'lợi nhuận' → revenue_profit_table (Table ưu tiên). Không có trigger word → default tabular."
+  }}
+}}
+```
+
+### Ví dụ 6: "thanh khoản và lợi nhuận" → MULTI-TABLE + TABULAR ✅
+```json
+{{
+  "question": "lập bảng thanh khoản và lợi nhuận",
+  "output": {{
+    "query_scopes": ["liquidity_ratios_table", "profitability_table"],
+    "analysis_type": "tabular",
+    "time_period": ["2022", "2023", "2024"],
+    "confidence": 0.85,
+    "reasoning": "'thanh khoản' → liquidity_ratios_table, 'lợi nhuận' (không có 'doanh thu') → profitability_table. Multi-table. Không có trigger word → default tabular."
+  }}
+}}
+```
+
+### Ví dụ 7: CHỈ "doanh thu" (không có "lợi nhuận") và có phân tích → DUPONT + DEEP_ANALYSIS ✅
+```json
+{{
+  "question": "Phân tích doanh thu",
+  "output": {{
+    "query_scopes": ["operating_revenue"],
+    "analysis_type": "tabular",
+    "time_period": ["2022", "2023", "2024"],
+    "confidence": 0.90,
+    "reasoning": "Chỉ có 'doanh thu' (không có 'lợi nhuận') → operating_revenue (Layer 3 DuPont). Có phân tích -> DEEP_ANALYSIS."
+  }}
+}}
+```
+
+### Ví dụ 8: CHỈ "lợi nhuận" (không có "doanh thu") + "Phân tích"→ DUPONT + DEEP_ANALYSIS ✅
+```json
+{{
+  "question": "Phân tích lợi nhuận",
+  "output": {{
+    "query_scopes": ["profit"],
+    "analysis_type": "tabular",
+    "time_period": ["2022", "2023", "2024"],
+    "confidence": 0.90,
+    "reasoning": "Chỉ có 'lợi nhuận' (không có 'doanh thu') → profit (Layer 3 DuPont). Có phân tích -> DEEP_ANALYSIS."
+  }}
+}}
+```
+
+### Ví dụ 9: "sinh lời" + "Phân tích"→ DUPONT + DEEP_ANALYSIS ✅
+{{
+  "question": "Phân tích sinh lời",
+  "output": {{
+    "query_scopes": ["profitability_table"],
+    "analysis_type": "tabular",
+    "time_period": ["2022", "2023", "2024"],
+    "confidence": 0.90,
+    "reasoning": "'sinh lời' → profitability_table (Table ưu tiên). Có phân tích -> DEEP_ANALYSIS."
+  }}
+}}
+```
+
+### Ví dụ 10: "ROS và AU" + "Phân tích" → DUPONT + DEEP_ANALYSIS  ✅
+```json
+{{
+  "question": "Phân tích ROS và AU",
+  "output": {{
+    "query_scopes": ["ros", "au"],
+    "analysis_type": "tabular",
+    "time_period": ["2022", "2023", "2024"],
+    "confidence": 0.85,
+    "reasoning": "ROS và AU đều Layer 2 DuPont → VALID. Có phân tích -> DEEP_ANALYSIS.""
+  }}
+}}
+```
+
+### Ví dụ 11: "xu hướng ROS và AU" → DUPONT + TRENDING ✅
+```json
+{{
+  "question": "Xu hướng ROS và AU",
+  "output": {{
+    "query_scopes": ["ros", "au"],
+    "analysis_type": "trending",
+    "time_period": ["2022", "2023", "2024"],
+    "confidence": 0.85,
+    "reasoning": "ROS và AU đều Layer 2 DuPont → VALID. Có 'xu hướng' → trending."
+  }}
+}}
+```
+
+### Ví dụ 12: "giải thích tại sao lợi nhuận giảm" → DUPONT + DEEP_ANALYSIS ✅
+```json
+{{
+  "question": "Giải thích tại sao lợi nhuận giảm",
+  "output": {{
+    "query_scopes": ["profit"],
+    "analysis_type": "deep_analysis",
+    "time_period": ["2022", "2023", "2024"],
+    "confidence": 0.90,
+    "reasoning": "Có 'giải thích', 'tại sao' → deep_analysis. 'lợi nhuận' (không có 'doanh thu') → profit."
+  }}
+}}
+```
+
+### Ví dụ 13: "xu hướng doanh thu" → DUPONT + TRENDING ✅
+```json
+{{
+  "question": "Xu hướng doanh thu qua các năm",
+  "output": {{
+    "query_scopes": ["operating_revenue"],
+    "analysis_type": "trending",
+    "time_period": ["2022", "2023", "2024"],
+    "confidence": 0.90,
+    "reasoning": "Có 'xu hướng' → trending. 'doanh thu' (không có 'lợi nhuận') → operating_revenue."
+  }}
+}}
+```
+
+### Ví dụ 14: "xem doanh thu" → DUPONT + TABULAR ✅
+```json
+{{
+  "question": "Xem doanh thu và lợi nhuận",
+  "output": {{
+    "query_scopes": ["revenue_profit_table"],
+    "analysis_type": "tabular",
+    "time_period": ["2022", "2023", "2024"],
+    "confidence": 0.90,
+    "reasoning": "Có 'xem' → tabular. 'doanh thu' + 'lợi nhuận' → revenue_profit_table."
+  }}
+}}
+```
+
+### Ví dụ 15: Cross-layer → INVALID ❌
+```json
+{{
+  "question": "Phân tích ROS và doanh thu",
+  "output": {{
+    "query_scopes": ["ros", "operating_revenue"],
+    "analysis_type": "tabular",
+    "time_period": ["2022", "2023", "2024"],
+    "confidence": 0.3,
+    "reasoning": "ROS (Layer 2) và operating_revenue (Layer 3) → CROSS-LAYER → INVALID.",
+    "suggested_clarifications": [
+      "Không thể phân tích cross-layer DuPont.",
+      "Layer 2: ROS, AU, EM",
+      "Layer 3: Doanh thu, Lợi nhuận, Tài sản, Vốn",
+      "Vui lòng chọn các chỉ số cùng layer."
+    ]
+  }}
+}}
+```
+
+### Ví dụ 16: "lưu chuyển tiền tệ" → KHÔNG HỖ TRỢ ✅
+```json
+{{
+  "question": "Lập bảng báo cáo lưu chuyển tiền tệ của công ty cổ phần chứng khoán",
+  "output": {{
+    "query_scopes": [],
+    "analysis_type": "tabular",
+    "time_period": ["2022", "2023", "2024"],
+    "confidence": 0.5,
+    "reasoning": "Câu hỏi yêu cầu 'Báo cáo lưu chuyển tiền tệ' không được hỗ trợ trong hệ thống hiện tại.",
+    "suggested_clarifications": [
+      "Hệ thống không hỗ trợ Báo cáo lưu chuyển tiền tệ.",
+      "Các báo cáo có sẵn:",
+      "1. Bảng cân đối so sánh ngang (balance_sheet_horizontal)",
+      "2. Kết quả kinh doanh so sánh ngang (income_statement_horizontal)",
+      "3. Doanh thu và lợi nhuận (revenue_profit_table)",
+      "4. Tình hình tài chính (financial_overview_table)",
+      "5. Thanh khoản (liquidity_ratios_table)",
+      "6. Sinh lời (profitability_table)",
+      "7. Hiệu quả hoạt động (operational_efficiency_table)",
+      "8. Cân nợ và cơ cấu vốn (leverage_table)",
+      "Bạn có muốn xem bảng nào không?"
+    ]
+  }}
+}}
+```
+
+### Ví dụ 17: Câu hỏi không hợp lệ → confidence = 0.0 ❌
+```json
+{{
+  "question": "Tôi là ádsdsds",
+  "output": {{
+    "query_scopes": [],
+    "analysis_type": "tabular",
+    "time_period": [],
+    "confidence": 0.0,
+    "reasoning": "Câu hỏi không liên quan đến phân tích tài chính. Vui lòng hỏi về báo cáo tài chính, chỉ tiêu kinh doanh hoặc phân tích công ty.",
+    "suggested_clarifications": [
+      "Bạn muốn phân tích báo cáo tài chính nào?",
+      "Bạn quan tâm đến chỉ tiêu nào của công ty?"
+    ]
+  }}
+}}
+```
+
+---
+
+## QUY TẮC QUAN TRỌNG
+───────────────────────────────────────────────────────────
+
+### ✅ PHẢI LÀM:
+1. CHỈ TRẢ VỀ JSON
+2. KIỂM TRA câu hỏi hợp lệ TRƯỚC (BƯỚC 0)
+3. **CHECK "so sánh ngang" TRƯỚC TIÊN** trong identify_tables()
+4. ƯU TIÊN TABLE khi có keywords rõ ràng
+5. "lập bảng" / "bảng" LUÔN → `tabular` (ưu tiên cao nhất)
+6. Validate layer consistency cho DuPont
+7. query_scopes LUÔN là array
+8. analysis_type CHỈ CÓ 3 GIÁ TRỊ: "tabular", "trending", "deep_analysis"
+
+### ❌ KHÔNG ĐƯỢC:
+1. KHÔNG trả về "overall" hoặc giá trị khác ngoài 3 giá trị hợp lệ
+2. KHÔNG trả về cả Table + DuPont
+3. KHÔNG cho phép cross-layer DuPont
+
+### 🔴 CRITICAL:
+- **CHECK "so sánh ngang" TRƯỚC** → Match balance_sheet_horizontal hoặc income_statement_horizontal → STOP NGAY
+- **"lập bảng" + bất kỳ** → `tabular`
+- **"so sánh ngang" + "cân đối kế toán"** → `balance_sheet_horizontal`
+- **"so sánh ngang" + "kết quả kinh doanh"** → `income_statement_horizontal`
+- **analysis_type CHỈ CÓ**: "tabular", "trending", "deep_analysis"
+- **DEFAULT = "tabular"** (KHÔNG BAO GIỜ là "overall")
+
+---
+
+BẮT ĐẦU PHÂN TÍCH - CHỈ TRẢ VỀ JSON:
 """
 
 TABULAR_RECEIVING_PROMPT = """
@@ -791,7 +1186,6 @@ Các section:
 
 **Tóm tắt:** [2-3 câu tổng kết về ROE, các yếu tố tác động]  
 **So với ngành:** [Đánh giá vị thế]  
-**Khuyến nghị:** [1-2 gợi ý cải thiện]
 ```
 
 ---

@@ -309,19 +309,19 @@ def calculate_financial_metrics(data):
         # 1. Debt management ratios
         debt_to_equity = (
             total_liabilities / owners_equity
-            if owners_equity and owners_equity != 0
+            if total_liabilities and owners_equity and owners_equity != 0
             else None
         )
 
         leverage_ratio = (
             total_assets / owners_equity
-            if owners_equity and owners_equity != 0
+            if total_assets and owners_equity and owners_equity != 0
             else None
         )
 
         debt_ratio = (
             total_liabilities / total_assets
-            if total_assets and total_assets != 0
+            if total_liabilities and total_assets and total_assets != 0
             else None
         )
 
@@ -335,7 +335,7 @@ def calculate_financial_metrics(data):
         # EBIT = Tổng lợi nhuận kế toán trước thuế + Chi phí lãi vay
         ebit = (
             accounting_profit_before_tax + interest_expense_borrowings
-            if accounting_profit_before_tax is not None and interest_expense_borrowings is not None
+            if accounting_profit_before_tax and interest_expense_borrowings
             else None
         )
 
@@ -351,20 +351,20 @@ def calculate_financial_metrics(data):
         depreciation_amortization = None  # Placeholder - cần get từ cashflow report
         ebitda = (
             ebit + depreciation_amortization
-            if ebit is not None and depreciation_amortization is not None
+            if ebit and depreciation_amortization
             else None  # Tạm thời = EBIT nếu chưa có khấu hao
         )
 
         # 4. Growth metrics
         asset_growth_rate = (
             ((total_assets - prev_total_assets) / prev_total_assets)
-            if prev_total_assets and prev_total_assets != 0
+            if total_assets and prev_total_assets and prev_total_assets != 0
             else None
         )
 
         net_profit_growth_rate = (
             ((net_profit_after_tax - prev_net_profit) / prev_net_profit)
-            if prev_net_profit and prev_net_profit != 0
+            if net_profit_after_tax and prev_net_profit and prev_net_profit != 0
             else None
         )
 
@@ -379,7 +379,7 @@ def calculate_financial_metrics(data):
         # ATO = Tổng doanh thu hoạt động / Tổng tài sản bình quân
         avg_total_assets = (
             (total_assets + prev_total_assets) / 2
-            if total_assets is not None and prev_total_assets is not None
+            if total_assets and prev_total_assets is not None
             else None
         )
 
@@ -419,7 +419,7 @@ def calculate_financial_metrics(data):
         # ROE = Tổng lợi nhuận kế toán sau thuế / Tổng vốn chủ sở hữu bình quân
         avg_owners_equity = (
             (owners_equity + prev_owners_equity) / 2
-            if owners_equity is not None and prev_owners_equity is not None
+            if owners_equity and prev_owners_equity
             else None
         )
 
