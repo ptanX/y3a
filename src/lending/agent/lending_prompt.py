@@ -880,7 +880,7 @@ Bạn là chuyên gia tài chính chuyên phân tích xu hướng từ dữ li�
 
 ### Dữ liệu (TOON format)
 ```
-financial_data}
+{financial_data}
 ```
 
 ### Cấu trúc
