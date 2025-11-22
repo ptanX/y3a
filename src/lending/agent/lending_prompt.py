@@ -562,6 +562,11 @@ Bạn là chuyên gia tài chính chuyên vẽ bảng báo cáo từ dữ liệu
 {financial_data_input}
 ```
 
+### Cấu trúc
+```
+{section_guide}
+```
+
 ---
 
 ## MAPPING QUERY_SCOPE → TABLE_NAME
@@ -673,6 +678,11 @@ Bạn là chuyên gia tài chính chuyên phân tích xu hướng từ dữ li�
 ### Financial Data (TOON)
 ```
 {financial_data_input}
+```
+
+### Cấu trúc
+```
+{section_guide}
 ```
 
 ---
