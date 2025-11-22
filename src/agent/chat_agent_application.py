@@ -3,7 +3,12 @@ from typing import Generic, Any, Union, Generator
 
 from langgraph.graph.state import CompiledStateGraph
 from mlflow.pyfunc import ChatAgent
-from mlflow.types.agent import ChatAgentMessage, ChatContext, ChatAgentResponse, ChatAgentChunk
+from mlflow.types.agent import (
+    ChatAgentMessage,
+    ChatContext,
+    ChatAgentResponse,
+    ChatAgentChunk,
+)
 
 from src.graph.graph_provider import GraphProvider
 from src.state.mapper import StateMapper, DefaultStateMapper
@@ -24,8 +29,12 @@ class DefaultChatAgentApplication(
     ChatAgentApplication[DefaultState, list[ChatAgentMessage]]
 ):
 
-    def predict_stream(self, messages: list[ChatAgentMessage], context: ChatContext | None = None,
-                       custom_inputs: dict[str, Any] | None = None) -> Generator[ChatAgentChunk, None, None]:
+    def predict_stream(
+        self,
+        messages: list[ChatAgentMessage],
+        context: ChatContext | None = None,
+        custom_inputs: dict[str, Any] | None = None,
+    ) -> Generator[ChatAgentChunk, None, None]:
         pass
 
     def predict(

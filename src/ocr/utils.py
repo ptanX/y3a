@@ -17,4 +17,3 @@ def cut_pdf_to_bytes(input_path: str, start_page: int, end_page: int) -> bytes:
 def get_total_page(input_path: str) -> int:
     reader = PdfReader(input_path)
     return len(reader.pages)
-

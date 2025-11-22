@@ -48,17 +48,19 @@ def submit(question, document_id):
                 "messages": [
                     {
                         "role": "user",
-                        "content": json.dumps(content, ensure_ascii=False, separators=(',', ':')),
+                        "content": json.dumps(
+                            content, ensure_ascii=False, separators=(",", ":")
+                        ),
                     }
                 ]
             }
         }
         url = "http://127.0.0.1:8080/invocations"
-        headers = {
-            'Content-Type': 'application/json'
-        }
+        headers = {"Content-Type": "application/json"}
 
-        response = requests.request("POST", url, headers=headers, data=json.dumps(message), timeout=300)
+        response = requests.request(
+            "POST", url, headers=headers, data=json.dumps(message), timeout=300
+        )
         return response.json().get("predictions").get("messages")[0].get("content")
     except EntityNotFound as e:
         return str(e)
@@ -68,11 +70,7 @@ def submit(question, document_id):
 
 
 def main():
-    st.set_page_config(
-        page_title="Rawiq",
-        page_icon="🧬",
-        layout="wide"
-    )
+    st.set_page_config(page_title="Rawiq", page_icon="🧬", layout="wide")
 
     st.header("🧬 Rawiq Insight Retrieval System")
 
@@ -82,16 +80,14 @@ def main():
         "Upload PDFs:",
         type=["pdf"],
         accept_multiple_files=False,
-        help="Add document to start analyzing."
+        help="Add document to start analyzing.",
     )
 
     col1, col2 = st.columns(2)
 
     with col1:
         email_input = st.text_input(
-            "Email",
-            placeholder="Email",
-            label_visibility="collapsed"
+            "Email", placeholder="Email", label_visibility="collapsed"
         )
 
     with col2:
@@ -105,20 +101,22 @@ def main():
                 try:
                     process(uploaded_file, email_input)
                     st.success(
-                        f"Đã tiếp nhận yêu cầu thành công. Vui lòng đợi kết quả gửi vào hòm mail {email_input}")
+                        f"Đã tiếp nhận yêu cầu thành công. Vui lòng đợi kết quả gửi vào hòm mail {email_input}"
+                    )
                 except Exception as e:
                     st.error(f"❌ Error processing documents: {e}")
 
     query = st.text_area(
         "💡 Enter your  question:",
         placeholder="e.g., Tình hình tài chính của công ty cổ phần chứng khoán DNSE?",
-        height=100
+        height=100,
     )
 
     col3, col4 = st.columns(2)
     with col3:
-        document_id = st.text_input("Document ID", placeholder="Mã tài liệu",
-                                    label_visibility="collapsed")
+        document_id = st.text_input(
+            "Document ID", placeholder="Mã tài liệu", label_visibility="collapsed"
+        )
     with col4:
         submit_button = st.button("🚀 Submit Query", type="primary")
 
@@ -140,8 +138,7 @@ def main():
         st.title("Documentations")
         # Using object notation
         add_selectbox = st.sidebar.selectbox(
-            "What would you like to be demonstrated?",
-            ("Lending", "Chat Agent")
+            "What would you like to be demonstrated?", ("Lending", "Chat Agent")
         )
         st.markdown("---")
 
@@ -152,7 +149,7 @@ def main():
         "<div style='text-align: center; color: #666; margin-top: 2rem;'>"
         "Built with ❤️ using AI"
         "</div>",
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
 

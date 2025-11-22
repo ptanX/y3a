@@ -11,6 +11,7 @@ def display_logo():
     logo_image = Image.open(str(logo_path))
     st.logo(str(logo_path), size="large", icon_image=logo_image)
 
+
 def has_permission(page):
     if not st.session_state.logged_in:
         return False
@@ -50,7 +51,9 @@ def authenticated_menu():
 
     # Settings page (admin only)
     if has_permission("settings"):
-        if st.sidebar.button("⚙️ Settings", use_container_width=True, key="nav_settings"):
+        if st.sidebar.button(
+            "⚙️ Settings", use_container_width=True, key="nav_settings"
+        ):
             st.switch_page("pages/setting.py")
 
     # st.sidebar.divider()
@@ -73,7 +76,9 @@ def menu_with_redirect():
         if query_params.get("document_id"):
             st.session_state.document_id = query_params.get("document_id")
         if query_params.get("financial_document_id"):
-            st.session_state.financial_document_id = query_params.get("financial_document_id")
+            st.session_state.financial_document_id = query_params.get(
+                "financial_document_id"
+            )
     # Check if logged in and has permission
     if "logged_in" not in st.session_state:
         st.switch_page("pages/login.py")
@@ -82,7 +87,11 @@ def menu_with_redirect():
 
 
 def menu():
-    if "role" not in st.session_state or st.session_state.role is None or not st.session_state.logged_in:
+    if (
+        "role" not in st.session_state
+        or st.session_state.role is None
+        or not st.session_state.logged_in
+    ):
         unauthenticated_menu()
         return
     authenticated_menu()

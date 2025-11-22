@@ -21,16 +21,22 @@ if query_params is not None:
     if query_params.get("document_id"):
         st.session_state.document_id = query_params.get("document_id")
     if query_params.get("financial_document_id"):
-        st.session_state.financial_document_id = query_params.get("financial_document_id")
+        st.session_state.financial_document_id = query_params.get(
+            "financial_document_id"
+        )
 
 with col2:
     st.markdown("### Please login to continue")
 
     with st.form("login_form"):
         username = st.text_input("Username", placeholder="Enter your username")
-        password = st.text_input("Password", type="password", placeholder="Enter your password")
+        password = st.text_input(
+            "Password", type="password", placeholder="Enter your password"
+        )
 
-        submitted = st.form_submit_button("Login", use_container_width=True, type="primary")
+        submitted = st.form_submit_button(
+            "Login", use_container_width=True, type="primary"
+        )
 
         if submitted:
             if username and password:
@@ -45,7 +51,9 @@ with col2:
                     # Navigate to first available page
                     if has_permission("upload"):
                         st.switch_page("pages/upload.py")
-                    elif has_permission("details") and "document_id" in st.session_state:
+                    elif (
+                        has_permission("details") and "document_id" in st.session_state
+                    ):
                         st.switch_page("pages/detail.py")
                     else:
                         st.switch_page("pages/chat_agent.py")

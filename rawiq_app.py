@@ -136,40 +136,28 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 def submit(question):
     # Prompt template
-    message = {
-        "inputs": {
-            "messages": [
-                {
-                    "role": "user",
-                    "content": question
-                }
-            ]
-        }
-    }
+    message = {"inputs": {"messages": [{"role": "user", "content": question}]}}
     url = "http://127.0.0.1:8080/invocations"
-    headers = {
-        'Content-Type': 'application/json'
-    }
+    headers = {"Content-Type": "application/json"}
 
     # Explain: just the curl sample
     # TODO:
     #  - Impl the chain and the parser
     try:
-        response = requests.request("POST", url, headers=headers, data=json.dumps(message), timeout=300)
+        response = requests.request(
+            "POST", url, headers=headers, data=json.dumps(message), timeout=300
+        )
         print(response.text)
         return response.json().get("predictions").get("messages")[0].get("content")
     except Exception as e:
         print(e)
         return "Error: Could not submit message. Please check your setup."
 
+
 def main():
     """Main Streamlit application - 100% HuggingFace-free."""
 
-    st.set_page_config(
-        page_title="Rawiq",
-        page_icon="🧬",
-        layout="wide"
-    )
+    st.set_page_config(page_title="Rawiq", page_icon="🧬", layout="wide")
 
     st.header("🧬 Rawiq Insight Retrieval System")
 
@@ -177,7 +165,7 @@ def main():
     query = st.text_area(
         "💡 Enter your  question:",
         placeholder="e.g., What are the latest AI applications in drug discovery?",
-        height=100
+        height=100,
     )
 
     col1, col2 = st.columns([1, 4])
@@ -202,105 +190,105 @@ def main():
 
     # Sidebar configuration
     # with st.sidebar:
-        # st.title("⚙️ Local AI Settings")
-        #
-        # # Model selection
-        # st.subheader("🤖 Language Model")
-        # llm_models = [
-        #     "llama3.1", "llama3.1:8b", "llama3.1:70b", "llama3.1:405b",
-        #     "llama3.2", "llama3.2:3b", "llama3.2:1b",
-        #     "codellama", "codellama:13b",
-        #     "mistral", "mistral:7b",
-        #     "phi3", "phi3:mini",
-        #     "gemma2", "gemma2:9b"
-        # ]
+    # st.title("⚙️ Local AI Settings")
+    #
+    # # Model selection
+    # st.subheader("🤖 Language Model")
+    # llm_models = [
+    #     "llama3.1", "llama3.1:8b", "llama3.1:70b", "llama3.1:405b",
+    #     "llama3.2", "llama3.2:3b", "llama3.2:1b",
+    #     "codellama", "codellama:13b",
+    #     "mistral", "mistral:7b",
+    #     "phi3", "phi3:mini",
+    #     "gemma2", "gemma2:9b"
+    # ]
 
-        # selected_model = st.selectbox(
-        #     "Choose your model:",
-        #     llm_models,
-        #     index=0
-        # )
-        #
-        # if st.button("💾 Set Model"):
-        #     st.session_state.selected_model = selected_model
-        #     st.success(f"✅ Model set to: {selected_model}")
-        #
-        # st.markdown("---")
-        #
-        # # Embedding model info
-        # st.subheader("🔤 Embedding Model")
-        # st.info("Currently using Ollama embeddings")
-        #
-        # embedding_options = [
-        #     "nomic-embed-text (Recommended)",
-        #     "mxbai-embed-large (High Quality)",
-        #     "all-minilm (Fast)",
-        #     "simple-text (Fallback)"
-        # ]
-        #
-        # st.selectbox("Embedding model:", embedding_options, disabled=True)
-        #
-        # st.markdown("---")
-        #
-        # # Connection status
-        # st.subheader("🔍 System Status")
-        # if st.button("🔧 Test Connection"):
-        #     with st.spinner("Testing..."):
-        #         try:
-        #             # Test LLM
-        #             test_llm = Ollama(model=selected_model)
-        #             llm_response = test_llm.invoke("Say 'OK' if you're working")
-        #             st.success("✅ LLM: Connected")
-        #
-        #             # Test embeddings
-        #             # test_embed = embedding_model.embed_query("test")
-        #             st.success("✅ Embeddings: Working")
-        #
-        #             st.balloons()
-        #
-        #         except Exception as e:
-        #             st.error(f"❌ Connection failed: {e}")
-        #
-        #             with st.expander("🛠️ Setup Instructions"):
-        #                 st.markdown("""
-        #                 **Install Ollama:**
-        #                 ```bash
-        #                 curl -fsSL https://ollama.ai/install.sh | sh
-        #                 ```
-        #
-        #                 **Start Ollama:**
-        #                 ```bash
-        #                 ollama serve
-        #                 ```
-        #
-        #                 **Install Models:**
-        #                 ```bash
-        #                 ollama pull llama3.1
-        #                 ollama pull nomic-embed-text
-        #                 ```
-        #                 """)
-        #
-        # st.markdown("---")
-        #
-        # # Document upload
-        # st.subheader("📄 Document Management")
-        # uploaded_files = st.file_uploader(
-        #     "Upload PDFs:",
-        #     type=["pdf"],
-        #     accept_multiple_files=True,
-        #     help="Add documents to improve query responses"
-        # )
-        #
-        # if st.button("📚 Process Documents"):
-        #     if not uploaded_files:
-        #         st.warning("⚠️ Please upload PDF files first")
-        #     else:
-        #         with st.spinner("🔄 Processing documents..."):
-        #             try:
-        #                 # add_to_db(uploaded_files)
-        #                 st.success(f"✅ Successfully processed {len(uploaded_files)} document(s)!")
-        #             except Exception as e:
-        #                 st.error(f"❌ Error processing documents: {e}")
+    # selected_model = st.selectbox(
+    #     "Choose your model:",
+    #     llm_models,
+    #     index=0
+    # )
+    #
+    # if st.button("💾 Set Model"):
+    #     st.session_state.selected_model = selected_model
+    #     st.success(f"✅ Model set to: {selected_model}")
+    #
+    # st.markdown("---")
+    #
+    # # Embedding model info
+    # st.subheader("🔤 Embedding Model")
+    # st.info("Currently using Ollama embeddings")
+    #
+    # embedding_options = [
+    #     "nomic-embed-text (Recommended)",
+    #     "mxbai-embed-large (High Quality)",
+    #     "all-minilm (Fast)",
+    #     "simple-text (Fallback)"
+    # ]
+    #
+    # st.selectbox("Embedding model:", embedding_options, disabled=True)
+    #
+    # st.markdown("---")
+    #
+    # # Connection status
+    # st.subheader("🔍 System Status")
+    # if st.button("🔧 Test Connection"):
+    #     with st.spinner("Testing..."):
+    #         try:
+    #             # Test LLM
+    #             test_llm = Ollama(model=selected_model)
+    #             llm_response = test_llm.invoke("Say 'OK' if you're working")
+    #             st.success("✅ LLM: Connected")
+    #
+    #             # Test embeddings
+    #             # test_embed = embedding_model.embed_query("test")
+    #             st.success("✅ Embeddings: Working")
+    #
+    #             st.balloons()
+    #
+    #         except Exception as e:
+    #             st.error(f"❌ Connection failed: {e}")
+    #
+    #             with st.expander("🛠️ Setup Instructions"):
+    #                 st.markdown("""
+    #                 **Install Ollama:**
+    #                 ```bash
+    #                 curl -fsSL https://ollama.ai/install.sh | sh
+    #                 ```
+    #
+    #                 **Start Ollama:**
+    #                 ```bash
+    #                 ollama serve
+    #                 ```
+    #
+    #                 **Install Models:**
+    #                 ```bash
+    #                 ollama pull llama3.1
+    #                 ollama pull nomic-embed-text
+    #                 ```
+    #                 """)
+    #
+    # st.markdown("---")
+    #
+    # # Document upload
+    # st.subheader("📄 Document Management")
+    # uploaded_files = st.file_uploader(
+    #     "Upload PDFs:",
+    #     type=["pdf"],
+    #     accept_multiple_files=True,
+    #     help="Add documents to improve query responses"
+    # )
+    #
+    # if st.button("📚 Process Documents"):
+    #     if not uploaded_files:
+    #         st.warning("⚠️ Please upload PDF files first")
+    #     else:
+    #         with st.spinner("🔄 Processing documents..."):
+    #             try:
+    #                 # add_to_db(uploaded_files)
+    #                 st.success(f"✅ Successfully processed {len(uploaded_files)} document(s)!")
+    #             except Exception as e:
+    #                 st.error(f"❌ Error processing documents: {e}")
 
     # # Footer
     st.markdown("---")
@@ -319,7 +307,7 @@ def main():
         "<div style='text-align: center; color: #666; margin-top: 2rem;'>"
         "Built with ❤️ using AI"
         "</div>",
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
 

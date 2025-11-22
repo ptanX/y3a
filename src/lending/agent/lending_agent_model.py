@@ -10,7 +10,7 @@ class DimensionRequest(BaseModel):
 
     dimension_name: str = Field(
         description="Tên dimension từ danh sách hợp lệ: capital_adequacy, asset_quality, management_quality, earnings,"
-                    " liquidity, sensitivity_to_market_risk"
+        " liquidity, sensitivity_to_market_risk"
     )
     sub_dimension_name: List[str] = Field(
         description="Danh sách các sub-dimension names thuộc dimension này"
@@ -41,9 +41,7 @@ class LendingShortTermContext(BaseModel):
         description="Loại phân tích: overall, trending, hoặc deep_analysis"
     )
 
-    previous_query_scopes: List[str] = Field(
-        description="Danh sách các query scope cũ"
-    )
+    previous_query_scopes: List[str] = Field(description="Danh sách các query scope cũ")
 
     previous_period: List[str] = Field(
         description="Các khoảng thời gian cần phân tích: 2021, 2022, 2023, Q1_2024"

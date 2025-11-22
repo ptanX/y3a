@@ -10,11 +10,16 @@ from src.config.settings import MODEL_NAME, MODEL_VERSION_ALIAS
 
 client = MlflowClient()
 
+
 def print_model_info(rm: RegisteredModel):
     print("--Model--")
     print("Name: {}".format(rm.name))
     print("Aliases: {}".format(rm.aliases))
-    print("Last Updated Timestamp: {}".format(datetime.fromtimestamp(rm.last_updated_timestamp / 1000)))
+    print(
+        "Last Updated Timestamp: {}".format(
+            datetime.fromtimestamp(rm.last_updated_timestamp / 1000)
+        )
+    )
 
 
 def show():
@@ -38,21 +43,17 @@ def deploy():
             ## TODO implement the factory initialize agent here
             python_model="business_customer_loan_validation.py",
             input_example=data_example,
-            pip_requirements="requirements.txt"
+            pip_requirements="requirements.txt",
         )
 
     mv = mlflow.register_model(name=MODEL_NAME, model_uri=model_info.model_uri)
-    client.set_registered_model_alias(
-        MODEL_NAME, MODEL_VERSION_ALIAS, mv.version
-    )
+    client.set_registered_model_alias(MODEL_NAME, MODEL_VERSION_ALIAS, mv.version)
 
     rm = client.get_registered_model(MODEL_NAME)
     print_model_info(rm)
 
     loaded_model = mlflow.pyfunc.load_model(model_info.model_uri)
-    result = loaded_model.predict(
-        data=data_example
-    )
+    result = loaded_model.predict(data=data_example)
 
     print("=" * 10, "SANITY CHECK", "=" * 10)
     print(result)

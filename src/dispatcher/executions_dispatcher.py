@@ -37,18 +37,14 @@ async def async_wrapper(func, *args, **kwargs):
     """Async wrapper for the extraction_numbers function"""
     loop = asyncio.get_event_loop()
     # Run the blocking function in a thread pool
-    return await loop.run_in_executor(
-        None,
-        func,
-        *args
-    )
+    return await loop.run_in_executor(None, func, *args)
 
 
 async def handle_simple_execution(execution_input: ExecutionInput) -> ExecutionOutput:
     return ExecutionOutput(
         handler_name=execution_input.handler_name,
         execution_id=execution_input.execution_id,
-        output_content=execution_input.input_content
+        output_content=execution_input.input_content,
     )
 
 
@@ -57,7 +53,7 @@ class ExecutionDispatcher:
         self.dispatchers: Dict[str, ExecutionHandler] = {}
 
     async def dispatch(
-            self, list_inputs: List[ExecutionInput]
+        self, list_inputs: List[ExecutionInput]
     ) -> List[ExecutionOutput]:
         """
         Returns list of results of execution input.

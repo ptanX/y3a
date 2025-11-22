@@ -1752,15 +1752,17 @@ OUTPUT: CHỈ JSON array như ví dụ, KHÔNG có text giải thích hay markdo
 """
 
 
-def get_data_prompt_by_section(document_type: str, section_type: str, other_info=None) -> str:
+def get_data_prompt_by_section(
+    document_type: str, section_type: str, other_info=None
+) -> str:
     if (
-            document_type == "securities_financial_report"
-            and section_type == "financial_statement"
+        document_type == "securities_financial_report"
+        and section_type == "financial_statement"
     ):
         return SECURITIES_FINANCIAL_STATEMENT_PROMPT
     if (
-            document_type == "securities_financial_report"
-            and section_type == "income_statement"
+        document_type == "securities_financial_report"
+        and section_type == "income_statement"
     ):
         return get_income_statement_by_section(other_info)
     else:
@@ -1776,6 +1778,4 @@ def get_income_statement_by_section(other_info) -> str:
         return KPMG_SECURITIES_INCOME_STATEMENT_PROMPT
     elif other_info.get("auditing_company", "") == "EY":
         return EY_SECURITIES_INCOME_STATEMENT_PROMPT
-    raise ValueError(
-        f"could not find prompt for income statement"
-    )
+    raise ValueError(f"could not find prompt for income statement")

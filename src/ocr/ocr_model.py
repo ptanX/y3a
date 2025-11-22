@@ -20,12 +20,12 @@ class MetadataPageType(str, Enum):
 class DocumentIdentifierMetadata:
 
     def __init__(
-            self,
-            company: str,
-            category: str,
-            file_type: str,
-            time: str = None,
-            note: str = None,
+        self,
+        company: str,
+        category: str,
+        file_type: str,
+        time: str = None,
+        note: str = None,
     ):
         self.company = company
         self.category = category
@@ -37,10 +37,7 @@ class DocumentIdentifierMetadata:
 class DocumentPageInfoMetadata:
 
     def __init__(
-            self,
-            from_page: int = None,
-            to_page: int = None,
-            page_length: int = None
+        self, from_page: int = None, to_page: int = None, page_length: int = None
     ):
         self.from_page = from_page
         self.to_page = to_page
@@ -51,9 +48,7 @@ class DocumentPageInfoMetadata:
 
 
 class DocumentSectionMetadata:
-    def __init__(self,
-                 component_type: str,
-                 page_info: DocumentPageInfoMetadata = None):
+    def __init__(self, component_type: str, page_info: DocumentPageInfoMetadata = None):
         self.component_type = component_type
         self.page_info = page_info
 
@@ -61,12 +56,12 @@ class DocumentSectionMetadata:
 class DocumentMetadata:
 
     def __init__(
-            self,
-            document_type: str,
-            document_identifier: DocumentIdentifierMetadata,
-            document_path: str,
-            sections: List[DocumentSectionMetadata] = None,
-            other_info: Dict = None,
+        self,
+        document_type: str,
+        document_identifier: DocumentIdentifierMetadata,
+        document_path: str,
+        sections: List[DocumentSectionMetadata] = None,
+        other_info: Dict = None,
     ):
         self.document_type = document_type
         self.document_identifier = document_identifier

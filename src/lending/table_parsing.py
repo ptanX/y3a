@@ -34,11 +34,15 @@ def extract_information(filepath: Union[str, pathlib.Path]) -> dict:
         contents=[
             types.Part.from_bytes(
                 data=filepath.read_bytes(),
-                mime_type='application/pdf',
+                mime_type="application/pdf",
             ),
-            prompt])
+            prompt,
+        ],
+    )
 
-    response_json = json.loads(response.text.replace('```json', '').replace('```', '').strip())
+    response_json = json.loads(
+        response.text.replace("```json", "").replace("```", "").strip()
+    )
     print(response_json)
 
     with open(str(filepath).rsplit(".", 1)[0] + ".json", "w", encoding="utf-8") as f:

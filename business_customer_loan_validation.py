@@ -13,13 +13,17 @@ from toon import encode
 from src.agent.agent_application import AgentApplication
 from src.graph.graph_provider import GraphProvider
 from src.lending.agent.documentation import SSI_TEST_QUESTION
-from src.lending.agent.lending_agent_model import BusinessLoanValidationState, LendingShortTermContext, \
-    OrchestrationInformation
+from src.lending.agent.lending_agent_model import (
+    BusinessLoanValidationState,
+    LendingShortTermContext,
+    OrchestrationInformation,
+)
 from src.lending.agent.lending_prompt import (
     INCOMING_QUESTION_ANALYSIS,
     TABULAR_RECEIVING_PROMPT,
     TRENDING_ANALYSIS_PROMPT,
-    DEEP_ANALYSIS_PROMPT, FALLBACK_PROMPT,
+    DEEP_ANALYSIS_PROMPT,
+    FALLBACK_PROMPT,
 )
 from src.lending.agent.mapping import DIMENSIONAL_MAPPING
 from src.lending.agent.short_term_context import InMemoryShortTermContextRepository
@@ -50,7 +54,9 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         document_id = structured_message.get("document_id")
         question = structured_message.get("question")
         documents = structured_message.get("documents")
-        orchestration_information = self.get_orchestration_information(document_id, question, documents)
+        orchestration_information = self.get_orchestration_information(
+            document_id, question, documents
+        )
         filtered_documents = []
         company = ""
         if len(documents) > 0:
@@ -64,16 +70,16 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         financial_outputs = []
         for query_scope in orchestration_information.query_scopes:
             dimensional_mapping = DIMENSIONAL_MAPPING.get(query_scope)
-            financial_outputs.append(build_financial_table_output(
-                financial_metrics=fined_grain_data,
-                mapping=dimensional_mapping
-            )
+            financial_outputs.append(
+                build_financial_table_output(
+                    financial_metrics=fined_grain_data, mapping=dimensional_mapping
+                )
             )
         return {
             "question": question,
             "orchestration_information": orchestration_information,
             "financial_outputs": financial_outputs,
-            "company": company
+            "company": company,
         }
 
     def get_orchestration_information(self, document_id, question, documents):
@@ -89,24 +95,26 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         available_time_period_json = json.dumps(sorted(available_time_period))
         prompt_template = ChatPromptTemplate.from_template(INCOMING_QUESTION_ANALYSIS)
         rag_chain = (
-                {
-                    "question": RunnablePassthrough(),
-                    "available_periods": lambda _: available_time_period_json,
-                    "previous_context": lambda _: previous_context_json
-                }
-                | prompt_template
-                | self.llm.with_structured_output(
-            OrchestrationInformation, method="json_mode"
-        )
+            {
+                "question": RunnablePassthrough(),
+                "available_periods": lambda _: available_time_period_json,
+                "previous_context": lambda _: previous_context_json,
+            }
+            | prompt_template
+            | self.llm.with_structured_output(
+                OrchestrationInformation, method="json_mode"
+            )
         )
         orchestration_response = rag_chain.invoke(question)
         print(orchestration_response)
         current_context = LendingShortTermContext(
             previous_analysis_type=orchestration_response.analysis_type,
             previous_query_scopes=orchestration_response.query_scopes,
-            previous_period=orchestration_response.time_period
+            previous_period=orchestration_response.time_period,
         )
-        self.short_term_context_repository.put(thread_id=document_id, context=current_context)
+        self.short_term_context_repository.put(
+            thread_id=document_id, context=current_context
+        )
         return orchestration_response
 
     def route_function(self, state):
@@ -168,14 +176,14 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
                 """
         prompt_template = ChatPromptTemplate.from_template(FALLBACK_PROMPT)
         rag_chain = (
-                {
-                    "question": RunnablePassthrough(),
-                    "response_logic": lambda _: response_logic,
-                    "clarifications_section": lambda _: clarifications_section,
-                }
-                | prompt_template
-                | self.llm
-                | StrOutputParser()
+            {
+                "question": RunnablePassthrough(),
+                "response_logic": lambda _: response_logic,
+                "clarifications_section": lambda _: clarifications_section,
+            }
+            | prompt_template
+            | self.llm
+            | StrOutputParser()
         )
 
         return {"message": rag_chain.invoke(question)}
@@ -202,17 +210,17 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         else:
             raise Exception(f"Illegal analysis type {analysis_type}")
         rag_chain = (
-                {
-                    "question": RunnablePassthrough(),
-                    "orchestration_request": lambda _: orchestration_request_json,
-                    "company_name": lambda _: company_name,
-                    "periods": lambda _: periods,
-                    "financial_data_input": lambda _: financial_data_input_toon,
-                    "section_guide": lambda _: section_guide
-                }
-                | prompt_template
-                | self.llm
-                | StrOutputParser()
+            {
+                "question": RunnablePassthrough(),
+                "orchestration_request": lambda _: orchestration_request_json,
+                "company_name": lambda _: company_name,
+                "periods": lambda _: periods,
+                "financial_data_input": lambda _: financial_data_input_toon,
+                "section_guide": lambda _: section_guide,
+            }
+            | prompt_template
+            | self.llm
+            | StrOutputParser()
         )
         return {"message": rag_chain.invoke(question)}
 
@@ -286,12 +294,18 @@ def calculate_financial_metrics(data):
         owners_equity = financial_statement_data.get("owners_equity")
         receivables = financial_statement_data.get("receivables")
         short_term_assets = financial_statement_data.get("short_term_assets")
-        cash_and_cash_equivalents = financial_statement_data.get("cash_and_cash_equivalents")
+        cash_and_cash_equivalents = financial_statement_data.get(
+            "cash_and_cash_equivalents"
+        )
 
         total_operating_revenue = income_statement_data.get("total_operating_revenue")
-        interest_expense_borrowings = income_statement_data.get("interest_expense_on_borrowings")
+        interest_expense_borrowings = income_statement_data.get(
+            "interest_expense_on_borrowings"
+        )
         operating_profit = income_statement_data.get("operating_profit")
-        accounting_profit_before_tax = income_statement_data.get("accounting_profit_before_tax")
+        accounting_profit_before_tax = income_statement_data.get(
+            "accounting_profit_before_tax"
+        )
         net_profit_after_tax = income_statement_data.get("net_profit_after_tax")
 
         # ============ GIÁ TRỊ NĂM TRƯỚC ============
@@ -330,7 +344,8 @@ def calculate_financial_metrics(data):
         # EBIT = Tổng lợi nhuận kế toán trước thuế + Chi phí lãi vay
         ebit = (
             accounting_profit_before_tax + interest_expense_borrowings
-            if accounting_profit_before_tax is not None and interest_expense_borrowings is not None
+            if accounting_profit_before_tax is not None
+            and interest_expense_borrowings is not None
             else None
         )
 
@@ -370,7 +385,6 @@ def calculate_financial_metrics(data):
             else None
         )
 
-
         # 6. ATO (ĐÃ SỬA)
         # ATO = Tổng doanh thu hoạt động / Tổng tài sản bình quân
         avg_total_assets = (
@@ -397,7 +411,9 @@ def calculate_financial_metrics(data):
 
         operating_profit_margin = (
             operating_profit / total_operating_revenue
-            if operating_profit and total_operating_revenue and total_operating_revenue != 0
+            if operating_profit
+            and total_operating_revenue
+            and total_operating_revenue != 0
             else None
         )
 
@@ -426,26 +442,34 @@ def calculate_financial_metrics(data):
         # 11. ROS
         ros = (
             net_profit_after_tax / total_operating_revenue
-            if net_profit_after_tax and total_operating_revenue and total_operating_revenue != 0
+            if net_profit_after_tax
+            and total_operating_revenue
+            and total_operating_revenue != 0
             else None
         )
 
         # 12. Liquidity ratios
         current_ratio = (
             short_term_assets / short_term_liabilities
-            if short_term_assets and short_term_liabilities and short_term_liabilities != 0
+            if short_term_assets
+            and short_term_liabilities
+            and short_term_liabilities != 0
             else None
         )
 
         quick_ratio = (
             short_term_assets / short_term_liabilities
-            if short_term_assets and short_term_liabilities and short_term_liabilities != 0
+            if short_term_assets
+            and short_term_liabilities
+            and short_term_liabilities != 0
             else None
         )
 
         cash_ratio = (
             cash_and_cash_equivalents / short_term_liabilities
-            if cash_and_cash_equivalents and short_term_liabilities and short_term_liabilities != 0
+            if cash_and_cash_equivalents
+            and short_term_liabilities
+            and short_term_liabilities != 0
             else None
         )
 
@@ -457,7 +481,9 @@ def calculate_financial_metrics(data):
 
         gross_profit_margin = (
             net_profit_after_tax / total_operating_revenue
-            if net_profit_after_tax and total_operating_revenue and total_operating_revenue != 0
+            if net_profit_after_tax
+            and total_operating_revenue
+            and total_operating_revenue != 0
             else None
         )
 
@@ -467,27 +493,23 @@ def calculate_financial_metrics(data):
             "company": report["company"],
             "report_date": report["report_date"],
             "currency": report["currency"],
-
             # Raw data components
             "financial_statement": financial_statement_data,
             "income_statement": income_statement_data,
-            "calculated_metrics" : {
+            "calculated_metrics": {
                 # Calculated Metrics - Debt Management
                 "debt_to_equity": debt_to_equity,
                 "leverage_ratio": leverage_ratio,
                 "debt_ratio": debt_ratio,
                 "long_term_debt_to_equity": long_term_debt_to_equity,
                 "interest_coverage_ratio": interest_coverage_ratio,
-
                 # Calculated Metrics - Growth
                 "asset_growth_rate": asset_growth_rate,
                 "net_profit_growth_rate": net_profit_growth_rate,
-
                 # Calculated Metrics - Efficiency
                 "receivables_turnover": receivables_turnover,
                 "ato": ato,
                 "fixed_asset_turnover": fixed_asset_turnover,
-
                 # Calculated Metrics - Profitability
                 "ebit": ebit,
                 "ebitda": ebitda,
@@ -496,14 +518,13 @@ def calculate_financial_metrics(data):
                 "roa": roa,
                 "roe": roe,
                 "ros": ros,
-
                 # Calculated Metrics - Liquidity
                 "current_ratio": current_ratio,
                 "quick_ratio": quick_ratio,
                 "cash_ratio": cash_ratio,
                 "working_capital": working_capital,
-                "gross_profit_margin": gross_profit_margin
-            }
+                "gross_profit_margin": gross_profit_margin,
+            },
         }
 
         results.append(result)
@@ -511,10 +532,7 @@ def calculate_financial_metrics(data):
     return results
 
 
-def build_financial_table_output(
-        financial_metrics: list[dict],
-        mapping: dict
-) -> dict:
+def build_financial_table_output(financial_metrics: list[dict], mapping: dict) -> dict:
     """
     Generate DataFrame-like output from financial metrics and mapping configuration,
     with rows ordered strictly by the order of fields in mapping.
@@ -556,14 +574,17 @@ def build_financial_table_output(
 
     # Create lookup dictionary
     metrics_by_period = {
-        parse_period(metric["report_date"]): metric
-        for metric in financial_metrics
+        parse_period(metric["report_date"]): metric for metric in financial_metrics
     }
 
     # Generate column names
     columns = ["Chỉ tiêu"]
-    has_proportion = any(field.get("show_proportion", False) for field in mapping.get("fields", []))
-    has_difference = any(field.get("show_difference", False) for field in mapping.get("fields", []))
+    has_proportion = any(
+        field.get("show_proportion", False) for field in mapping.get("fields", [])
+    )
+    has_difference = any(
+        field.get("show_difference", False) for field in mapping.get("fields", [])
+    )
 
     for year, quarter in periods:
         period_label = format_period_short(year, quarter)
@@ -593,10 +614,7 @@ def build_financial_table_output(
     for field in mapping.get("fields", []):
         if field.get("is_section"):
             # This is a main section
-            current_section = {
-                "name": field.get("display_name", ""),
-                "subsections": []
-            }
+            current_section = {"name": field.get("display_name", ""), "subsections": []}
             section_structure.append(current_section)
 
         if field.get("is_group_header"):
@@ -650,7 +668,11 @@ def build_financial_table_output(
                 if show_difference:
                     current_val = values[i]
                     prev_val = values[i + 1]
-                    if current_val is not None and prev_val is not None and prev_val != 0:
+                    if (
+                        current_val is not None
+                        and prev_val is not None
+                        and prev_val != 0
+                    ):
                         diff = ((current_val - prev_val) / prev_val) * 100
                 row.append(diff)
 
@@ -659,7 +681,7 @@ def build_financial_table_output(
     return {
         "columns": columns,
         "data": data,
-        "section_structure": section_structure  # ← NEW: Section metadata
+        "section_structure": section_structure,  # ← NEW: Section metadata
     }
 
 
@@ -684,8 +706,7 @@ def extract_section_guide(financial_outputs: list[dict]) -> str:
         else:
             # Fallback: extract all group headers
             sections = [
-                row[0] for row in table["data"][1:]
-                if all(v is None for v in row[1:])
+                row[0] for row in table["data"][1:] if all(v is None for v in row[1:])
             ]
 
         if sections:

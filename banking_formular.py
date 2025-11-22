@@ -12,11 +12,12 @@ class CapitalAdequacyCalculator:
         self.thresholds = {
             "growth_rate": {"good": 10, "acceptable": 5},
             "leverage_ratio": {"good": (12, 20), "warning": 25, "low": 12},
-            "iccr": {"benchmark": "rwa_growth"}  # So sánh với tốc độ tăng RWA
+            "iccr": {"benchmark": "rwa_growth"},  # So sánh với tốc độ tăng RWA
         }
 
-    def calculate_equity_growth_rate(self, current_equity: float,
-                                     previous_equity: float) -> Dict[str, Union[float, str]]:
+    def calculate_equity_growth_rate(
+        self, current_equity: float, previous_equity: float
+    ) -> Dict[str, Union[float, str]]:
         """
         a) Tốc độ tăng quy mô VCSH
 
@@ -30,9 +31,7 @@ class CapitalAdequacyCalculator:
         if previous_equity <= 0:
             return {"error": "Vốn chủ sở hữu năm trước phải > 0"}
         growth_rate = ((current_equity - previous_equity) / previous_equity) * 100
-        return {
-            "growth_rate": round(growth_rate, 2)
-        }
+        return {"growth_rate": round(growth_rate, 2)}
 
     def calculate_cagr(self, equity_data: List[Dict]) -> Dict[str, Union[float, str]]:
         """
@@ -51,11 +50,11 @@ class CapitalAdequacyCalculator:
             return {"error": "Cần ít nhất 2 năm dữ liệu"}
 
         # Sort by year
-        sorted_data = sorted(equity_data, key=lambda x: x['year'])
+        sorted_data = sorted(equity_data, key=lambda x: x["year"])
 
-        beginning_value = sorted_data[0]['equity']
-        ending_value = sorted_data[-1]['equity']
-        num_periods = int(sorted_data[-1]['year']) - int(sorted_data[0]['year'])
+        beginning_value = sorted_data[0]["equity"]
+        ending_value = sorted_data[-1]["equity"]
+        num_periods = int(sorted_data[-1]["year"]) - int(sorted_data[0]["year"])
 
         if beginning_value <= 0 or ending_value <= 0 or num_periods <= 0:
             return {"error": "Dữ liệu không hợp lệ cho tính CAGR"}
@@ -63,12 +62,11 @@ class CapitalAdequacyCalculator:
         # CAGR Formula: (Ending Value / Beginning Value)^(1/n) - 1
         cagr = (pow(ending_value / beginning_value, 1 / num_periods) - 1) * 100
 
-        return {
-            "cagr": round(cagr, 2)
-        }
+        return {"cagr": round(cagr, 2)}
 
-    def calculate_leverage_ratio(self, total_assets: float,
-                                 total_equity: float) -> Dict[str, Union[float, str]]:
+    def calculate_leverage_ratio(
+        self, total_assets: float, total_equity: float
+    ) -> Dict[str, Union[float, str]]:
         """
         c) Hệ số đòn bẩy tài chính (L = Total Assets / Equity)
 
@@ -87,8 +85,12 @@ class CapitalAdequacyCalculator:
             "leverage_ratio": round(leverage_ratio, 2),
         }
 
-    def calculate_iccr(self, retained_earnings: float, beginning_equity: float,
-                       dividends_paid: Optional[float] = None) -> Dict[str, Union[float, str]]:
+    def calculate_iccr(
+        self,
+        retained_earnings: float,
+        beginning_equity: float,
+        dividends_paid: Optional[float] = None,
+    ) -> Dict[str, Union[float, str]]:
         """
         d) Internal Capital Creation Rate - Tỷ lệ tăng trưởng vốn tự có bền vững
 
@@ -116,11 +118,9 @@ class CapitalAdequacyCalculator:
                 retention_info = {
                     "retention_ratio": round(retention_ratio, 4),
                     "payout_ratio": round(payout_ratio, 4),
-                    "total_earnings": total_earnings
+                    "total_earnings": total_earnings,
                 }
-        result = {
-            "iccr": round(iccr, 2)
-        }
+        result = {"iccr": round(iccr, 2)}
 
         if retention_info:
             result.update(retention_info)
@@ -151,15 +151,20 @@ class CapitalAdequacyCalculator:
             current_year = years[i]
             previous_year = years[i - 1]
 
-            current_equity = financial_data[current_year]["CAPITAL_ADEQUACY"]["total_equity"]
-            previous_equity = financial_data[previous_year]["CAPITAL_ADEQUACY"]["total_equity"]
+            current_equity = financial_data[current_year]["CAPITAL_ADEQUACY"][
+                "total_equity"
+            ]
+            previous_equity = financial_data[previous_year]["CAPITAL_ADEQUACY"][
+                "total_equity"
+            ]
 
             if current_equity and previous_equity:
-                growth = self.calculate_equity_growth_rate(current_equity, previous_equity)
-                growth_rates.append({
-                    "period": f"{previous_year}-{current_year}",
-                    **growth
-                })
+                growth = self.calculate_equity_growth_rate(
+                    current_equity, previous_equity
+                )
+                growth_rates.append(
+                    {"period": f"{previous_year}-{current_year}", **growth}
+                )
 
         results["yearly_growth_rates"] = growth_rates
 
@@ -192,13 +197,21 @@ class CapitalAdequacyCalculator:
             if i == 0:  # Skip first year (no previous year data)
                 continue
 
-            retained_earnings = financial_data[year]["CAPITAL_ADEQUACY"]["retained_earnings"]
-            beginning_equity = financial_data[years[i - 1]]["CAPITAL_ADEQUACY"]["total_equity"]
+            retained_earnings = financial_data[year]["CAPITAL_ADEQUACY"][
+                "retained_earnings"
+            ]
+            beginning_equity = financial_data[years[i - 1]]["CAPITAL_ADEQUACY"][
+                "total_equity"
+            ]
 
             if retained_earnings is not None and beginning_equity:
                 # Tính retained earnings cho năm hiện tại
-                current_retained = financial_data[year]["CAPITAL_ADEQUACY"]["retained_earnings"]
-                previous_retained = financial_data[years[i - 1]]["CAPITAL_ADEQUACY"]["retained_earnings"]
+                current_retained = financial_data[year]["CAPITAL_ADEQUACY"][
+                    "retained_earnings"
+                ]
+                previous_retained = financial_data[years[i - 1]]["CAPITAL_ADEQUACY"][
+                    "retained_earnings"
+                ]
 
                 if current_retained is not None and previous_retained is not None:
                     annual_retained = current_retained - previous_retained
@@ -244,11 +257,7 @@ class AssetQualityCalculator:
         Format: bank_data["2022"]["ASSET_QUALITY"]...
         """
         years = sorted(bank_data.keys())
-        results = {
-            "growth_rates": [],
-            "loan_to_asset_ratios": [],
-            "npl_ratios": []
-        }
+        results = {"growth_rates": [], "loan_to_asset_ratios": [], "npl_ratios": []}
 
         # Growth rates (tổng tài sản, dư nợ tín dụng)
         for i in range(1, len(years)):
@@ -257,38 +266,45 @@ class AssetQualityCalculator:
             prev_assets = bank_data[prev]["CAPITAL_ADEQUACY"]["total_assets"]
             curr_assets = bank_data[curr]["CAPITAL_ADEQUACY"]["total_assets"]
             if prev_assets and curr_assets:
-                results["growth_rates"].append({
-                    "indicator": "total_assets",
-                    "period": f"{prev}-{curr}",
-                    "growth_rate": self.calculate_growth(curr_assets, prev_assets)
-                })
+                results["growth_rates"].append(
+                    {
+                        "indicator": "total_assets",
+                        "period": f"{prev}-{curr}",
+                        "growth_rate": self.calculate_growth(curr_assets, prev_assets),
+                    }
+                )
 
             prev_loans = bank_data[prev]["ASSET_QUALITY"]["gross_loans_to_customers"]
             curr_loans = bank_data[curr]["ASSET_QUALITY"]["gross_loans_to_customers"]
             if prev_loans and curr_loans:
-                results["growth_rates"].append({
-                    "indicator": "gross_loans_to_customers",
-                    "period": f"{prev}-{curr}",
-                    "growth_rate": self.calculate_growth(curr_loans, prev_loans)
-                })
+                results["growth_rates"].append(
+                    {
+                        "indicator": "gross_loans_to_customers",
+                        "period": f"{prev}-{curr}",
+                        "growth_rate": self.calculate_growth(curr_loans, prev_loans),
+                    }
+                )
 
         # Loan/Asset ratio
         for year in years:
             loans = bank_data[year]["ASSET_QUALITY"]["gross_loans_to_customers"]
             assets = bank_data[year]["CAPITAL_ADEQUACY"]["total_assets"]
-            results["loan_to_asset_ratios"].append({
-                "year": year,
-                "loan_to_asset_ratio": self.calculate_loan_to_asset_ratio(loans, assets)
-            })
+            results["loan_to_asset_ratios"].append(
+                {
+                    "year": year,
+                    "loan_to_asset_ratio": self.calculate_loan_to_asset_ratio(
+                        loans, assets
+                    ),
+                }
+            )
 
         # NPL ratio
         for year in years:
             loans = bank_data[year]["ASSET_QUALITY"]["gross_loans_to_customers"]
             provision = bank_data[year]["ASSET_QUALITY"]["loan_loss_provision"]
-            results["npl_ratios"].append({
-                "year": year,
-                "npl_ratio": self.calculate_npl_ratio(provision, loans)
-            })
+            results["npl_ratios"].append(
+                {"year": year, "npl_ratio": self.calculate_npl_ratio(provision, loans)}
+            )
 
         return results
 
@@ -330,10 +346,7 @@ class ManagementCompetenceCalculator:
             Dict với CIR và OPEX/Assets theo từng năm
         """
         years = sorted(bank_data.keys())
-        results = {
-            "cir": [],
-            "opex_to_assets": []
-        }
+        results = {"cir": [], "opex_to_assets": []}
 
         for year in years:
             mgmt = bank_data[year].get("MANAGEMENT_EFFICIENCY", {})
@@ -341,7 +354,9 @@ class ManagementCompetenceCalculator:
             earn = bank_data[year].get("EARNINGS_PROFITABILITY", {})
 
             opex = mgmt.get("total_operating_expenses")
-            toi = mgmt.get("total_operating_income") or earn.get("total_operating_income")
+            toi = mgmt.get("total_operating_income") or earn.get(
+                "total_operating_income"
+            )
             assets = cap.get("total_assets")
 
             # CIR
@@ -349,8 +364,12 @@ class ManagementCompetenceCalculator:
             results["cir"].append({"year": year, "cir": cir_val})
 
             # OPEX/Assets
-            opex_assets_val = self.calculate_opex_to_assets(opex, assets) if opex and assets else None
-            results["opex_to_assets"].append({"year": year, "opex_to_assets": opex_assets_val})
+            opex_assets_val = (
+                self.calculate_opex_to_assets(opex, assets) if opex and assets else None
+            )
+            results["opex_to_assets"].append(
+                {"year": year, "opex_to_assets": opex_assets_val}
+            )
 
         return results
 
@@ -363,7 +382,9 @@ class EarningStrengthCalculator:
     Calculator cho các chỉ số Earning Strength (E) trong CAMELS
     """
 
-    def calculate_profit_margin(self, net_profit: float, total_income: float) -> Optional[float]:
+    def calculate_profit_margin(
+        self, net_profit: float, total_income: float
+    ) -> Optional[float]:
         """
         PM – Profit Margin = LNST / Tổng thu nhập hoạt động (%)
         """
@@ -371,7 +392,9 @@ class EarningStrengthCalculator:
             return None
         return round(net_profit / total_income * 100, 2)
 
-    def calculate_asset_utilization(self, total_income: float, total_assets: float) -> Optional[float]:
+    def calculate_asset_utilization(
+        self, total_income: float, total_assets: float
+    ) -> Optional[float]:
         """
         AU – Asset Utilization = Tổng thu nhập hoạt động / Tổng tài sản (%)
         """
@@ -379,7 +402,9 @@ class EarningStrengthCalculator:
             return None
         return round(total_income / total_assets * 100, 2)
 
-    def calculate_equity_multiplier(self, total_assets: float, total_equity: float) -> Optional[float]:
+    def calculate_equity_multiplier(
+        self, total_assets: float, total_equity: float
+    ) -> Optional[float]:
         """
         EM – Equity Multiplier = Tổng tài sản / Vốn chủ sở hữu (lần)
         """
@@ -395,7 +420,9 @@ class EarningStrengthCalculator:
             return None
         return round((pm / 100) * (au / 100) * em * 100, 2)
 
-    def calculate_nim(self, net_interest_income: float, earning_assets: float) -> Optional[float]:
+    def calculate_nim(
+        self, net_interest_income: float, earning_assets: float
+    ) -> Optional[float]:
         """
         NIM = Thu nhập lãi thuần / Tài sản sinh lãi (%)
         earning_assets có thể lấy từ: cho vay khách hàng + chứng khoán đầu tư + tiền gửi liên NH
@@ -404,8 +431,9 @@ class EarningStrengthCalculator:
             return None
         return round(net_interest_income / earning_assets * 100, 2)
 
-    def calculate_days_interest_receivable(self, interest_income: float, interest_receivable: float,
-                                           period_days: int = 365) -> Optional[float]:
+    def calculate_days_interest_receivable(
+        self, interest_income: float, interest_receivable: float, period_days: int = 365
+    ) -> Optional[float]:
         """
         Số ngày lãi phải thu = Lãi phải thu / (Thu nhập lãi bình quân 1 ngày)
         """
@@ -434,7 +462,7 @@ class EarningStrengthCalculator:
             "equity_multiplier": [],
             "roe": [],
             "nim": [],
-            "days_interest_receivable": []
+            "days_interest_receivable": [],
         }
 
         for year in years:
@@ -448,9 +476,21 @@ class EarningStrengthCalculator:
             total_equity = cap.get("total_equity")
 
             # Dupont components
-            pm = self.calculate_profit_margin(net_profit, total_income) if net_profit and total_income else None
-            au = self.calculate_asset_utilization(total_income, total_assets) if total_income and total_assets else None
-            em = self.calculate_equity_multiplier(total_assets, total_equity) if total_assets and total_equity else None
+            pm = (
+                self.calculate_profit_margin(net_profit, total_income)
+                if net_profit and total_income
+                else None
+            )
+            au = (
+                self.calculate_asset_utilization(total_income, total_assets)
+                if total_income and total_assets
+                else None
+            )
+            em = (
+                self.calculate_equity_multiplier(total_assets, total_equity)
+                if total_assets and total_equity
+                else None
+            )
             roe = self.calculate_roe(pm, au, em) if pm and au and em else None
 
             results["profit_margin"].append({"year": year, "pm": pm})
@@ -460,21 +500,35 @@ class EarningStrengthCalculator:
 
             # NIM
             net_interest_income = earn.get("net_interest_income")
-            earning_assets = assetq.get("gross_loans_to_customers", 0) + assetq.get("investment_securities_htm",
-                                                                                    0) + assetq.get(
-                "investment_securities_afs", 0) + assetq.get("interbank_deposits_loans", 0)
-            nim = self.calculate_nim(net_interest_income,
-                                     earning_assets) if net_interest_income and earning_assets else None
+            earning_assets = (
+                assetq.get("gross_loans_to_customers", 0)
+                + assetq.get("investment_securities_htm", 0)
+                + assetq.get("investment_securities_afs", 0)
+                + assetq.get("interbank_deposits_loans", 0)
+            )
+            nim = (
+                self.calculate_nim(net_interest_income, earning_assets)
+                if net_interest_income and earning_assets
+                else None
+            )
             results["nim"].append({"year": year, "nim": nim})
 
             # Days Interest Receivable
             interest_income = earn.get("gross_interest_income")
             interest_receivable = assetq.get("interest_and_fees_receivable")
-            days_ir = self.calculate_days_interest_receivable(interest_income,
-                                                              interest_receivable) if interest_income and interest_receivable else None
-            results["days_interest_receivable"].append({"year": year, "days_ir": days_ir})
+            days_ir = (
+                self.calculate_days_interest_receivable(
+                    interest_income, interest_receivable
+                )
+                if interest_income and interest_receivable
+                else None
+            )
+            results["days_interest_receivable"].append(
+                {"year": year, "days_ir": days_ir}
+            )
 
         return results
+
 
 #
 # with open('banking_index.json', 'r', encoding='utf-8') as file:

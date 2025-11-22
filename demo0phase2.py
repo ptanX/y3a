@@ -13,8 +13,12 @@ from langgraph.graph.state import CompiledStateGraph, StateGraph
 from mlflow.pyfunc import ChatAgent
 from mlflow.types.agent import ChatAgentMessage, ChatContext, ChatAgentResponse
 
-from banking_formular import CapitalAdequacyCalculator, AssetQualityCalculator, ManagementCompetenceCalculator, \
-    EarningStrengthCalculator
+from banking_formular import (
+    CapitalAdequacyCalculator,
+    AssetQualityCalculator,
+    ManagementCompetenceCalculator,
+    EarningStrengthCalculator,
+)
 from src.graph.graph_provider import GraphProvider
 from src.state.mapper import StateMapper
 from src.state.type import DefaultState
@@ -22,8 +26,9 @@ from src.state.type import DefaultState
 load_dotenv()
 
 
-def query_context_with_metadata(db, query_terms: List[str], year: int = 2024,
-                                k: int = 10):
+def query_context_with_metadata(
+    db, query_terms: List[str], year: int = 2024, k: int = 10
+):
     """
     Query vector DB với metadata filter và multiple query terms
     """
@@ -35,7 +40,7 @@ def query_context_with_metadata(db, query_terms: List[str], year: int = 2024,
             results = db.similarity_search(
                 query=query_term,
                 k=k,
-                filter={"year": year}  # Filter theo năm trong metadata
+                filter={"year": year},  # Filter theo năm trong metadata
             )
             all_results.extend(results)
         except Exception as e:
@@ -60,16 +65,20 @@ class Demo0EnhancedState(DefaultState):
 class Demo0EnhancedStateMapper(StateMapper[DefaultState, list[ChatAgentMessage]]):
 
     def map_from_state_to_message(self, state: DefaultState) -> list[ChatAgentMessage]:
-        message = state.get('message', "")
+        message = state.get("message", "")
         content = ""
         if isinstance(message, str):
             content = message
         elif isinstance(message, AIMessage):
             content = message.content
-        result = [ChatAgentMessage(role="assistant", content=content, id=str(uuid.uuid4()))]
+        result = [
+            ChatAgentMessage(role="assistant", content=content, id=str(uuid.uuid4()))
+        ]
         return result
 
-    def map_from_message_to_state(self, message: list[ChatAgentMessage]) -> DefaultState:
+    def map_from_message_to_state(
+        self, message: list[ChatAgentMessage]
+    ) -> DefaultState:
         actual_message = message[-1].content
         return {"message": HumanMessage(content=actual_message)}
 
@@ -84,10 +93,7 @@ class Demo0EnhancedGraphProvider(GraphProvider[Demo0EnhancedState]):
         # embedding = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
         # Test the model
         # self.embedding = embedding
-        self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-pro",
-            temperature=0
-        )
+        self.llm = ChatGoogleGenerativeAI(model="gemini-2.5-pro", temperature=0)
         self.known_banks = ["SHB", "MBB", "VPB", "TCB"]
 
     def provide(self) -> CompiledStateGraph:
@@ -112,7 +118,11 @@ class Demo0EnhancedGraphProvider(GraphProvider[Demo0EnhancedState]):
         Trả về dưới dạng danh sách các tên ngân hàng, phân cách bằng dấu phẩy.
         """
         response = self.llm.invoke(prompt).content
-        return [name.strip().upper() for name in response.split(",") if name.strip().upper() in self.known_banks]
+        return [
+            name.strip().upper()
+            for name in response.split(",")
+            if name.strip().upper() in self.known_banks
+        ]
 
     def extract_question_topic(self, question):
         prompt = f"""
@@ -137,10 +147,18 @@ class Demo0EnhancedGraphProvider(GraphProvider[Demo0EnhancedState]):
 
     def handle_supervisor(self, state):
         incoming_message = state.get("message")
-        question = incoming_message.content if incoming_message is not None and incoming_message.content is not None else ""
+        question = (
+            incoming_message.content
+            if incoming_message is not None and incoming_message.content is not None
+            else ""
+        )
         bank_names = self.extract_bank_names(question)
         question_topic = self.extract_question_topic(question)
-        return {"question": question, "banks": bank_names, "question_topic": question_topic}
+        return {
+            "question": question,
+            "banks": bank_names,
+            "question_topic": question_topic,
+        }
 
     def route_function(self, state):
         bank_names = state["banks"]
@@ -152,14 +170,14 @@ class Demo0EnhancedGraphProvider(GraphProvider[Demo0EnhancedState]):
             return "fallback"
 
     def handle_banking_comparison(self, state):
-        with open('banking_index.json', 'r', encoding='utf-8') as file:
+        with open("banking_index.json", "r", encoding="utf-8") as file:
             banking_index = json.load(file)
         capital_calc = CapitalAdequacyCalculator()
         asset_calc = AssetQualityCalculator()
         mgmt_calc = ManagementCompetenceCalculator()
         earn_calc = EarningStrengthCalculator()
 
-        bank1, bank2 = state['banks'][0], state['banks'][1]
+        bank1, bank2 = state["banks"][0], state["banks"][1]
         data1, data2 = banking_index[bank1], banking_index[bank2]
 
         results = {
@@ -174,7 +192,7 @@ class Demo0EnhancedGraphProvider(GraphProvider[Demo0EnhancedState]):
                 "asset": asset_calc.comprehensive_asset_quality_analysis(data2),
                 "management": mgmt_calc.comprehensive_management_analysis(data2),
                 "earnings": earn_calc.comprehensive_earning_analysis(data2),
-            }
+            },
         }
 
         prompt_template = """
@@ -250,16 +268,16 @@ class Demo0EnhancedGraphProvider(GraphProvider[Demo0EnhancedState]):
         prompt_template = ChatPromptTemplate.from_template(prompt_template)
         # Build RAG chain
         rag_chain = (
-                {"results": lambda _: results, "question": RunnablePassthrough()}
-                | prompt_template
-                | self.llm
-                | StrOutputParser()
+            {"results": lambda _: results, "question": RunnablePassthrough()}
+            | prompt_template
+            | self.llm
+            | StrOutputParser()
         )
         return {"message": rag_chain.invoke(question)}
 
     def analyze_single_bank_ca(self, state, banking_index):
         capital_adequacy_calculator = CapitalAdequacyCalculator()
-        bank_data = banking_index[state['banks'][0]]
+        bank_data = banking_index[state["banks"][0]]
         system_prompt = """
                         Dựa trên dữ liệu capital adequacy sau và câu hỏi, tạo bảng phân tích markdown:
 
@@ -322,21 +340,26 @@ class Demo0EnhancedGraphProvider(GraphProvider[Demo0EnhancedState]):
                            - Ổn định: "Duy trì ổn định"  
                            - Giảm sút: "Có dấu hiệu suy giảm"
                             """
-        capital_adequacy = json.dumps(capital_adequacy_calculator.comprehensive_capital_analysis(bank_data))
+        capital_adequacy = json.dumps(
+            capital_adequacy_calculator.comprehensive_capital_analysis(bank_data)
+        )
         question = state.get("question", "")
         prompt_template = ChatPromptTemplate.from_template(system_prompt)
         # Build RAG chain
         rag_chain = (
-                {"capital_adequacy": lambda _: capital_adequacy, "question": RunnablePassthrough()}
-                | prompt_template
-                | self.llm
-                | StrOutputParser()
+            {
+                "capital_adequacy": lambda _: capital_adequacy,
+                "question": RunnablePassthrough(),
+            }
+            | prompt_template
+            | self.llm
+            | StrOutputParser()
         )
         return {"message": rag_chain.invoke(question)}
 
     def analyze_single_bank_asset(self, state, banking_index):
         asset_quality_calculator = AssetQualityCalculator()
-        bank_data = banking_index[state['banks'][0]]
+        bank_data = banking_index[state["banks"][0]]
         system_prompt = """
                     Bạn là chuyên gia phân tích ngân hàng theo mô hình CAMELS.  
                     Dữ liệu đầu vào (Asset Quality) có dạng JSON:
@@ -424,21 +447,26 @@ class Demo0EnhancedGraphProvider(GraphProvider[Demo0EnhancedState]):
                     - Ổn định: biến động nhẹ, phù hợp ALM  
                     - Xấu: >40% tổng tài sản  
                 """
-        asset_quality = json.dumps(asset_quality_calculator.comprehensive_asset_quality_analysis(bank_data))
+        asset_quality = json.dumps(
+            asset_quality_calculator.comprehensive_asset_quality_analysis(bank_data)
+        )
         question = state.get("question", "")
         prompt_template = ChatPromptTemplate.from_template(system_prompt)
         # Build RAG chain
         rag_chain = (
-                {"asset_quality": lambda _: asset_quality, "question": RunnablePassthrough()}
-                | prompt_template
-                | self.llm
-                | StrOutputParser()
+            {
+                "asset_quality": lambda _: asset_quality,
+                "question": RunnablePassthrough(),
+            }
+            | prompt_template
+            | self.llm
+            | StrOutputParser()
         )
         return {"message": rag_chain.invoke(question)}
 
     def analyze_single_bank_management(self, state, banking_index):
         management_competence_calculator = ManagementCompetenceCalculator()
-        bank_data = banking_index[state['banks'][0]]
+        bank_data = banking_index[state["banks"][0]]
         system_prompt = """
                         Bạn là chuyên gia phân tích ngân hàng theo mô hình CAMELS.  
                         Dữ liệu đầu vào (Management Competence) có dạng JSON:
@@ -490,21 +518,28 @@ class Demo0EnhancedGraphProvider(GraphProvider[Demo0EnhancedState]):
                         - **Xấu**: >3% → chi phí vận hành cao, làm giảm khả năng sinh lời.  
 
                         """
-        management_results = json.dumps(management_competence_calculator.comprehensive_management_analysis(bank_data))
+        management_results = json.dumps(
+            management_competence_calculator.comprehensive_management_analysis(
+                bank_data
+            )
+        )
         question = state.get("question", "")
         prompt_template = ChatPromptTemplate.from_template(system_prompt)
         # Build RAG chain
         rag_chain = (
-                {"management_results": lambda _: management_results, "question": RunnablePassthrough()}
-                | prompt_template
-                | self.llm
-                | StrOutputParser()
+            {
+                "management_results": lambda _: management_results,
+                "question": RunnablePassthrough(),
+            }
+            | prompt_template
+            | self.llm
+            | StrOutputParser()
         )
         return {"message": rag_chain.invoke(question)}
 
     def analyze_single_bank_earning_strength(self, state, banking_index):
         earning_strength_calculator = EarningStrengthCalculator()
-        bank_data = banking_index[state['banks'][0]]
+        bank_data = banking_index[state["banks"][0]]
         system_prompt = """
                         Bạn là chuyên gia phân tích ngân hàng theo mô hình CAMELS.  
                         Dữ liệu đầu vào (Earning Strength) có dạng JSON:
@@ -581,15 +616,20 @@ class Demo0EnhancedGraphProvider(GraphProvider[Demo0EnhancedState]):
                         - Ổn định: 30–60 ngày → bình thường, cần giám sát.  
                         - Xấu: >60 ngày → khách hàng chậm trả, rủi ro tín dụng.  
                         """
-        earning_results = json.dumps(earning_strength_calculator.comprehensive_earning_analysis(bank_data))
+        earning_results = json.dumps(
+            earning_strength_calculator.comprehensive_earning_analysis(bank_data)
+        )
         question = state.get("question", "")
         prompt_template = ChatPromptTemplate.from_template(system_prompt)
         # Build RAG chain
         rag_chain = (
-                {"earning_results": lambda _: earning_results, "question": RunnablePassthrough()}
-                | prompt_template
-                | self.llm
-                | StrOutputParser()
+            {
+                "earning_results": lambda _: earning_results,
+                "question": RunnablePassthrough(),
+            }
+            | prompt_template
+            | self.llm
+            | StrOutputParser()
         )
         return {"message": rag_chain.invoke(question)}
 
@@ -598,7 +638,7 @@ class Demo0EnhancedGraphProvider(GraphProvider[Demo0EnhancedState]):
         asset_calculator = AssetQualityCalculator()
         management_calculator = ManagementCompetenceCalculator()
         earning_calculator = EarningStrengthCalculator()
-        bank_data = banking_index[state['banks'][0]]
+        bank_data = banking_index[state["banks"][0]]
         system_prompt = """
                         Bạn là chuyên gia phân tích ngân hàng theo mô hình CAMELS.  
                         Dữ liệu đầu vào gồm kết quả phân tích từng cấu phần:  
@@ -706,27 +746,37 @@ class Demo0EnhancedGraphProvider(GraphProvider[Demo0EnhancedState]):
                         - Ổn định: 30–60 ngày → bình thường, cần giám sát.  
                         - Xấu: >60 ngày → khách hàng chậm trả, rủi ro tín dụng.   
                         """
-        earning_results = json.dumps(earning_calculator.comprehensive_earning_analysis(bank_data))
-        capital_results = json.dumps(capital_calculator.comprehensive_capital_analysis(bank_data))
-        asset_results = json.dumps(asset_calculator.comprehensive_asset_quality_analysis(bank_data))
-        management_results = json.dumps(management_calculator.comprehensive_management_analysis(bank_data))
+        earning_results = json.dumps(
+            earning_calculator.comprehensive_earning_analysis(bank_data)
+        )
+        capital_results = json.dumps(
+            capital_calculator.comprehensive_capital_analysis(bank_data)
+        )
+        asset_results = json.dumps(
+            asset_calculator.comprehensive_asset_quality_analysis(bank_data)
+        )
+        management_results = json.dumps(
+            management_calculator.comprehensive_management_analysis(bank_data)
+        )
         question = state.get("question", "")
         prompt_template = ChatPromptTemplate.from_template(system_prompt)
         # Build RAG chain
         rag_chain = (
-                {"earning_results": lambda _: earning_results,
-                 "capital_results": lambda _: capital_results,
-                 "asset_results": lambda _: asset_results,
-                 "management_results": lambda _: management_results,
-                 "question": RunnablePassthrough()}
-                | prompt_template
-                | self.llm
-                | StrOutputParser()
+            {
+                "earning_results": lambda _: earning_results,
+                "capital_results": lambda _: capital_results,
+                "asset_results": lambda _: asset_results,
+                "management_results": lambda _: management_results,
+                "question": RunnablePassthrough(),
+            }
+            | prompt_template
+            | self.llm
+            | StrOutputParser()
         )
         return {"message": rag_chain.invoke(question)}
 
     def handle_querying_single_bank(self, state):
-        with open('banking_index.json', 'r', encoding='utf-8') as file:
+        with open("banking_index.json", "r", encoding="utf-8") as file:
             banking_index = json.load(file)
         question_topic = state.get("question_topic", "")
         # ["capital", "asset_quality", "management", "earnings", "liquidity", "comprehensive"]
@@ -756,8 +806,12 @@ class Demo0ChatAgent(ChatAgent):
         self.graph = graph
         self.mapper = Demo0EnhancedStateMapper()
 
-    def predict(self, messages: list[ChatAgentMessage], context: ChatContext | None = None,
-                custom_inputs: dict[str, Any] | None = None) -> ChatAgentResponse:
+    def predict(
+        self,
+        messages: list[ChatAgentMessage],
+        context: ChatContext | None = None,
+        custom_inputs: dict[str, Any] | None = None,
+    ) -> ChatAgentResponse:
         input_state = self.mapper.map_from_message_to_state(messages)
         state = self.graph.provide().invoke(input_state)
         result = self.mapper.map_from_state_to_message(state)

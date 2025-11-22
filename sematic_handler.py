@@ -14,12 +14,15 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain_ollama import OllamaEmbeddings
-from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
+from langchain_text_splitters import (
+    MarkdownHeaderTextSplitter,
+    RecursiveCharacterTextSplitter,
+)
 from nltk import sent_tokenize
 
 from src.chunking.chunking_handler import chunk_the_extracted_report_enhanced
 
-nltk.download('punkt_tab')
+nltk.download("punkt_tab")
 
 
 def semantic_chunking(text, max_tokens=1024):
@@ -45,14 +48,16 @@ def split_documents_semantically(documents):
     for i, doc in enumerate(documents):
         semantic_chunks = semantic_chunking(doc.page_content)
         for j, chunk_text in enumerate(semantic_chunks):
-            chunks.append({
-                "text": chunk_text,
-                "metadata": {
-                    "source": doc.metadata.get("source", ""),
-                    "page": doc.metadata.get("page", i + 1),
-                    "chunk_id": f"{i + 1}_{j}"
+            chunks.append(
+                {
+                    "text": chunk_text,
+                    "metadata": {
+                        "source": doc.metadata.get("source", ""),
+                        "page": doc.metadata.get("page", i + 1),
+                        "chunk_id": f"{i + 1}_{j}",
+                    },
                 }
-            })
+            )
     return chunks
 
 
@@ -62,8 +67,8 @@ def store_chunks(db, chunks):
             page_content=chunk["text"],
             metadata={
                 "page": chunk["metadata"]["page"],
-                "chunk_id": chunk["metadata"]["chunk_id"]
-            }
+                "chunk_id": chunk["metadata"]["chunk_id"],
+            },
         )
         for chunk in chunks
     ]
@@ -72,7 +77,7 @@ def store_chunks(db, chunks):
 
 MAPPING_COLLECTION = {
     "LPB_Baocaothuongnien_2024.pdf": "LPBANK",
-    "MBB_Baocaothuongnien_2024.pdf": "MBBANK"
+    "MBB_Baocaothuongnien_2024.pdf": "MBBANK",
 }
 
 
@@ -89,13 +94,15 @@ def init_predefined_docs_to_db():
         # )
         embedding = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
         # Test the model
-        db = Chroma(collection_name=collection_name,
-                    embedding_function=embedding,
-                    persist_directory='./rawiq_db')
+        db = Chroma(
+            collection_name=collection_name,
+            embedding_function=embedding,
+            persist_directory="./rawiq_db",
+        )
         file_path = os.path.join(documentations_path, filename)
         # Check if it's a file (not a subfolder)
         if os.path.isfile(file_path):
-            print(f'######### File Path: {file_path} ############')
+            print(f"######### File Path: {file_path} ############")
             loader = PyPDFLoader(file_path)
             chunks = split_documents_semantically(loader.load())
             store_chunks(db, chunks)
@@ -157,9 +164,11 @@ def extract_information_from_report(filepath):
         contents=[
             types.Part.from_bytes(
                 data=filepath.read_bytes(),
-                mime_type='application/pdf',
+                mime_type="application/pdf",
             ),
-            prompt])
+            prompt,
+        ],
+    )
     print(response.text)
 
 
@@ -172,7 +181,7 @@ def is_table_line(line):
     if line.startswith("|") and line.endswith("|"):
         return True
     # Table separator (contains only |, -, :, and spaces)
-    if re.match(r'^[|\-:\s]+$', line) and '|' in line:
+    if re.match(r"^[|\-:\s]+$", line) and "|" in line:
         return True
     return False
 
@@ -241,7 +250,10 @@ def smart_split_text(text, semantic_splitter):
             continue
 
         # If adding this paragraph would exceed chunk size, finalize current chunk
-        if current_chunk and len(current_chunk + "\n\n" + paragraph) > semantic_splitter._chunk_size:
+        if (
+            current_chunk
+            and len(current_chunk + "\n\n" + paragraph) > semantic_splitter._chunk_size
+        ):
             chunks.append(current_chunk.strip())
             current_chunk = paragraph
         else:
@@ -274,7 +286,7 @@ def chunk_the_extracted_report(file_path, year):
         ("###", "BÁO CÁO TÌNH HÌNH TÀI CHÍNH HỢP NHẤT"),
         ("###", "BÁO CÁO LƯU CHUYỂN TIỀN TỆ HỢP NHẤT"),
         ("###", "CÁC CHỈ TIÊU NGOÀI BÁO CÁO TÌNH HÌNH TÀI CHÍNH HỢP NHẤT"),
-        ("###", "BÁO CÁO LƯU CHUYỂN TIỀN TỆ HỢP NHẤT")
+        ("###", "BÁO CÁO LƯU CHUYỂN TIỀN TỆ HỢP NHẤT"),
     ]
 
     semantic_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
@@ -296,19 +308,23 @@ def chunk_the_extracted_report(file_path, year):
             if is_table:
                 # Keep table intact as a single chunk
                 print(f"Found table chunk: {len(section_content)} characters")
-                final_chunks.append(Document(
-                    page_content=section_content,
-                    metadata={**doc.metadata, "year": year}
-                ))
+                final_chunks.append(
+                    Document(
+                        page_content=section_content,
+                        metadata={**doc.metadata, "year": year},
+                    )
+                )
             else:
                 # Apply semantic chunking to regular text
                 sub_chunks = smart_split_text(section_content, semantic_splitter)
                 for chunk in sub_chunks:
                     if chunk.strip():
-                        final_chunks.append(Document(
-                            page_content=chunk,
-                            metadata={**doc.metadata, "year": year}
-                        ))
+                        final_chunks.append(
+                            Document(
+                                page_content=chunk,
+                                metadata={**doc.metadata, "year": year},
+                            )
+                        )
 
     print(f"Total chunks created: {len(final_chunks)}")
 
@@ -325,9 +341,11 @@ def chunk_and_store_to_vector_search(file_path, bank, year):
     #     model="toshk0/nomic-embed-text-v2-moe:Q6_K",
     #     base_url="http://localhost:11434"
     # )
-    db = Chroma(collection_name=bank,
-                embedding_function=embedding,
-                persist_directory='./rawiq_db')
+    db = Chroma(
+        collection_name=bank,
+        embedding_function=embedding,
+        persist_directory="./rawiq_db",
+    )
     db.add_documents(docs)
 
 
@@ -338,8 +356,9 @@ def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
 
 
-def query_context_with_metadata(db, query_terms: List[str], year: int = 2024,
-                                k: int = 10):
+def query_context_with_metadata(
+    db, query_terms: List[str], year: int = 2024, k: int = 10
+):
     """
     Query vector DB với metadata filter và multiple query terms
     """
@@ -351,7 +370,7 @@ def query_context_with_metadata(db, query_terms: List[str], year: int = 2024,
             results = db.similarity_search(
                 query=query_term,
                 k=k,
-                filter={"year": year}  # Filter theo năm trong metadata
+                filter={"year": year},  # Filter theo năm trong metadata
             )
             all_results.extend(results)
         except Exception as e:
@@ -369,46 +388,52 @@ def handle_querying_single_bank(bank, year):
     # Test the model
     print(embedding.embed_query("test connection"))
     print("✅ Successfully loaded embedding model")
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-pro",
-        temperature=0
+    llm = ChatGoogleGenerativeAI(model="gemini-2.5-pro", temperature=0)
+    bank_db = Chroma(
+        collection_name=bank,
+        embedding_function=embedding,
+        persist_directory="./rawiq_db",
     )
-    bank_db = Chroma(collection_name=bank,
-                     embedding_function=embedding,
-                     persist_directory='./rawiq_db')
     context_queries = {
         "balance_sheet": [
             "BÁO CÁO TÌNH HÌNH TÀI CHÍNH HỢP NHẤT",
             "Bảng cân đối kế toán",
             "tài sản có",
             "nợ phải trả",
-            "vốn chủ sở hữu"
+            "vốn chủ sở hữu",
         ],
         "income_statement": [
             "BÁO CÁO KẾT QUẢ HOẠT ĐỘNG HỢP NHẤT",
             "thu nhập lãi thuần",
             "chi phí hoạt động",
             "lợi nhuận",
-            "chi phí dự phòng"
+            "chi phí dự phòng",
         ],
         "cash_flow": [
             "BÁO CÁO LƯU CHUYỂN TIỀN TỆ HỢP NHẤT",
             "hoạt động kinh doanh",
             "hoạt động đầu tư",
-            "hoạt động tài chính"
+            "hoạt động tài chính",
         ],
         "off_balance": [
             "CÁC CHỈ TIÊU NGOÀI BÁO CÁO TÌNH HÌNH TÀI CHÍNH",
             "bảo lãnh",
             "cam kết",
-            "công cụ tài chính phái sinh"
-        ]
+            "công cụ tài chính phái sinh",
+        ],
     }
-    balance_sheet = query_context_with_metadata(db=bank_db, query_terms=context_queries.get("balance_sheet"), year=year)
-    income_statement = query_context_with_metadata(db=bank_db, query_terms=context_queries.get("income_statement"),
-                                                   year=year)
-    cash_flow = query_context_with_metadata(db=bank_db, query_terms=context_queries.get("cash_flow"), year=year)
-    off_balance = query_context_with_metadata(db=bank_db, query_terms=context_queries.get("off_balance"), year=year)
+    balance_sheet = query_context_with_metadata(
+        db=bank_db, query_terms=context_queries.get("balance_sheet"), year=year
+    )
+    income_statement = query_context_with_metadata(
+        db=bank_db, query_terms=context_queries.get("income_statement"), year=year
+    )
+    cash_flow = query_context_with_metadata(
+        db=bank_db, query_terms=context_queries.get("cash_flow"), year=year
+    )
+    off_balance = query_context_with_metadata(
+        db=bank_db, query_terms=context_queries.get("off_balance"), year=year
+    )
 
     # Prompt template
     prompt = """
@@ -533,19 +558,22 @@ Chỉ trả về JSON hợp lệ, không cần giải thích thêm.
 
 ## QUESTION: {question}
     """
-    prompt = ((prompt.replace("{balance_sheet}", balance_sheet).
-               replace("{income_statement}", income_statement)).
-              replace("{cash_flow}", cash_flow).
-              replace("{off_balance}", off_balance))
+    prompt = (
+        (
+            prompt.replace("{balance_sheet}", balance_sheet).replace(
+                "{income_statement}", income_statement
+            )
+        )
+        .replace("{cash_flow}", cash_flow)
+        .replace("{off_balance}", off_balance)
+    )
 
     prompt_template = ChatPromptTemplate.from_template(prompt)
 
     # 3. Tạo chain
-    chain = ({"question": RunnablePassthrough()} |
-             prompt_template
-             | llm
-             | StrOutputParser()
-             )
+    chain = (
+        {"question": RunnablePassthrough()} | prompt_template | llm | StrOutputParser()
+    )
     return chain.invoke("trích xuất các chỉ số CAMELS cho SHB")
 
 

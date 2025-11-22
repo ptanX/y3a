@@ -4,12 +4,14 @@ from sqlalchemy.orm import DeclarativeBase
 
 class Base(DeclarativeBase):
     """Modern SQLAlchemy 2.0+ declarative base class"""
+
     pass
 
 
 class CustomerProfile(Base):
     """Customer Profile table with exact schema - all STRING columns"""
-    __tablename__ = 'customer_profile'
+
+    __tablename__ = "customer_profile"
 
     # Primary key (using customer_id as primary key)
     customer_id = Column(String(50), primary_key=True, nullable=False)
@@ -48,7 +50,8 @@ class CustomerProfile(Base):
 
 class LegalRepresentative(Base):
     """Legal Representative table with exact schema - all STRING columns"""
-    __tablename__ = 'legal_representative'
+
+    __tablename__ = "legal_representative"
 
     # Primary key
     rep_id = Column(String(50), primary_key=True, nullable=False)
@@ -83,7 +86,8 @@ class LegalRepresentative(Base):
 
 class DocumentationInformation(Base):
     """Documentation Information table with exact schema - all STRING columns"""
-    __tablename__ = 'documentation_information'
+
+    __tablename__ = "documentation_information"
 
     # Primary key
     id = Column(String(50), primary_key=True, nullable=False)

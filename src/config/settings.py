@@ -5,5 +5,3 @@ OTEL_ENDPOINT = "http://localhost:4318"
 
 MODEL_NAME = "rawiq-quickstart-model"
 MODEL_VERSION_ALIAS = "champion"
-
-

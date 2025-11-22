@@ -17,22 +17,25 @@ st.divider()
 logo_path = Path(__file__).parent.absolute().joinpath("logo.ico")
 logo_image = Image.open(logo_path)
 
+
 def submit():
     document_id = str(uuid.uuid4())
     upload_record = {
-        'document_id': document_id,
-        'recipient_name': recipient_name,
-        'recipient_email': recipient_email,
-        'files': uploaded_files,
-        'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        'uploaded_by': st.session_state.username,
-        'uploaded_by_name': st.session_state.full_name,
+        "document_id": document_id,
+        "recipient_name": recipient_name,
+        "recipient_email": recipient_email,
+        "files": uploaded_files,
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "uploaded_by": st.session_state.username,
+        "uploaded_by_name": st.session_state.full_name,
     }
 
     e2e_usecases.async_execute(upload_record)
     time.sleep(3)
 
-    st.success(f"✅ Đã tiếp nhận yêu cầu thành công. Vui lòng đợi kết quả gửi vào hòm mail {recipient_email}")
+    st.success(
+        f"✅ Đã tiếp nhận yêu cầu thành công. Vui lòng đợi kết quả gửi vào hòm mail {recipient_email}"
+    )
     st.write(f"**Mã yêu cầu:** {document_id}")
     st.write(f"**Tên QHKH:** {recipient_name}")
     st.write(f"**Email QHKH:** {recipient_email}")
@@ -54,7 +57,7 @@ with st.form("upload_form"):
         "Choose files",
         accept_multiple_files=True,
         type=["pdf"],
-        label_visibility="collapsed"
+        label_visibility="collapsed",
     )
 
     # Display uploaded file names
@@ -64,7 +67,9 @@ with st.form("upload_form"):
             st.write(f"📄 {uploaded_file.name}")
 
     # Submit button
-    submitted = st.form_submit_button("Submit", use_container_width=True, type="primary")
+    submitted = st.form_submit_button(
+        "Submit", use_container_width=True, type="primary"
+    )
 
     if submitted:
         if not recipient_name:

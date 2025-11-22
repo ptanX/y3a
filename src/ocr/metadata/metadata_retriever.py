@@ -9,9 +9,12 @@ from google.genai import types
 from src.dispatcher.executions_dispatcher import (
     ExecutionInput,
     ExecutionOutput,
-    ExecutionDispatcher, )
+    ExecutionDispatcher,
+)
 from src.ocr.metadata.doc_section_metadata import (
-    KPMG_SECURITIES_FINANCIAL_SECTION_METADATA, DNSE_COMPANY_CHARTER, SSI_COMPANY_CHARTER,
+    KPMG_SECURITIES_FINANCIAL_SECTION_METADATA,
+    DNSE_COMPANY_CHARTER,
+    SSI_COMPANY_CHARTER,
     EY_SECURITIES_FINANCIAL_SECTION_METADATA,
 )
 from src.ocr.ocr_model import (
@@ -19,19 +22,27 @@ from src.ocr.ocr_model import (
     DocumentType,
     MetadataPageType,
     DocumentPageInfoMetadata,
-    DocumentMetadata, DocumentIdentifierMetadata,
+    DocumentMetadata,
+    DocumentIdentifierMetadata,
 )
 from src.ocr.utils import cut_pdf_to_bytes, get_total_page
 
 load_dotenv()
 
-SECURITIES_FINANCIAL_REPORT_SINGLE_METADATA_PAGE_EXTRACTION = "securities_financial_report_single_page_metadata_extraction"
-BUSINESS_REGISTRATION_SINGLE_METADATA_PAGE_EXTRACTION = "business_registration_single_metadata_page_extraction"
-COMPANY_CHARTER_SINGLE_METADATA_PAGE_EXTRACTION = "company_charter_single_metadata_page_extraction"
+SECURITIES_FINANCIAL_REPORT_SINGLE_METADATA_PAGE_EXTRACTION = (
+    "securities_financial_report_single_page_metadata_extraction"
+)
+BUSINESS_REGISTRATION_SINGLE_METADATA_PAGE_EXTRACTION = (
+    "business_registration_single_metadata_page_extraction"
+)
+COMPANY_CHARTER_SINGLE_METADATA_PAGE_EXTRACTION = (
+    "company_charter_single_metadata_page_extraction"
+)
 
 
-def extract_single_securities_raw_metadata_report_page(execution_input: ExecutionInput,
-                                                       ) -> ExecutionOutput:
+def extract_single_securities_raw_metadata_report_page(
+    execution_input: ExecutionInput,
+) -> ExecutionOutput:
     page_number = execution_input.execution_id
     path = execution_input.input_content
     page_content_in_bytes = cut_pdf_to_bytes(
@@ -89,8 +100,9 @@ def extract_single_securities_raw_metadata_report_page(execution_input: Executio
     )
 
 
-def extract_single_business_registration_raw_metadata_page(execution_input: ExecutionInput,
-                                                           ) -> ExecutionOutput:
+def extract_single_business_registration_raw_metadata_page(
+    execution_input: ExecutionInput,
+) -> ExecutionOutput:
     page_number = execution_input.execution_id
     path = execution_input.input_content
     page_content_in_bytes = cut_pdf_to_bytes(
@@ -121,10 +133,9 @@ def extract_single_business_registration_raw_metadata_page(execution_input: Exec
 class DocumentationMetadataRetriever(ABC):
 
     @abstractmethod
-    async def retrieve(self,
-                       path: str,
-                       document_identifier: DocumentIdentifierMetadata
-                       ) -> DocumentMetadata:
+    async def retrieve(
+        self, path: str, document_identifier: DocumentIdentifierMetadata
+    ) -> DocumentMetadata:
         pass
 
 
@@ -133,13 +144,18 @@ class SecuritiesFinancialReportMetadataRetriever(DocumentationMetadataRetriever)
     def __init__(self, execution_dispatcher: ExecutionDispatcher):
         self.execution_dispatcher = execution_dispatcher
 
-    async def retrieve(self, path: str, document_identifier: DocumentIdentifierMetadata) -> DocumentMetadata:
-        return await self.retrieve_securities_financial_report(path, document_identifier)
+    async def retrieve(
+        self, path: str, document_identifier: DocumentIdentifierMetadata
+    ) -> DocumentMetadata:
+        return await self.retrieve_securities_financial_report(
+            path, document_identifier
+        )
 
-    async def retrieve_securities_financial_report(self,
-                                                   path: str,
-                                                   document_identifier: DocumentIdentifierMetadata,
-                                                   ) -> DocumentMetadata:
+    async def retrieve_securities_financial_report(
+        self,
+        path: str,
+        document_identifier: DocumentIdentifierMetadata,
+    ) -> DocumentMetadata:
         list_inputs = []
         report_date = self.get_report_date(document_identifier.time)
         other_info = {"report_date": report_date}
@@ -153,9 +169,11 @@ class SecuritiesFinancialReportMetadataRetriever(DocumentationMetadataRetriever)
         raw_metadata = await self.execution_dispatcher.dispatch(list_inputs=list_inputs)
         table_of_contents = self.get_table_of_contents(raw_metadata)
         if self.is_table_of_contents(table_of_contents) is True:
-            sections_metadata = self.retrieve_securities_financial_section_metadata_from_toc(
-                toc_page=table_of_contents.get("page"),
-                toc=table_of_contents.get("table_of_contents"),
+            sections_metadata = (
+                self.retrieve_securities_financial_section_metadata_from_toc(
+                    toc_page=table_of_contents.get("page"),
+                    toc=table_of_contents.get("table_of_contents"),
+                )
             )
             return DocumentMetadata(
                 document_type="securities_financial_report",
@@ -164,8 +182,8 @@ class SecuritiesFinancialReportMetadataRetriever(DocumentationMetadataRetriever)
                 sections=sections_metadata,
                 other_info=other_info,
             )
-        sections_metadata = self.retrieve_securities_financial_section_metadata_from_raw(
-            raw_metadata
+        sections_metadata = (
+            self.retrieve_securities_financial_section_metadata_from_raw(raw_metadata)
         )
         return DocumentMetadata(
             document_type="securities_financial_report",
@@ -193,16 +211,16 @@ class SecuritiesFinancialReportMetadataRetriever(DocumentationMetadataRetriever)
     def is_table_of_contents(self, table_of_contents):
         return table_of_contents.get("is_table_of_contents")
 
-    def retrieve_securities_financial_section_metadata_from_toc(self,
-                                                                toc_page, toc
-                                                                ) -> List[DocumentSectionMetadata]:
+    def retrieve_securities_financial_section_metadata_from_toc(
+        self, toc_page, toc
+    ) -> List[DocumentSectionMetadata]:
         results = []
         for content in toc:
             section_name = content.get("section_name")
             if (
-                    section_name is not None
-                    and "financial" in section_name.lower()
-                    and "notes" not in section_name.lower()
+                section_name is not None
+                and "financial" in section_name.lower()
+                and "notes" not in section_name.lower()
             ):
                 page_range = DocumentPageInfoMetadata(
                     from_page=toc_page + int(content.get("from_page")),
@@ -213,9 +231,9 @@ class SecuritiesFinancialReportMetadataRetriever(DocumentationMetadataRetriever)
                 )
                 results.append(document_metadata)
             elif (
-                    section_name is not None
-                    and "income" in section_name.lower()
-                    and "notes" not in section_name.lower()
+                section_name is not None
+                and "income" in section_name.lower()
+                and "notes" not in section_name.lower()
             ):
                 page_range = DocumentPageInfoMetadata(
                     from_page=toc_page + int(content.get("from_page")),
@@ -227,9 +245,10 @@ class SecuritiesFinancialReportMetadataRetriever(DocumentationMetadataRetriever)
                 results.append(document_metadata)
         return results
 
-    def retrieve_securities_financial_section_metadata_from_raw(self,
-                                                                raw_inputs: List[ExecutionOutput],
-                                                                ) -> List[DocumentSectionMetadata]:
+    def retrieve_securities_financial_section_metadata_from_raw(
+        self,
+        raw_inputs: List[ExecutionOutput],
+    ) -> List[DocumentSectionMetadata]:
         for raw_input in raw_inputs:
             if "KPMG" in raw_input.output_content.get("raw_content", ""):
                 return self.retrieve_kpmg_securities_financial_metadata(raw_inputs)
@@ -237,26 +256,27 @@ class SecuritiesFinancialReportMetadataRetriever(DocumentationMetadataRetriever)
                 return self.retrieve_ey_securities_financial_metadata(raw_inputs)
         return []
 
-    def retrieve_kpmg_securities_financial_metadata(self,
-                                                    raw_inputs: List[ExecutionOutput],
-                                                    ) -> List[DocumentSectionMetadata]:
+    def retrieve_kpmg_securities_financial_metadata(
+        self,
+        raw_inputs: List[ExecutionOutput],
+    ) -> List[DocumentSectionMetadata]:
         financial_statement_page = []
         for raw_input in raw_inputs:
             if "Báo cáo tình hình tài chính" in raw_input.output_content.get(
-                    "raw_content", ""
+                "raw_content", ""
             ):
                 financial_statement_page.append(raw_input.execution_id)
         from_page_of_financial_statement = min(financial_statement_page)
         to_page_of_financial_statement = (
-                from_page_of_financial_statement
-                + KPMG_SECURITIES_FINANCIAL_SECTION_METADATA[0].page_info.page_length
-                - 1
+            from_page_of_financial_statement
+            + KPMG_SECURITIES_FINANCIAL_SECTION_METADATA[0].page_info.page_length
+            - 1
         )
         from_page_of_income_statement = to_page_of_financial_statement + 1
         to_page_of_income_statement = (
-                from_page_of_income_statement
-                + KPMG_SECURITIES_FINANCIAL_SECTION_METADATA[1].page_info.page_length
-                - 1
+            from_page_of_income_statement
+            + KPMG_SECURITIES_FINANCIAL_SECTION_METADATA[1].page_info.page_length
+            - 1
         )
         return [
             DocumentSectionMetadata(
@@ -275,26 +295,27 @@ class SecuritiesFinancialReportMetadataRetriever(DocumentationMetadataRetriever)
             ),
         ]
 
-    def retrieve_ey_securities_financial_metadata(self,
-                                                  raw_inputs: List[ExecutionOutput],
-                                                  ) -> List[DocumentSectionMetadata]:
+    def retrieve_ey_securities_financial_metadata(
+        self,
+        raw_inputs: List[ExecutionOutput],
+    ) -> List[DocumentSectionMetadata]:
         financial_statement_page = []
         for raw_input in raw_inputs:
             if "Báo cáo tình hình tài chính" in raw_input.output_content.get(
-                    "raw_content", ""
+                "raw_content", ""
             ):
                 financial_statement_page.append(raw_input.execution_id)
         from_page_of_financial_statement = min(financial_statement_page)
         to_page_of_financial_statement = (
-                from_page_of_financial_statement
-                + EY_SECURITIES_FINANCIAL_SECTION_METADATA[0].page_info.page_length
-                - 1
+            from_page_of_financial_statement
+            + EY_SECURITIES_FINANCIAL_SECTION_METADATA[0].page_info.page_length
+            - 1
         )
         from_page_of_income_statement = to_page_of_financial_statement + 1
         to_page_of_income_statement = (
-                from_page_of_income_statement
-                + EY_SECURITIES_FINANCIAL_SECTION_METADATA[1].page_info.page_length
-                - 1
+            from_page_of_income_statement
+            + EY_SECURITIES_FINANCIAL_SECTION_METADATA[1].page_info.page_length
+            - 1
         )
         return [
             DocumentSectionMetadata(
@@ -316,8 +337,8 @@ class SecuritiesFinancialReportMetadataRetriever(DocumentationMetadataRetriever)
     def get_table_of_contents(self, raw_page_contents: List[ExecutionOutput]):
         for execution_output in raw_page_contents:
             if (
-                    MetadataPageType.TABLE_OF_CONTENTS.value
-                    == execution_output.output_content.get("page_type")
+                MetadataPageType.TABLE_OF_CONTENTS.value
+                == execution_output.output_content.get("page_type")
             ):
                 return {
                     "is_table_of_contents": True,
@@ -334,7 +355,9 @@ class BusinessRegistrationMetadataRetriever(DocumentationMetadataRetriever):
     def __init__(self, execution_dispatcher: ExecutionDispatcher):
         self.execution_dispatcher = execution_dispatcher
 
-    async def retrieve(self, path: str, document_identifier: DocumentIdentifierMetadata) -> DocumentMetadata:
+    async def retrieve(
+        self, path: str, document_identifier: DocumentIdentifierMetadata
+    ) -> DocumentMetadata:
         total_page = get_total_page(path)
         if total_page > 5:
             max_checked_metadata_page = 5
@@ -345,7 +368,7 @@ class BusinessRegistrationMetadataRetriever(DocumentationMetadataRetriever):
             execution_input = ExecutionInput(
                 handler_name=BUSINESS_REGISTRATION_SINGLE_METADATA_PAGE_EXTRACTION,
                 execution_id=page_number,
-                input_content=path
+                input_content=path,
             )
             list_execution_inputs.append(execution_input)
         raw_metadata = await self.execution_dispatcher.dispatch(list_execution_inputs)
@@ -354,8 +377,10 @@ class BusinessRegistrationMetadataRetriever(DocumentationMetadataRetriever):
                 sections = [
                     DocumentSectionMetadata(
                         component_type="business_registration",
-                        page_info=DocumentPageInfoMetadata(from_page=metadata.execution_id,
-                                                           to_page=metadata.execution_id),
+                        page_info=DocumentPageInfoMetadata(
+                            from_page=metadata.execution_id,
+                            to_page=metadata.execution_id,
+                        ),
                     ),
                 ]
                 return DocumentMetadata(
@@ -368,25 +393,27 @@ class BusinessRegistrationMetadataRetriever(DocumentationMetadataRetriever):
 
     def is_business_registration_page(self, page_content: str):
         return (
-                "GIẤY CHỨNG NHẬN ĐĂNG KÝ DOANH NGHIỆP" in page_content
-                and "CÔNG TY" in page_content
-                and "Mã số doanh nghiệp" in page_content
-                and "Đăng ký lần đầu" in page_content
-                and "Đăng ký thay đổi lần thứ" in page_content
+            "GIẤY CHỨNG NHẬN ĐĂNG KÝ DOANH NGHIỆP" in page_content
+            and "CÔNG TY" in page_content
+            and "Mã số doanh nghiệp" in page_content
+            and "Đăng ký lần đầu" in page_content
+            and "Đăng ký thay đổi lần thứ" in page_content
         )
 
 
 class CompanyCharterMetadataRetriever(DocumentationMetadataRetriever):
 
-    async def retrieve(self, path: str, document_identifier: DocumentIdentifierMetadata) -> DocumentMetadata:
-        if document_identifier.company.lower() == 'dnse':
+    async def retrieve(
+        self, path: str, document_identifier: DocumentIdentifierMetadata
+    ) -> DocumentMetadata:
+        if document_identifier.company.lower() == "dnse":
             return DocumentMetadata(
                 document_type=DocumentType.COMPANY_CHARTER.value,
                 document_identifier=document_identifier,
                 document_path=path,
                 sections=DNSE_COMPANY_CHARTER,
             )
-        elif document_identifier.company.lower() == 'ssi':
+        elif document_identifier.company.lower() == "ssi":
             return DocumentMetadata(
                 document_type=DocumentType.COMPANY_CHARTER.value,
                 document_identifier=document_identifier,

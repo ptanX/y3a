@@ -160,11 +160,14 @@ class BusinessRegistrationDataRetriever(DocumentDataRetriever):
             start_page=doc_metadata.sections[0].page_info.from_page,
             end_page=doc_metadata.sections[0].page_info.to_page,
         )
-        business_regis_extractor = DocumentAIExtractor(project_id=PROJECT_ID,
-                                                       location=LOCATION,
-                                                       processor_id=business_registration_processor_id,
-                                                       )
-        business_regis_cert = business_regis_extractor.extract_normalized_text(file_content=content_in_bytes)
+        business_regis_extractor = DocumentAIExtractor(
+            project_id=PROJECT_ID,
+            location=LOCATION,
+            processor_id=business_registration_processor_id,
+        )
+        business_regis_cert = business_regis_extractor.extract_normalized_text(
+            file_content=content_in_bytes
+        )
         return business_regis_cert
 
 
@@ -179,10 +182,12 @@ class CompanyCharterDataRetriever(DocumentDataRetriever):
             start_page=doc_metadata.sections[0].page_info.from_page,
             end_page=doc_metadata.sections[0].page_info.to_page,
         )
-        company_charter_extractor = DocumentAIExtractor(project_id=PROJECT_ID,
-                                                        location=LOCATION,
-                                                        processor_id=company_character_processor_id,
-                                                        )
-        business_regis_cert = company_charter_extractor.extract_normalized_text(file_content=content_in_bytes)
+        company_charter_extractor = DocumentAIExtractor(
+            project_id=PROJECT_ID,
+            location=LOCATION,
+            processor_id=company_character_processor_id,
+        )
+        business_regis_cert = company_charter_extractor.extract_normalized_text(
+            file_content=content_in_bytes
+        )
         return business_regis_cert
-

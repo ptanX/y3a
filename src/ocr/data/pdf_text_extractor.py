@@ -17,11 +17,11 @@ class DocumentAIExtractor:
     """
 
     def __init__(
-            self,
-            project_id: str,
-            location: str,
-            processor_id: str,
-            processor_version: Optional[str] = None
+        self,
+        project_id: str,
+        location: str,
+        processor_id: str,
+        processor_version: Optional[str] = None,
     ):
         """
         Initialize Document AI client.
@@ -53,19 +53,17 @@ class DocumentAIExtractor:
                 self.project_id,
                 self.location,
                 self.processor_id,
-                self.processor_version
+                self.processor_version,
             )
         return self._client.processor_path(
-            self.project_id,
-            self.location,
-            self.processor_id
+            self.project_id, self.location, self.processor_id
         )
 
     def extract_raw_document(
-            self,
-            file_content: bytes,
-            mime_type: str = "application/pdf",
-            field_mask: Optional[str] = None
+        self,
+        file_content: bytes,
+        mime_type: str = "application/pdf",
+        field_mask: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Process document and return raw Document AI response.
@@ -123,7 +121,7 @@ class DocumentAIExtractor:
             Structured data with entities organized by type
         """
         result = {}
-        entities = document_data.get('entities', [])
+        entities = document_data.get("entities", [])
 
         for entity in entities:
             entity_type = self._get_entity_type(entity)
@@ -138,7 +136,7 @@ class DocumentAIExtractor:
     @staticmethod
     def _get_entity_type(entity: Dict[str, Any]) -> Optional[str]:
         """Extract entity type from entity object."""
-        return entity.get('type') or entity.get('type_')
+        return entity.get("type") or entity.get("type_")
 
     def _extract_entity_properties(self, entity: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -150,7 +148,7 @@ class DocumentAIExtractor:
         Returns:
             Dictionary of property types to values
         """
-        properties = entity.get('properties', [])
+        properties = entity.get("properties", [])
         property_groups = defaultdict(list)
 
         for prop in properties:
@@ -161,7 +159,7 @@ class DocumentAIExtractor:
                 continue
 
             mention_text = self._clean_text(mention_text)
-            nested_properties = prop.get('properties', [])
+            nested_properties = prop.get("properties", [])
 
             if nested_properties:
                 nested_data = self._extract_nested_properties(nested_properties)
@@ -174,7 +172,7 @@ class DocumentAIExtractor:
     @staticmethod
     def _get_mention_text(property_obj: Dict[str, Any]) -> Optional[str]:
         """Extract mention text from property object."""
-        return property_obj.get('mentionText') or property_obj.get('mention_text')
+        return property_obj.get("mentionText") or property_obj.get("mention_text")
 
     @staticmethod
     def _clean_text(text: str) -> str:
@@ -182,8 +180,7 @@ class DocumentAIExtractor:
         return text.replace("\n", " ").rstrip(".;")
 
     def _extract_nested_properties(
-            self,
-            nested_props: List[Dict[str, Any]]
+        self, nested_props: List[Dict[str, Any]]
     ) -> Dict[str, Any]:
         """
         Extract nested properties recursively.
@@ -205,10 +202,7 @@ class DocumentAIExtractor:
 
         return self._flatten_single_values(nested_data)
 
-    def _flatten_single_values(
-            self,
-            data: Dict[str, List[Any]]
-    ) -> Dict[str, Any]:
+    def _flatten_single_values(self, data: Dict[str, List[Any]]) -> Dict[str, Any]:
         """
         Convert single-item lists to single values.
 
@@ -224,10 +218,7 @@ class DocumentAIExtractor:
         }
 
     def _add_entity_to_result(
-            self,
-            result: Dict[str, Any],
-            entity_type: str,
-            entity_data: Dict[str, Any]
+        self, result: Dict[str, Any], entity_type: str, entity_data: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
         Add entity data to result, handling duplicates by creating lists.
@@ -351,5 +342,5 @@ class DocumentAIExtractor:
 
     @staticmethod
     def _is_single_statement(text: Any) -> bool:
-        has_separator_in_middle = '.' in str(text) or ';' in str(text)
+        has_separator_in_middle = "." in str(text) or ";" in str(text)
         return not has_separator_in_middle

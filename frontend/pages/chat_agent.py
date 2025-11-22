@@ -59,17 +59,19 @@ def submit(question):
                 "messages": [
                     {
                         "role": "user",
-                        "content": json.dumps(content, ensure_ascii=False, separators=(',', ':')),
+                        "content": json.dumps(
+                            content, ensure_ascii=False, separators=(",", ":")
+                        ),
                     }
                 ]
             }
         }
         url = "http://127.0.0.1:8080/invocations"
-        headers = {
-            'Content-Type': 'application/json'
-        }
+        headers = {"Content-Type": "application/json"}
 
-        response = requests.request("POST", url, headers=headers, data=json.dumps(message), timeout=300)
+        response = requests.request(
+            "POST", url, headers=headers, data=json.dumps(message), timeout=300
+        )
         return response.json().get("predictions").get("messages")[0].get("content")
         # return "Hello"
     except EntityNotFound as e:
@@ -83,8 +85,11 @@ def disable_chat_input():
     st.session_state.chat_input_disabled = True
 
 
-if prompt := st.chat_input("How can I help you today?", disabled=st.session_state.chat_input_disabled,
-                           on_submit=disable_chat_input):
+if prompt := st.chat_input(
+    "How can I help you today?",
+    disabled=st.session_state.chat_input_disabled,
+    on_submit=disable_chat_input,
+):
     st.chat_message("user").markdown(prompt)
     st.session_state.messages.append({"role": "user", "content": prompt})
 
@@ -93,7 +98,9 @@ if prompt := st.chat_input("How can I help you today?", disabled=st.session_stat
             try:
                 response = submit(prompt)
                 st.markdown(response)
-                st.session_state.messages.append({"role": "assistant", "content": response})
+                st.session_state.messages.append(
+                    {"role": "assistant", "content": response}
+                )
             except Exception as e:
                 st.error(f"❌ Error processing documents: {e}")
 

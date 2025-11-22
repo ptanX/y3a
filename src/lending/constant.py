@@ -9,7 +9,7 @@ REQUIRED_EXTRACTION_FIELDS = [
     "total_shares",
     "email",
     "legal_rep",
-    "business_code"
+    "business_code",
 ]
 
 REQUIRED_FIELDS = {
@@ -25,7 +25,6 @@ REQUIRED_FIELDS = {
     "email",
     "legal_rep",
     "business_code",
-
     # Balance Sheet - Assets
     "short_term_assets",
     "current_financial_assets",  # "Tài sản tài chính" under short-term
@@ -38,7 +37,6 @@ REQUIRED_FIELDS = {
     "other_long_term_assets",
     "provision_long_term_assets",
     "total_assets",
-
     # Balance Sheet - Liabilities & Equity
     "liabilities",  # "NỢ PHẢI TRẢ"
     "short_term_liabilities",
@@ -47,7 +45,6 @@ REQUIRED_FIELDS = {
     "owners_capital",
     "funds_and_reserves",
     "total_liabilities_and_owners_equity",
-
     # Income Statement
     "selling_expenses",
     "general_and_administrative_expenses",
@@ -56,12 +53,11 @@ REQUIRED_FIELDS = {
     "total_corporate_income_tax",
     "net_profit_after_tax",
     "total_comprehensive_income",
-
     # Cash Flow Statement
     "cash_flow_operating",
     "cash_flow_investing",
     "cash_flow_financing",
     "net_cash_change",
     "cash_beginning",
-    "cash_ending"
+    "cash_ending",
 }

@@ -9,21 +9,13 @@ class Role(str, Enum):
 
 # User database with roles
 USERS = {
-    "admin": {
-        "password": "admin123",
-        "role": "admin",
-        "full_name": "Administrator"
-    },
+    "admin": {"password": "admin123", "role": "admin", "full_name": "Administrator"},
     "manager": {
         "password": "manager123",
         "role": "manager",
-        "full_name": "Manager User"
+        "full_name": "Manager User",
     },
-    "user": {
-        "password": "user123",
-        "role": "user",
-        "full_name": "Regular User"
-    },
+    "user": {"password": "user123", "role": "user", "full_name": "Regular User"},
 }
 
 # Role permissions

@@ -31,16 +31,20 @@ class Demo0DefaultState(DefaultState):
 class Demo0DefaultStateMapper(StateMapper[DefaultState, list[ChatAgentMessage]]):
 
     def map_from_state_to_message(self, state: DefaultState) -> list[ChatAgentMessage]:
-        message = state.get('message', "")
+        message = state.get("message", "")
         content = ""
         if isinstance(message, str):
             content = message
         elif isinstance(message, AIMessage):
             content = message.content
-        result = [ChatAgentMessage(role="assistant", content=content, id=str(uuid.uuid4()))]
+        result = [
+            ChatAgentMessage(role="assistant", content=content, id=str(uuid.uuid4()))
+        ]
         return result
 
-    def map_from_message_to_state(self, message: list[ChatAgentMessage]) -> DefaultState:
+    def map_from_message_to_state(
+        self, message: list[ChatAgentMessage]
+    ) -> DefaultState:
         actual_message = message[-1].content
         return {"message": HumanMessage(content=actual_message)}
 
@@ -57,10 +61,7 @@ class Demo0GraphProvider(GraphProvider[Demo0DefaultState]):
         print(embedding.embed_query("test connection"))
         print("✅ Successfully loaded embedding model")
         self.embedding = embedding
-        self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-pro",
-            temperature=0
-        )
+        self.llm = ChatGoogleGenerativeAI(model="gemini-2.5-pro", temperature=0)
         self.known_banks = ["LPBANK", "MBBANK", "VPBANK", "TECHCOMBANK"]
 
     def provide(self) -> CompiledStateGraph:
@@ -85,11 +86,19 @@ class Demo0GraphProvider(GraphProvider[Demo0DefaultState]):
         Trả về dưới dạng danh sách các tên ngân hàng, phân cách bằng dấu phẩy.
         """
         response = self.llm.invoke(prompt).content
-        return [name.strip().upper() for name in response.split(",") if name.strip().upper() in self.known_banks]
+        return [
+            name.strip().upper()
+            for name in response.split(",")
+            if name.strip().upper() in self.known_banks
+        ]
 
     def handle_supervisor(self, state):
         incoming_message = state.get("message")
-        question = incoming_message.content if incoming_message is not None and incoming_message.content is not None else ""
+        question = (
+            incoming_message.content
+            if incoming_message is not None and incoming_message.content is not None
+            else ""
+        )
         bank_names = self.extract_bank_names(question)
         return {"question": question, "banks": bank_names}
 
@@ -105,16 +114,26 @@ class Demo0GraphProvider(GraphProvider[Demo0DefaultState]):
     def handle_banking_comparison(self, state):
         bank1, bank2 = state["banks"]
         current_question = state.get("question", "")
-        bank1_db = Chroma(collection_name=bank1,
-                          embedding_function=self.embedding,
-                          persist_directory='./rawiq_db')
-        bank2_db = Chroma(collection_name=bank2,
-                          embedding_function=self.embedding,
-                          persist_directory='./rawiq_db')
+        bank1_db = Chroma(
+            collection_name=bank1,
+            embedding_function=self.embedding,
+            persist_directory="./rawiq_db",
+        )
+        bank2_db = Chroma(
+            collection_name=bank2,
+            embedding_function=self.embedding,
+            persist_directory="./rawiq_db",
+        )
         retriever_1 = RunnableLambda(
-            lambda _: bank1_db.similarity_search(f"tóm tắt thông tin kinh doanh {bank1}"))
+            lambda _: bank1_db.similarity_search(
+                f"tóm tắt thông tin kinh doanh {bank1}"
+            )
+        )
         retriever_2 = RunnableLambda(
-            lambda _: bank2_db.similarity_search(f"tóm tắt thông tin kinh doanh {bank2}"))
+            lambda _: bank2_db.similarity_search(
+                f"tóm tắt thông tin kinh doanh {bank2}"
+            )
+        )
 
         prompt_template = """
         Bạn là một chuyên gia phân tích tài chính ngân hàng với kinh nghiệm phân tích báo cáo tài chính, đánh giá rủi ro và hiệu quả hoạt động của các ngân hàng.
@@ -164,24 +183,26 @@ class Demo0GraphProvider(GraphProvider[Demo0DefaultState]):
         from langchain_core.output_parsers import StrOutputParser
 
         rag_chain = (
-                {
-                    "context_1": retriever_1 | format_docs,
-                    "context_2": retriever_2 | format_docs,
-                    "question": RunnablePassthrough(),
-                    "bank1": RunnableLambda(lambda _: bank1),
-                    "bank2": RunnableLambda(lambda _: bank2)
-                }
-                | prompt
-                | self.llm
-                | StrOutputParser()
+            {
+                "context_1": retriever_1 | format_docs,
+                "context_2": retriever_2 | format_docs,
+                "question": RunnablePassthrough(),
+                "bank1": RunnableLambda(lambda _: bank1),
+                "bank2": RunnableLambda(lambda _: bank2),
+            }
+            | prompt
+            | self.llm
+            | StrOutputParser()
         )
         return {"message": rag_chain.invoke(current_question)}
 
     def handle_querying_single_bank(self, state):
-        bank1 = state['banks'][0]
-        bank1_db = Chroma(collection_name=bank1,
-                          embedding_function=self.embedding,
-                          persist_directory='./rawiq_db')
+        bank1 = state["banks"][0]
+        bank1_db = Chroma(
+            collection_name=bank1,
+            embedding_function=self.embedding,
+            persist_directory="./rawiq_db",
+        )
         retriever = bank1_db.as_retriever(search_type="similarity")
         # Prompt template
         prompt = """
@@ -227,10 +248,10 @@ class Demo0GraphProvider(GraphProvider[Demo0DefaultState]):
         prompt_template = ChatPromptTemplate.from_template(prompt)
         # Build RAG chain
         rag_chain = (
-                {"context": retriever | format_docs, "question": RunnablePassthrough()}
-                | prompt_template
-                | self.llm
-                | StrOutputParser()
+            {"context": retriever | format_docs, "question": RunnablePassthrough()}
+            | prompt_template
+            | self.llm
+            | StrOutputParser()
         )
         current_question = state.get("question", "")
         return {"message": rag_chain.invoke(current_question)}
@@ -248,8 +269,12 @@ class Demo0ChatAgent(ChatAgent):
         self.graph = graph
         self.mapper = Demo0DefaultStateMapper()
 
-    def predict(self, messages: list[ChatAgentMessage], context: ChatContext | None = None,
-                custom_inputs: dict[str, Any] | None = None) -> ChatAgentResponse:
+    def predict(
+        self,
+        messages: list[ChatAgentMessage],
+        context: ChatContext | None = None,
+        custom_inputs: dict[str, Any] | None = None,
+    ) -> ChatAgentResponse:
         input_state = self.mapper.map_from_message_to_state(messages)
         state = self.graph.provide().invoke(input_state)
         result = self.mapper.map_from_state_to_message(state)

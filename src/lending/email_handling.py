@@ -1,7 +1,5 @@
-import email
 import os
 import smtplib
-from email.message import EmailMessage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -20,7 +18,8 @@ def build_validation_table_html(document_id, data):
         HTML string with styled table
     """
 
-    html = """
+    html = (
+        """
     <!DOCTYPE html>
     <html>
     <head>
@@ -114,17 +113,23 @@ def build_validation_table_html(document_id, data):
     <body>
         <div class="container">
             <div class="content">
-            """ + f"""
+            """
+        + f"""
                 <h1>[DocumentID={document_id}] Validation Results Report</h1>
                 <div class="intro">
                     <p>This report contains the validation results for document data verification against the database.</p>
                 </div>
     """
+    )
 
     # Calculate summary statistics
-    total_fields = len(data['results'])
-    consistent_count = sum(1 for r in data['results'] if r['validation_result']['is_consistent_across_doc'])
-    match_count = sum(1 for r in data['results'] if r['validation_result']['is_match_database'])
+    total_fields = len(data["results"])
+    consistent_count = sum(
+        1 for r in data["results"] if r["validation_result"]["is_consistent_across_doc"]
+    )
+    match_count = sum(
+        1 for r in data["results"] if r["validation_result"]["is_match_database"]
+    )
 
     html += f"""
                 <div class="summary">
@@ -141,9 +146,9 @@ def build_validation_table_html(document_id, data):
 
     # Get all unique document names for headers
     all_docs = set()
-    for result in data['results']:
-        for doc in result['origin_docs']:
-            all_docs.add(doc['name'])
+    for result in data["results"]:
+        for doc in result["origin_docs"]:
+            all_docs.add(doc["name"])
 
     # Add headers for each document
     for doc_name in sorted(all_docs):
@@ -158,35 +163,39 @@ def build_validation_table_html(document_id, data):
     """
 
     # Add rows
-    for result in data['results']:
+    for result in data["results"]:
         html += "                        <tr>\n"
 
         # Field name column
         html += f"                            <td class='field-name'>{result['field_name']}</td>\n"
 
         # Create a dict for quick lookup of document values
-        doc_values = {doc['name']: doc['value'] for doc in result['origin_docs']}
+        doc_values = {doc["name"]: doc["value"] for doc in result["origin_docs"]}
 
         # Add columns for each document
         for doc_name in sorted(all_docs):
-            value = doc_values.get(doc_name, '-')
+            value = doc_values.get(doc_name, "-")
             html += f"                            <td>{value}</td>\n"
 
         # Database value column
-        db_value = result.get('database_value', '-')
-        html += f"                            <td class='database-value'>{db_value}</td>\n"
+        db_value = result.get("database_value", "-")
+        html += (
+            f"                            <td class='database-value'>{db_value}</td>\n"
+        )
 
         # Consistent across docs column
-        is_consistent = result['validation_result']['is_consistent_across_doc']
-        consistent_class = 'status-true' if is_consistent else 'status-false'
-        consistent_text = '✓ Yes' if is_consistent else '✗ No'
+        is_consistent = result["validation_result"]["is_consistent_across_doc"]
+        consistent_class = "status-true" if is_consistent else "status-false"
+        consistent_text = "✓ Yes" if is_consistent else "✗ No"
         html += f"                            <td class='{consistent_class}'>{consistent_text}</td>\n"
 
         # Match database column
-        is_match = result['validation_result']['is_match_database']
-        match_class = 'status-true' if is_match else 'status-false'
-        match_text = '✓ Yes' if is_match else '✗ No'
-        html += f"                            <td class='{match_class}'>{match_text}</td>\n"
+        is_match = result["validation_result"]["is_match_database"]
+        match_class = "status-true" if is_match else "status-false"
+        match_text = "✓ Yes" if is_match else "✗ No"
+        html += (
+            f"                            <td class='{match_class}'>{match_text}</td>\n"
+        )
 
         html += "                        </tr>\n"
 
@@ -217,30 +226,34 @@ def build_validation_table_text(data):
     lines.append("=" * 100)
 
     # Summary
-    total_fields = len(data['results'])
-    consistent_count = sum(1 for r in data['results'] if r['validation_result']['is_consistent_across_doc'])
-    match_count = sum(1 for r in data['results'] if r['validation_result']['is_match_database'])
+    total_fields = len(data["results"])
+    consistent_count = sum(
+        1 for r in data["results"] if r["validation_result"]["is_consistent_across_doc"]
+    )
+    match_count = sum(
+        1 for r in data["results"] if r["validation_result"]["is_match_database"]
+    )
 
     lines.append(f"\nSummary: {total_fields} fields validated")
     lines.append(f"Consistent across documents: {consistent_count}/{total_fields}")
     lines.append(f"Match database: {match_count}/{total_fields}")
     lines.append("")
 
-    for result in data['results']:
+    for result in data["results"]:
         lines.append(f"\nField: {result['field_name']}")
         lines.append("-" * 100)
 
         # Origin documents
         lines.append("Origin Documents:")
-        for doc in result['origin_docs']:
+        for doc in result["origin_docs"]:
             lines.append(f"  - {doc['name']}: {doc['value']}")
 
         # Database value
         lines.append(f"\nDatabase Value: {result['database_value']}")
 
         # Validation results
-        is_consistent = result['validation_result']['is_consistent_across_doc']
-        is_match = result['validation_result']['is_match_database']
+        is_consistent = result["validation_result"]["is_consistent_across_doc"]
+        is_match = result["validation_result"]["is_match_database"]
 
         lines.append(f"Consistent Across Docs: {'✓ Yes' if is_consistent else '✗ No'}")
         lines.append(f"Match Database: {'✓ Yes' if is_match else '✗ No'}")
@@ -249,7 +262,14 @@ def build_validation_table_text(data):
     return "\n".join(lines)
 
 
-def send_validation_email(document_id, sender_email, sender_password, recipient_email, validation_data, subject=None):
+def send_validation_email(
+    document_id,
+    sender_email,
+    sender_password,
+    recipient_email,
+    validation_data,
+    subject=None,
+):
     """
     Send validation results as a pretty formatted email
 
@@ -263,26 +283,29 @@ def send_validation_email(document_id, sender_email, sender_password, recipient_
     """
     # Generate subject if not provided
     if not subject:
-        total_fields = len(validation_data['results'])
-        issues = sum(1 for r in validation_data['results']
-                     if not r['validation_result']['is_consistent_across_doc']
-                     or not r['validation_result']['is_match_database'])
+        total_fields = len(validation_data["results"])
+        issues = sum(
+            1
+            for r in validation_data["results"]
+            if not r["validation_result"]["is_consistent_across_doc"]
+            or not r["validation_result"]["is_match_database"]
+        )
         subject = f"RAWIQ Validation Report: {total_fields} Fields Validated"
         if issues > 0:
             subject += f" ({issues} issues found)"
 
     # Create message container
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = subject
-    msg['From'] = sender_email
-    msg['To'] = ", ".join(recipient_email)
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = sender_email
+    msg["To"] = ", ".join(recipient_email)
 
     # Create plain text and HTML versions
     body_text = build_validation_table_text(validation_data)
     body_html = build_validation_table_html(document_id, validation_data)
 
-    part1 = MIMEText(body_text, 'plain')
-    part2 = MIMEText(body_html, 'html')
+    part1 = MIMEText(body_text, "plain")
+    part2 = MIMEText(body_html, "html")
 
     msg.attach(part1)
     msg.attach(part2)
@@ -290,7 +313,7 @@ def send_validation_email(document_id, sender_email, sender_password, recipient_
     # Send email
     try:
         # For Gmail (change for other providers)
-        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server = smtplib.SMTP("smtp.gmail.com", 587)
         server.starttls()
         server.login(sender_email, sender_password)
         server.send_message(msg)
@@ -315,7 +338,7 @@ def execute(document_id, validation_data, email_input=None):
         sender_email=SENDER_EMAIL,
         sender_password=SENDER_PASSWORD,
         recipient_email=RECIPIENT_EMAIL,
-        validation_data=validation_data
+        validation_data=validation_data,
     )
 
 
@@ -331,14 +354,14 @@ def build_lending_content(**kwargs):
 
     categories_html = ""
     for category in document_categories:
-        documents = category.get('documents', '')
+        documents = category.get("documents", "")
 
         # Build documents list
-        document_type_name = category.get('document_type_name', '')
+        document_type_name = category.get("description", "")
         document_html = ""
         for doc in documents:
-            name = doc.get('name', '')
-            quantity = doc.get('quantity', '')
+            name = doc.get("description", "")
+            quantity = doc.get("quantity", "")
             document_html += f"""
                     <tr>
                         <td style="padding: 8px; border: 1px solid #ddd;">{name}</td>
@@ -354,7 +377,7 @@ def build_lending_content(**kwargs):
                     </tr>
                 """
             # Add remaining rows
-            remaining_rows = document_html.split('</tr>')[1:]
+            remaining_rows = document_html.split("</tr>")[1:]
             for row in remaining_rows:
                 if row.strip():
                     categories_html += row + "</tr>"
@@ -440,8 +463,8 @@ def build_lending_content(**kwargs):
                 <h3>Phân loại giấy tờ:</h3>
                 <table>
                     <tr>
-                        <th style="width: 50%;">Loại hồ sơ</th>
-                        <th style="width: 35%;">Tài liệu thành phần</th>
+                        <th style="width: 35%;">Loại hồ sơ</th>
+                        <th style="width: 50%;">Tài liệu thành phần</th>
                         <th style="width: 15%; text-align: center;">Số lượng</th>
                     </tr>
                     {categories_html}
@@ -461,16 +484,12 @@ def _build_verified_lending_content(**kwargs):
     qttd_name = kwargs.get("recipient_name")
     qhkh_name = kwargs.get("qhkh_name")
     customer_name = kwargs.get("customer_name")
-    document_type = kwargs.get("document_type")
-    loan_purpose = kwargs.get("loan_purpose")
-    loan_amount = kwargs.get("loan_amount")
-    loan_term = kwargs.get("loan_term")
+    document_type = kwargs.get("document_type", "KHDN")
+    loan_purpose = kwargs.get("loan_purpose", "-")
+    loan_amount = kwargs.get("loan_amount", "-")
+    loan_term = kwargs.get("loan_term", "-")
     verification_time = kwargs.get("verification_time")
-
-    customer_info_result = kwargs.get("customer_info_result")
-    all_keys = list(customer_info_result.keys())
-    missing_keys = set(REQUIRED_EXTRACTION_FIELDS) - set(all_keys)
-    none_keys = [key for key, value in customer_info_result.items() if value is None or value == ""]
+    missing_key_names = kwargs.get("missing_key_names")
 
     detail_url = kwargs.get("detail_url")
 
@@ -488,7 +507,7 @@ def _build_verified_lending_content(**kwargs):
        - Người phụ trách: {qhkh_name}
     2. Tóm tắt kết quả kiểm tra:
        - Hồ sơ đã được phân loại và bóc tách đầy đủ
-       - Các trường thông tin bắt buộc đã được xác minh, ngoại trừ {none_keys + list(missing_keys)}
+       - Các trường thông tin bắt buộc đã được xác minh, ngoại trừ {missing_key_names}
     Anh/chị vui lòng truy cập đường dẫn bên dưới để ra soát và hoàn thiện thông tin phân tích tín dụng.
     Link truy cập hồ sơ: {detail_url}"""
     return content
@@ -514,19 +533,21 @@ def send_verified_lending_email(**kwargs):
     _send_email(sender_email, sender_password, recipient_email, subject, body, "plain")
 
 
-def _send_email(sender_email, sender_pw, recipient_email, subject, body, subtype="html"):
+def _send_email(
+    sender_email, sender_pw, recipient_email, subject, body, subtype="html"
+):
     if not isinstance(sender_email, str):
         sender_email = ", ".join(sender_email)
     if not isinstance(recipient_email, str):
         recipient_email = ", ".join(recipient_email)
 
     # msg = EmailMessage(policy=email.policy.SMTP)
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = subject
-    msg['From'] = sender_email
-    msg['To'] = recipient_email
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = sender_email
+    msg["To"] = recipient_email
 
-    plain_payload = MIMEText("plain_body", 'plain')
+    plain_payload = MIMEText("plain_body", "plain")
     payload = MIMEText(body, subtype)
     msg.attach(plain_payload)
     msg.attach(payload)
@@ -534,7 +555,7 @@ def _send_email(sender_email, sender_pw, recipient_email, subject, body, subtype
     # Send email
     try:
         # For Gmail (change for other providers)
-        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server = smtplib.SMTP("smtp.gmail.com", 587)
         server.starttls()
         server.login(sender_email, sender_pw)
 

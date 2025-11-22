@@ -10,6 +10,7 @@ from sqlalchemy.orm import sessionmaker
 
 from frontend.menu import menu_with_redirect, display_logo
 from src.lending import e2e_usecases
+from src.lending.constant import REQUIRED_EXTRACTION_FIELDS
 from src.lending.db.bidv_entity import DocumentationInformation
 from src.lending.startup.environment_initialization import DATABASE_PATH
 
@@ -18,7 +19,9 @@ logo_path = Path(__file__).parent.absolute().joinpath("logo.ico")
 logo_image = Image.open(logo_path)
 
 # Streamlit App
-st.set_page_config(page_title="Bảng Kiểm Tra Dữ Liệu", page_icon=logo_image, layout="wide")
+st.set_page_config(
+    page_title="Bảng Kiểm Tra Dữ Liệu", page_icon=logo_image, layout="wide"
+)
 st.title("📊 Kết Quả Bóc Tách Chi Tiết")
 
 document_id = st.session_state.document_id
@@ -50,7 +53,7 @@ field_labels_mapping = {
     "email": "Email công ty",
     "par_value": "Mệnh giá (đồng)",
     "total_shares": "Tổng số cổ phần",
-    "business_code": "Mã số thuế/Mã số doanh nghiệp"
+    "business_code": "Mã số thuế/Mã số doanh nghiệp",
 }
 
 field_columns_mapping = {
@@ -61,7 +64,7 @@ field_columns_mapping = {
     "database_value": "CSDL nội bộ (DB)",
     "is_consistent": "Nhất quán với các tài liệu",
     "is_match_database": "Nhất quán với DB",
-    "user_input": "Ý kiến QHKH"
+    "user_input": "Ý kiến QHKH",
 }
 
 
@@ -100,13 +103,13 @@ def build_extraction_data(data):
 
 
 def highlight_rows(row):
-    style = ['background-color: white'] * (len(row))
+    style = ["background-color: white"] * (len(row))
     if not row["coalesce"]:
         # Red
-        style = ['background-color: #FFCDD2'] * (len(row))
-    if not row['is_consistent']:
+        style = ["background-color: #FFCDD2"] * (len(row))
+    if not row["is_consistent"]:
         # Yellow
-        style = ['background-color: #FFF9C4'] * (len(row))
+        style = ["background-color: #FFF9C4"] * (len(row))
 
     return style
 
@@ -122,9 +125,7 @@ def get_column_config():
         "coalesce": None,
         "is_consistent": None,
         "is_match_db": None,
-        "user_input": st.column_config.Column(
-            field_columns_mapping.get("user_input")
-        )
+        "user_input": st.column_config.Column(field_columns_mapping.get("user_input")),
     }
 
     return column_config
@@ -147,17 +148,29 @@ st.data_editor(
     use_container_width=True,
     key="my_editor",
     on_change=handle_data_change,
-    height=400
+    height=400,
 )
 
 
 def submit():
     customer_info_result = dict(
-        zip(st.session_state.my_data["field"], st.session_state.my_data["user_input"]))
+        zip(st.session_state.my_data["field"], st.session_state.my_data["user_input"])
+    )
 
     financial_document_id = document_data["financial_document_id"]
     base_url = os.environ.get("BASE_URL", "http://localhost:8501")
     detail_url = f"{base_url}/chat_agent?financial_document_id={financial_document_id}"
+
+    all_keys = list(customer_info_result.keys())
+    missing_keys = set(REQUIRED_EXTRACTION_FIELDS) - set(all_keys)
+    none_keys = [
+        key
+        for key, value in customer_info_result.items()
+        if value is None or value == ""
+    ]
+
+    missing_keys = none_keys + list(missing_keys)
+    missing_key_names = [field_labels_mapping[key] for key in missing_keys]
 
     request_body = {
         "document_id": document_data["document_id"],
@@ -168,12 +181,15 @@ def submit():
         "qhkh_name": document_data["recipient_name"],
         "customer_name": customer_info_result["company_name_vn"],
         "customer_info_result": customer_info_result,
-        "detail_url": detail_url
+        "detail_url": detail_url,
+        "missing_key_names": missing_key_names,
     }
+
     print(request_body)
     e2e_usecases.execute_submit_document(request_body)
     st.success(
-        f"✅ Đã tiếp nhận yêu cầu thành công. Vui lòng đợi kết quả gửi vào hòm mail {recipient_email}")
+        f"✅ Đã tiếp nhận yêu cầu thành công. Vui lòng đợi kết quả gửi vào hòm mail {recipient_email}"
+    )
 
 
 # Display legend
@@ -191,7 +207,9 @@ with st.form("detail_form"):
     recipient_name = st.text_input("Tên QTTD", placeholder="Tên QTTD")
     recipient_email = st.text_input("Email QTTD", placeholder="Email QTTD")
 
-    submitted = st.form_submit_button("Submit", use_container_width=True, type="primary")
+    submitted = st.form_submit_button(
+        "Submit", use_container_width=True, type="primary"
+    )
 
     if submitted:
         if not recipient_name:

@@ -25,13 +25,9 @@ def convert_to_mlflow_message(message) -> ChatAgentMessage:
             role="assistant", content=message.content, id=message.id
         )
     elif isinstance(message, HumanMessage):
-        return ChatAgentMessage(
-            role="user", content=message.content, id=message.id
-        )
+        return ChatAgentMessage(role="user", content=message.content, id=message.id)
     elif isinstance(message, SystemMessage):
-        return ChatAgentMessage(
-            role="system", content=message.content, id=message.id
-        )
+        return ChatAgentMessage(role="system", content=message.content, id=message.id)
 
 
 class DefaultStateMapper(StateMapper[DefaultState, list[ChatAgentMessage]]):
