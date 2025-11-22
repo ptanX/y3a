@@ -185,31 +185,36 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         orchestration_request = state["orchestration_information"]
         orchestration_request_json = orchestration_request.model_dump_json()
         financial_outputs = state["financial_outputs"]
-        financial_data_input_toon = encode(financial_outputs)
+        financial_data_toon = encode(financial_outputs)
         analysis_type = orchestration_request.analysis_type
-        # Get periods
         periods = ", ".join(orchestration_request.time_period)
+        query_scopes = orchestration_request.query_scopes or []
 
         # ✅ STEP 1: Extract section guide (FAST - ~5ms)
-        section_guide = extract_section_guide(financial_outputs)
+        structure = extract_section_guide(financial_outputs)
+
         company_name = state["company"]
+        analysis_type_label = None
         if analysis_type == "tabular":
             prompt_template = ChatPromptTemplate.from_template(TABULAR_RECEIVING_PROMPT)
         elif analysis_type == "trending":
             prompt_template = ChatPromptTemplate.from_template(TRENDING_ANALYSIS_PROMPT)
         elif analysis_type == "deep_analysis":
             prompt_template = ChatPromptTemplate.from_template(DEEP_ANALYSIS_PROMPT)
+            analysis_type_label = generate_analysis_type_label(query_scopes)
         else:
             raise Exception(f"Illegal analysis type {analysis_type}")
+        chain_params = {
+            "question": RunnablePassthrough(),
+            "company_name": lambda _: company_name,
+            "periods": lambda _: periods,
+            "financial_data": lambda _: financial_data_toon,
+            "structure": lambda _: structure
+        }
+        if analysis_type == "deep_analysis" and analysis_type_label:
+            chain_params["analysis_type"] = lambda _: analysis_type_label
         rag_chain = (
-                {
-                    "question": RunnablePassthrough(),
-                    "orchestration_request": lambda _: orchestration_request_json,
-                    "company_name": lambda _: company_name,
-                    "periods": lambda _: periods,
-                    "financial_data_input": lambda _: financial_data_input_toon,
-                    "section_guide": lambda _: section_guide
-                }
+                chain_params
                 | prompt_template
                 | self.llm
                 | StrOutputParser()
@@ -370,7 +375,6 @@ def calculate_financial_metrics(data):
             else None
         )
 
-
         # 6. ATO (ĐÃ SỬA)
         # ATO = Tổng doanh thu hoạt động / Tổng tài sản bình quân
         avg_total_assets = (
@@ -398,8 +402,8 @@ def calculate_financial_metrics(data):
         operating_profit_margin = (
             operating_profit / total_operating_revenue
             if operating_profit
-            and total_operating_revenue
-            and total_operating_revenue != 0
+               and total_operating_revenue
+               and total_operating_revenue != 0
             else None
         )
 
@@ -432,20 +436,32 @@ def calculate_financial_metrics(data):
             else None
         )
 
+        em = (
+            avg_total_assets / owners_equity
+            if avg_total_assets and owners_equity and owners_equity != 0
+            else None
+        )
+
+        au = (
+            total_operating_revenue / avg_total_assets
+            if total_operating_revenue and avg_total_assets and avg_total_assets != 0
+            else None
+        )
+
         # 12. Liquidity ratios
         current_ratio = (
             short_term_assets / short_term_liabilities
             if short_term_assets
-            and short_term_liabilities
-            and short_term_liabilities != 0
+               and short_term_liabilities
+               and short_term_liabilities != 0
             else None
         )
 
         quick_ratio = (
             short_term_assets / short_term_liabilities
             if short_term_assets
-            and short_term_liabilities
-            and short_term_liabilities != 0
+               and short_term_liabilities
+               and short_term_liabilities != 0
             else None
         )
 
@@ -477,7 +493,7 @@ def calculate_financial_metrics(data):
             # Raw data components
             "financial_statement": financial_statement_data,
             "income_statement": income_statement_data,
-            "calculated_metrics" : {
+            "calculated_metrics": {
                 # Calculated Metrics - Debt Management
                 "debt_to_equity": debt_to_equity,
                 "leverage_ratio": leverage_ratio,
@@ -502,13 +518,16 @@ def calculate_financial_metrics(data):
                 "roa": roa,
                 "roe": roe,
                 "ros": ros,
+                "em": em,
+                "au": au,
 
                 # Calculated Metrics - Liquidity
                 "current_ratio": current_ratio,
                 "quick_ratio": quick_ratio,
                 "cash_ratio": cash_ratio,
                 "working_capital": working_capital,
-                "gross_profit_margin": gross_profit_margin
+                "gross_profit_margin": gross_profit_margin,
+                "avg_total_assets": avg_total_assets
             }
         }
 
@@ -671,33 +690,122 @@ def build_financial_table_output(
 
 def extract_section_guide(financial_outputs: list[dict]) -> str:
     """
-    Extract simple section guide for LLM.
-    Returns human-readable string (NOT JSON for faster parsing).
+    Extract structure guide for LLM.
+    SAFE: Handles empty list, missing keys, None values.
 
-    Example output:
-    "Bảng cân đối kế toán: A. TÀI SẢN NGẮN HẠN, C. NỢ PHẢI TRẢ, VỐN CHỦ SỞ HỮU
-    Báo cáo kết quả kinh doanh: I. DOANH THU HOẠT ĐỘNG, II. CHI PHÍ HOẠT ĐỘNG, VII. KẾT QUẢ HOẠT ĐỘNG"
+    Returns simple text format.
     """
-    guides = []
 
-    for table in financial_outputs:
-        # Get table name (first row)
-        table_name = table["data"][0][0] if table["data"] else "Unknown"
+    # ✅ SAFE: Check empty list
+    if not financial_outputs or len(financial_outputs) == 0:
+        return "Không có dữ liệu phân tích"
 
-        # Extract sections (from section_structure if exists)
-        if "section_structure" in table and table["section_structure"]:
-            sections = [s["name"] for s in table["section_structure"]]
-        else:
-            # Fallback: extract all group headers
-            sections = [
-                row[0] for row in table["data"][1:]
-                if all(v is None for v in row[1:])
-            ]
+    table = financial_outputs[0]
+
+    # ✅ SAFE: Check table structure
+    if not isinstance(table, dict):
+        return "Dữ liệu không hợp lệ"
+
+    # ✅ SAFE: Get table name with default
+    data = table.get("data", [])
+    if not data or len(data) == 0:
+        return "Dữ liệu trống"
+
+    # ✅ SAFE: Get first row safely
+    first_row = data[0] if len(data) > 0 else []
+    table_name = first_row[0] if len(first_row) > 0 else "Unknown"
+
+    # Extract sections/fields
+    section_structure = table.get("section_structure", [])
+
+    if section_structure and len(section_structure) > 0:
+        # Has section structure (for horizontal tables)
+        sections = []
+        for s in section_structure:
+            if isinstance(s, dict) and "name" in s:
+                sections.append(s["name"])
 
         if sections:
-            guides.append(f"{table_name}: {', '.join(sections)}")
+            structure = f"Bảng: {table_name}\n"
+            structure += "Các section:\n"
+            structure += "\n".join(f"- {s}" for s in sections)
+            return structure
 
-    return "\n".join(guides)
+    # Fallback: Extract fields from data rows
+    fields = []
+    for row in data[1:]:  # Skip header
+        if isinstance(row, list) and len(row) > 0 and row[0]:
+            # ✅ SAFE: Check row is not all None (group header)
+            if not all(v is None for v in row[1:]):
+                fields.append(str(row[0]))
+
+    if not fields:
+        return f"Bảng: {table_name}\nKhông có dữ liệu chi tiết"
+
+    structure = f"Bảng/Dimension: {table_name}\n"
+    structure += "Các chỉ tiêu:\n"
+
+    # ✅ SAFE: Limit to 20 fields
+    display_fields = fields[:20] if len(fields) > 20 else fields
+    structure += "\n".join(f"- {f}" for f in display_fields)
+
+    if len(fields) > 20:
+        structure += f"\n- ... (và {len(fields) - 20} chỉ tiêu khác)"
+
+    return structure
+
+
+def generate_analysis_type_label(query_scopes: list) -> str:
+    """
+    Generate analysis type label for LLM prompt.
+    SAFE: Handles empty list, None values, unknown scopes.
+
+    Args:
+        query_scopes: ["roe"] or ["revenue_profit_table"] or []
+
+    Returns:
+        Label string like "DUPONT_LAYER_1" or "TABLE"
+    """
+
+    # ✅ SAFE: Check empty/None
+    if not query_scopes or len(query_scopes) == 0:
+        return "TABLE"
+
+    query_scope = query_scopes[0]
+
+    # ✅ SAFE: Check None
+    if query_scope is None:
+        return "TABLE"
+
+    # TABLE-BASED
+    TABLE_NAMES = [
+        "revenue_profit_table",
+        "financial_overview_table",
+        "liquidity_ratios_table",
+        "operational_efficiency_table",
+        "leverage_table",
+        "profitability_table",
+        "balance_sheet_horizontal",
+        "income_statement_horizontal"
+    ]
+
+    if query_scope in TABLE_NAMES:
+        return "TABLE"
+
+    # DUPONT-BASED
+    LAYER_MAPPING = {
+        "roe": "DUPONT_LAYER_1",
+        "ros": "DUPONT_LAYER_2_ROS",
+        "au": "DUPONT_LAYER_2_AU",
+        "em": "DUPONT_LAYER_2_EM",
+        "operating_revenue": "DUPONT_LAYER_3_REVENUE",
+        "profit": "DUPONT_LAYER_3_PROFIT",
+        "assets": "DUPONT_LAYER_3_ASSETS",
+        "owners_equity": "DUPONT_LAYER_3_EQUITY"
+    }
+
+    # ✅ SAFE: Use .get() with default
+    return LAYER_MAPPING.get(query_scope, "TABLE")
 
 
 mlflow.langchain.autolog()
