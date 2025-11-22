@@ -1,4 +1,7 @@
+from pathlib import Path
+
 import streamlit as st
+from PIL import Image
 from dotenv import load_dotenv
 
 from menu import menu
@@ -25,7 +28,10 @@ def initialize_session_state():
 
 if __name__ == "__main__":
     # Page configuration
-    st.set_page_config(page_title="Multi-Page App", layout="wide")
+    logo_path = Path(__file__).parent.absolute().joinpath("images").joinpath("logo.jpg")
+    logo_image = Image.open(logo_path)
+
+    st.set_page_config(page_title="RawIQ App", page_icon=logo_image, layout="wide")
 
     initialize_session_state()
     menu()
