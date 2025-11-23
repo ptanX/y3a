@@ -401,9 +401,7 @@ def calculate_financial_metrics(data):
 
         operating_profit_margin = (
             operating_profit / total_operating_revenue
-            if operating_profit
-               and total_operating_revenue
-               and total_operating_revenue != 0
+            if operating_profit and total_operating_revenue and total_operating_revenue != 0
             else None
         )
 
@@ -690,69 +688,85 @@ def build_financial_table_output(
 
 def extract_section_guide(financial_outputs: list[dict]) -> str:
     """
-    Extract structure guide for LLM.
+    Extract structure guide for LLM - SUPPORTS MULTIPLE TABLES/DIMENSIONS.
     SAFE: Handles empty list, missing keys, None values.
 
-    Returns simple text format.
+    Returns simple text format for ALL tables/dimensions.
     """
 
     # ✅ SAFE: Check empty list
     if not financial_outputs or len(financial_outputs) == 0:
         return "Không có dữ liệu phân tích"
 
-    table = financial_outputs[0]
+    # ✅ NEW: Process ALL tables/dimensions
+    all_structures = []
 
-    # ✅ SAFE: Check table structure
-    if not isinstance(table, dict):
-        return "Dữ liệu không hợp lệ"
+    for idx, table in enumerate(financial_outputs):
+        # ✅ SAFE: Check table structure
+        if not isinstance(table, dict):
+            continue
 
-    # ✅ SAFE: Get table name with default
-    data = table.get("data", [])
-    if not data or len(data) == 0:
-        return "Dữ liệu trống"
+        # ✅ SAFE: Get table name with default
+        data = table.get("data", [])
+        if not data or len(data) == 0:
+            continue
 
-    # ✅ SAFE: Get first row safely
-    first_row = data[0] if len(data) > 0 else []
-    table_name = first_row[0] if len(first_row) > 0 else "Unknown"
+        # ✅ SAFE: Get first row safely
+        first_row = data[0] if len(data) > 0 else []
+        table_name = first_row[0] if len(first_row) > 0 else f"Unknown_{idx + 1}"
 
-    # Extract sections/fields
-    section_structure = table.get("section_structure", [])
+        # Extract sections/fields
+        section_structure = table.get("section_structure", [])
 
-    if section_structure and len(section_structure) > 0:
-        # Has section structure (for horizontal tables)
-        sections = []
-        for s in section_structure:
-            if isinstance(s, dict) and "name" in s:
-                sections.append(s["name"])
+        if section_structure and len(section_structure) > 0:
+            # Has section structure (for horizontal tables)
+            sections = []
+            for s in section_structure:
+                if isinstance(s, dict) and "name" in s:
+                    sections.append(s["name"])
 
-        if sections:
-            structure = f"Bảng: {table_name}\n"
-            structure += "Các section:\n"
-            structure += "\n".join(f"- {s}" for s in sections)
-            return structure
+            if sections:
+                structure = f"### Bảng {idx + 1}: {table_name}\n"
+                structure += "**Các section:**\n"
+                structure += "\n".join(f"- {s}" for s in sections)
+                all_structures.append(structure)
+                continue
 
-    # Fallback: Extract fields from data rows
-    fields = []
-    for row in data[1:]:  # Skip header
-        if isinstance(row, list) and len(row) > 0 and row[0]:
-            # ✅ SAFE: Check row is not all None (group header)
-            if not all(v is None for v in row[1:]):
-                fields.append(str(row[0]))
+        # Fallback: Extract fields from data rows
+        fields = []
+        for row in data[1:]:  # Skip header
+            if isinstance(row, list) and len(row) > 0 and row[0]:
+                # ✅ SAFE: Check row is not all None (group header)
+                if not all(v is None for v in row[1:]):
+                    fields.append(str(row[0]))
 
-    if not fields:
-        return f"Bảng: {table_name}\nKhông có dữ liệu chi tiết"
+        if not fields:
+            structure = f"### Bảng {idx + 1}: {table_name}\n"
+            structure += "Không có dữ liệu chi tiết"
+            all_structures.append(structure)
+            continue
 
-    structure = f"Bảng/Dimension: {table_name}\n"
-    structure += "Các chỉ tiêu:\n"
+        structure = f"### Bảng {idx + 1}: {table_name}\n"
+        structure += "**Các chỉ tiêu:**\n"
 
-    # ✅ SAFE: Limit to 20 fields
-    display_fields = fields[:20] if len(fields) > 20 else fields
-    structure += "\n".join(f"- {f}" for f in display_fields)
+        # ✅ SAFE: Limit to 20 fields per table
+        display_fields = fields[:20] if len(fields) > 20 else fields
+        structure += "\n".join(f"- {f}" for f in display_fields)
 
-    if len(fields) > 20:
-        structure += f"\n- ... (và {len(fields) - 20} chỉ tiêu khác)"
+        if len(fields) > 20:
+            structure += f"\n- ... (và {len(fields) - 20} chỉ tiêu khác)"
 
-    return structure
+        all_structures.append(structure)
+
+    # ✅ Combine all structures
+    if not all_structures:
+        return "Không có dữ liệu chi tiết"
+
+    # Add summary header
+    num_tables = len(all_structures)
+    summary = f"# CẤU TRÚC DỮ LIỆU ({num_tables} bảng)\n\n"
+
+    return summary + "\n\n".join(all_structures)
 
 
 def generate_analysis_type_label(query_scopes: list) -> str:
