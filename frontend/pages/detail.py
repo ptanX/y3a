@@ -22,7 +22,7 @@ logo_image = Image.open(logo_path)
 st.set_page_config(
     page_title="Bảng Kiểm Tra Dữ Liệu", page_icon=logo_image, layout="wide"
 )
-st.title("📊 Kết Quả Bóc Tách Chi Tiết")
+st.title("Kết Quả Bóc Tách Chi Tiết")
 
 document_id = st.session_state.document_id
 if not document_id:
@@ -121,7 +121,7 @@ def get_column_config():
 
     column_config = {
         **cols,
-        "index": st.column_config.NumberColumn("STT", disabled=True),
+        "field": None,
         "coalesce": None,
         "is_consistent": None,
         "is_match_db": None,
@@ -193,7 +193,7 @@ def submit():
 
 
 # Display legend
-st.markdown("### 📌 Chú thích:")
+st.markdown("### Chú thích:")
 col1, col2 = st.columns(2)
 with col1:
     st.markdown("🟨 Trường thông tin cần kiểm tra")

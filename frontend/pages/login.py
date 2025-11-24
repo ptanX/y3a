@@ -12,8 +12,6 @@ logo_image = Image.open(logo_path)
 st.set_page_config(page_title="Login", page_icon=logo_image)
 
 # LOGIN PAGE
-st.title("🔐 Login")
-
 col1, col2, col3 = st.columns([1, 2, 1])
 
 query_params = st.query_params
@@ -26,16 +24,16 @@ if query_params is not None:
         )
 
 with col2:
-    st.markdown("### Please login to continue")
+    st.title("Đăng nhập")
 
     with st.form("login_form"):
-        username = st.text_input("Username", placeholder="Enter your username")
+        username = st.text_input("Tài khoản", placeholder="Nhập tên tài khoản")
         password = st.text_input(
-            "Password", type="password", placeholder="Enter your password"
+            "Mật khẩu", type="password", placeholder="Nhập mật khẩu"
         )
 
         submitted = st.form_submit_button(
-            "Login", use_container_width=True, type="primary"
+            "Đăng nhập", use_container_width=True, type="primary"
         )
 
         if submitted:
@@ -46,7 +44,7 @@ with col2:
                     st.session_state.username = username
                     st.session_state.role = user_data["role"]
                     st.session_state.full_name = user_data["full_name"]
-                    st.success(f"Login successful! Welcome {user_data['full_name']}")
+                    st.success(f"Đăng nhập thành công! Chào mừng {user_data['full_name']}")
 
                     # Navigate to first available page
                     if has_permission("upload"):
@@ -58,6 +56,6 @@ with col2:
                     else:
                         st.switch_page("pages/chat_agent.py")
                 else:
-                    st.error("Invalid credentials")
+                    st.error("Tên tài khoản hoặc mật khẩu không chính xác")
             else:
-                st.error("Please enter both username and password")
+                st.error("Hãy nhập đầy đủ tên tài khoản và mật khẩu")
