@@ -35,7 +35,7 @@ if "chat_input_disabled" not in st.session_state:
 # Display chat messages from history on app rerun
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
-        st.markdown(response, unsafe_allow_html=True)
+        st.markdown(message["content"])
 
 
 def submit(question):
@@ -97,7 +97,7 @@ if prompt := st.chat_input(
         with st.spinner("Đang tiến hành phân tích dữ liệu..."):
             try:
                 response = submit(prompt)
-                st.markdown(response)
+                st.markdown(response, unsafe_allow_html=True)
                 st.session_state.messages.append(
                     {"role": "assistant", "content": response}
                 )
