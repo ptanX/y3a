@@ -795,11 +795,6 @@ Bạn là chuyên gia tài chính chuyên vẽ bảng báo cáo từ dữ liệu
 {financial_data}
 ```
 
-### Cấu trúc
-```
-{structure}
-```
-
 ---
 
 ## QUY TẮC VẼ BẢNG
@@ -823,48 +818,84 @@ Bạn là chuyên gia tài chính chuyên vẽ bảng báo cáo từ dữ liệu
 ---
 
 ## TEMPLATE OUTPUT
-```markdown
+
+**QUAN TRỌNG: Trả về TRỰC TIẾP markdown, KHÔNG bọc trong ```markdown ... ```**
+
 # BÁO CÁO TÀI CHÍNH
 **Công ty:** {{company_name}} | **Kỳ:** {{periods}} | **Đơn vị:** VND
 
 ---
 
-## {{Tên bảng từ structure}}
-
-| {{col_0}} | {{col_1}} | {{col_2}} | ... |
+| {{columns[0]}} | {{columns[1]}} | {{columns[2]}} | ... |
 |:--------|--------:|--------:|----:|
-| **{{section_header}}** | | | |
-| {{row_item}} | {{value_1}} | {{value_2}} | ... |
-| {{row_item}} | {{value_1}} | {{value_2}} | ... |
-| **{{total_row}}** | {{total_1}} | {{total_2}} | ... |
+| **{{section_header nếu có}}** | | | |
+| {{data[0][0]}} | {{data[0][1]}} | {{data[0][2]}} | ... |
+| {{data[1][0]}} | {{data[1][1]}} | {{data[1][2]}} | ... |
+| **{{total_row nếu có}}** | {{total_1}} | {{total_2}} | ... |
 
 ---
 
-## {{Bảng tiếp theo nếu có nhiều bảng}}
+_Nếu có nhiều bảng, thêm separator `---` và vẽ bảng tiếp theo_
 
-[Cấu trúc tương tự]
-```
+| {{columns[0]}} | {{columns[1]}} | {{columns[2]}} | ... |
+|:--------|--------:|--------:|----:|
+| {{data[0][0]}} | {{data[0][1]}} | {{data[0][2]}} | ... |
 
 ---
 
 ## QUY TẮC
 
 ✅ **Phải làm:**
-- Vẽ bảng theo đúng structure
-- Dùng giá trị có sẵn (không tính lại)
+- Vẽ TẤT CẢ bảng có trong dữ liệu
+- Dùng giá trị có sẵn từ TOON (không tính lại)
 - Format đúng theo quy tắc
 - Section header in đậm
 - Total row in đậm
+- Ngăn cách các bảng bằng `---`
+- **Trả về TRỰC TIẾP markdown thuần, KHÔNG dùng code block**
 
 ❌ **Không được làm:**
 - Thêm text phân tích/nhận xét
+- Thêm tiêu đề bảng (## Tên bảng)
 - Tính toán lại giá trị
 - Thay đổi thứ tự rows
+- Bỏ qua bất kỳ bảng nào
 - Dùng emoji/icon
+- **Bọc output trong ```markdown ... ```**
+- **Bọc output trong ``` ... ```**
 
 ---
 
-BẮT ĐẦU VẼ BẢNG:
+## VÍ DỤ
+
+**Input data:**
+```
+[
+  {{
+    "columns": ["Chỉ tiêu", "2024", "2023"],
+    "data": [
+      ["Doanh thu hoạt động", 8529279575474, 7157692593506],
+      ["Chi phí hoạt động", 3287961608948, 2434565309825]
+    ]
+  }}
+]
+```
+
+**Output (markdown thuần):**
+
+# BÁO CÁO TÀI CHÍNH
+**Công ty:** SSI | **Kỳ:** 2023, 2024 | **Đơn vị:** VND
+
+---
+
+| Chỉ tiêu | 2024 | 2023 |
+|:--------|--------:|--------:|
+| Doanh thu hoạt động | 8,529,279,575,474 | 7,157,692,593,506 |
+| Chi phí hoạt động | 3,287,961,608,948 | 2,434,565,309,825 |
+
+---
+
+BẮT ĐẦU VẼ BẢNG (trả về markdown thuần, không code block):
 """
 
 TRENDING_ANALYSIS_PROMPT = """

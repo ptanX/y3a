@@ -12,7 +12,7 @@ from toon import encode
 
 from src.agent.agent_application import AgentApplication
 from src.graph.graph_provider import GraphProvider
-from src.lending.agent.documentation import SSI_TEST_QUESTION
+from src.lending.agent.documentation import SSI_TEST_QUESTION, RULE_1458_HARDCODE_RESPONSE, RULE_9427_HARDCODE_RESPONSE
 from src.lending.agent.lending_agent_model import BusinessLoanValidationState, LendingShortTermContext, \
     OrchestrationInformation
 from src.lending.agent.lending_prompt import (
@@ -37,18 +37,27 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         graph = StateGraph(BusinessLoanValidationState)
         graph.add_node("supervisor", self.handle_supervisor)
         graph.add_node("final_answer", self.handle_final_answer)
+        graph.add_node("handle_hardcode_rule", self.handle_hardcode_rule)
         graph.add_node("fallback", self.handle_fallback)
         graph.set_entry_point("supervisor")
         graph.add_conditional_edges("supervisor", self.route_function)
         graph.set_finish_point("final_answer")
         graph.set_finish_point("fallback")
+        graph.set_finish_point("handle_hardcode_rule")
         return graph.compile()
 
     def handle_supervisor(self, state):
         incoming_message = state.get("message")
         structured_message = json.loads(incoming_message.content)
-        document_id = structured_message.get("document_id")
         question = structured_message.get("question")
+        if "quyết định 1458/QĐ" in question or "quyết định 9427/QĐ" in question:
+            return {
+                "question": question,
+                "orchestration_information": None,
+                "financial_outputs": None,
+                "company": None
+            }
+        document_id = structured_message.get("document_id")
         documents = structured_message.get("documents")
         orchestration_information = self.get_orchestration_information(document_id, question, documents)
         filtered_documents = []
@@ -110,6 +119,9 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         return orchestration_response
 
     def route_function(self, state):
+        question = state["question"]
+        if "quyết định 1458/QĐ" in question or "quyết định 9427/QĐ" in question:
+            return "handle_hardcode_rule"
         orchestration_information = state["orchestration_information"]
         confidence = orchestration_information.confidence
         if confidence is None:
@@ -180,10 +192,18 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
 
         return {"message": rag_chain.invoke(question)}
 
+    def handle_hardcode_rule(self, state):
+        question = state["question"]
+        output = ""
+        if "quyết định 1458/QĐ" in question:
+            output = RULE_1458_HARDCODE_RESPONSE
+        elif "quyết định 9427/QĐ" in question:
+            output = RULE_9427_HARDCODE_RESPONSE
+        return {"message": output}
+
     def handle_final_answer(self, state):
         question = state["question"]
         orchestration_request = state["orchestration_information"]
-        orchestration_request_json = orchestration_request.model_dump_json()
         financial_outputs = state["financial_outputs"]
         financial_data_toon = encode(financial_outputs)
         analysis_type = orchestration_request.analysis_type
@@ -192,6 +212,7 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
 
         # ✅ STEP 1: Extract section guide (FAST - ~5ms)
         structure = extract_section_guide(financial_outputs)
+        print(structure)
 
         company_name = state["company"]
         analysis_type_label = None
@@ -706,14 +727,14 @@ def extract_section_guide(financial_outputs: list[dict]) -> str:
         if not isinstance(table, dict):
             continue
 
-        # ✅ SAFE: Get table name with default
+        # ✅ SAFE: Get data
         data = table.get("data", [])
         if not data or len(data) == 0:
             continue
 
-        # ✅ SAFE: Get first row safely
+        # ✅ SAFE: Get table name from first row
         first_row = data[0] if len(data) > 0 else []
-        table_name = first_row[0] if len(first_row) > 0 else f"Unknown_{idx + 1}"
+        table_name = first_row[0] if len(first_row) > 0 else f"Bảng {idx + 1}"
 
         # Extract sections/fields
         section_structure = table.get("section_structure", [])
@@ -732,9 +753,9 @@ def extract_section_guide(financial_outputs: list[dict]) -> str:
                 all_structures.append(structure)
                 continue
 
-        # Fallback: Extract fields from data rows
+        # ✅ FIX: Extract fields from ALL data rows (including first row)
         fields = []
-        for row in data[1:]:  # Skip header
+        for row in data:  # ✅ CHANGED: Không skip row đầu
             if isinstance(row, list) and len(row) > 0 and row[0]:
                 # ✅ SAFE: Check row is not all None (group header)
                 if not all(v is None for v in row[1:]):

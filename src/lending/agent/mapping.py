@@ -788,8 +788,18 @@ DIMENSIONAL_MAPPING = {
   "revenue_profit_table": {
     "fields": [
       {
-        "display_name": "Doanh thu",
+        "display_name": "Doanh thu hoạt động",
         "field_path": "income_statement.total_operating_revenue",
+        "data_type": "VND"
+      },
+      {
+        "display_name": "Chi phí hoạt động",
+        "field_path": "income_statement.total_operating_expenses",
+        "data_type": "VND"
+      },
+      {
+        "display_name": "Kết quả hoạt động",
+        "field_path": "income_statement.operating_profit",
         "data_type": "VND"
       },
       {
