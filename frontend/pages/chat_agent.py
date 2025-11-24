@@ -1,5 +1,4 @@
 import json
-from pathlib import Path
 
 import requests
 import streamlit as st
@@ -7,41 +6,21 @@ from PIL import Image
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from frontend.menu import menu_with_redirect, display_logo
-from frontend.utils import get_base64_image
+from frontend.constants import LOGO_ICO_PATH
+from frontend.menu import menu_with_redirect
+from frontend.utils import build_logo_before_title_html
+from src.exceptions import EntityNotFound
 from src.lending.db.bidv_entity import DocumentationInformation
 from src.lending.startup.environment_initialization import DATABASE_PATH
-from src.exceptions import EntityNotFound
 
 menu_with_redirect()
-logo_path = Path(__file__).parent.parent.joinpath("images").joinpath("logo.jpg").absolute()
-logo_image = Image.open(logo_path)
+logo_image = Image.open(LOGO_ICO_PATH)
 
 st.set_page_config(page_title="Lending Chat Agent", page_icon=logo_image)
-# st.title("Lending Chat Agent")
-logo_base64 = get_base64_image(logo_path)
-st.markdown(f"""
-    <style>
-    .logo-title-container {{
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }}
-    .logo-title-container img {{
-        width: 60px;
-        height: auto;
-    }}
-    .logo-title-container h1 {{
-        margin: 0;
-        font-size: 2.5rem;
-    }}
-    </style>
-
-    <div class="logo-title-container">
-        <img src="data:image/jpeg;base64,{logo_base64}" alt="Logo">
-        <h1>Lending Chat Agent</h1>
-    </div>
-""", unsafe_allow_html=True)
+st.markdown(
+    build_logo_before_title_html("Lending Chat Agent"),
+    unsafe_allow_html=True,
+)
 st.divider()
 
 financial_document_id = st.session_state.financial_document_id
@@ -111,9 +90,9 @@ def disable_chat_input():
 
 
 if prompt := st.chat_input(
-    "How can I help you today?",
-    disabled=st.session_state.chat_input_disabled,
-    on_submit=disable_chat_input,
+        "How can I help you today?",
+        disabled=st.session_state.chat_input_disabled,
+        on_submit=disable_chat_input,
 ):
     st.chat_message("user").markdown(prompt)
     st.session_state.messages.append({"role": "user", "content": prompt})

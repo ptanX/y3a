@@ -1,44 +1,25 @@
 import time
 import uuid
 from datetime import datetime
-from pathlib import Path
 
 import streamlit as st
 from PIL import Image
 
+from frontend.constants import LOGO_ICO_PATH
 from frontend.menu import menu_with_redirect
-from frontend.utils import get_base64_image
+from frontend.utils import build_logo_before_title_html
 from src.lending import e2e_usecases
 
 menu_with_redirect()
 
 # UPLOAD PAGE
-logo_path = Path(__file__).parent.parent.joinpath("images").joinpath("logo.jpg").absolute()
-logo_image = Image.open(logo_path)
+logo_image = Image.open(LOGO_ICO_PATH)
+st.set_page_config(page_title="Upload", page_icon=logo_image)
 
-logo_base64 = get_base64_image(logo_path)
-st.markdown(f"""
-    <style>
-    .logo-title-container {{
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }}
-    .logo-title-container img {{
-        width: 60px;
-        height: auto;
-    }}
-    .logo-title-container h1 {{
-        margin: 0;
-        font-size: 2.5rem;
-    }}
-    </style>
-
-    <div class="logo-title-container">
-        <img src="data:image/jpeg;base64,{logo_base64}" alt="Logo">
-        <h1>Upload tài liệu thủ tục vay vốn</h1>
-    </div>
-""", unsafe_allow_html=True)
+st.markdown(
+    build_logo_before_title_html("Upload tài liệu thủ tục vay vốn"),
+    unsafe_allow_html=True,
+)
 st.divider()
 
 

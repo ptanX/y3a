@@ -26,5 +26,3 @@ RULE_9427_HARDCODE_RESPONSE = """# Kết quả đầu ra
 | 3 | **Chính sách về tài sản bảo đảm (KH XHTDNB là A-):** TSBĐ bằng toàn bộ tài sản hình thành từ vốn vay. | KH thế chấp toàn bộ tài sản hình thành từ vốn vay. | **Đáp ứng** |
 | 4 | **Chính sách về tỷ lệ vốn chủ sở hữu (KH XHTDNB là A-):** (1) Tỷ lệ VCSH tham gia dự án tối thiểu 15% hoặc theo quy định pháp luật (mức nào cao hơn); (2) VCSH tham gia, vốn tham gia khác phải giải ngân trước và/hoặc đồng thời với vốn vay theo tỷ lệ cơ cấu vốn dự án. | (1) VCSH tham gia dự án = 31,4%; (2) VCSH tham gia được giải ngân trước và/hoặc đồng thời vốn vay theo tỷ lệ cơ cấu vốn dự án. | **Đáp ứng** |
 | 5 | **Chính sách về tỷ lệ cho vay tối đa (KH XHTDNB là A-):** 75% | Tỷ lệ cho vay = 68,6% | **Đáp ứng** |"""
-
-
