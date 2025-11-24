@@ -17,49 +17,14 @@ RULE_1458_HARDCODE_RESPONSE = """# Kết quả đầu ra
 | 4 | Tỷ lệ tham gia VCSH: tối thiểu 15% hoặc theo quy định của Pháp luật tuỳ mức nào cao hơn. | Vốn chủ sở hữu tham gia dự án của khách hàng là **31,4% tổng mức đầu tư** | **Đáp ứng** |
 """
 
-RULE_9427_HARDCODE_RESPONSE = """
-<h1>Kết quả đầu ra</h1>
+RULE_9427_HARDCODE_RESPONSE = """# Kết quả đầu ra
 
-<table>
-<thead>
-<tr>
-<th align="left">TT</th>
-<th align="left">Điều kiện</th>
-<th align="left">Tình trạng thực tế của khách hàng</th>
-<th align="right">Khả năng đáp ứng theo quy định</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td colspan="3"><strong>Quy định số 9427/QĐ ngày 26/12/2024</strong></td>
-</tr>
-<tr>
-<td>1</td>
-<td>Định hướng quan hệ tín dụng:<br><br>Tiêu chí nhóm tăng trưởng cấp tín dụng:<br><br>- Phân loại nợ nhóm 1<br>- Không có nợ nhóm 2, nợ xấu (bao gồm dư nợ bán VAMC) tại các tổ chức tín dụng trong thời gian 01 năm gần nhất.<br>- Xếp hạng từ BBB trở lên (trừ doanh nghiệp dự án), tỷ lệ điểm phi tài chính trên điểm tài chính (theo chấm điểm xếp hạng tín dụng nội bộ)≤1,7.<br>- Không có nợ quá hạn trên 10 ngày tại Ngân hàng trong vòng 06 tháng gần nhất.<br>- Không có nợ cơ cấu lại thời hạn trả nợ tại Ngân hàng trong vòng 6 tháng gần nhất.<br>- Không có dư nợ đã được sử dụng dự phòng để xử lý rủi ro chuyển hạch toán ngoại bảng tại Ngân hàng.<br>- Tỷ lệ đòn bẩy ≤50% hoặc hệ số nợ ≤3. Vốn lưu động ròng dương.<br>- Lợi nhuận sau thuế 02 năm gần nhất ≥0 (trừ trường hợp lỗ theo kế hoạch).</td>
-<td>Khách hàng phân loại nợ nhóm 1; không có nợ nhóm 2, nợ xấu (bao gồm cả dư nợ bán VAMC) tại các TCTD trong thời gian 01 năm gần nhất.<br><br>Khách hàng là doanh nghiệp dự án, xếp hạng tín tụng A-, tỷ lệ điểm phi tài chính trên điểm tài chính (theo chấm điểm xếp hạng tín dụng nội bộ)=1,3.<br><br>Khách hàng không có nợ quá hạn trên 10 ngày tại Ngân hàng trong vòng 06 tháng gần nhất, không có nợ cơ cấu lại thời hạn trả nợ tại Ngân hàng trong vòng 6 tháng gần nhất, không có dư nợ đã được sử dụng dự phòng để xử lý rủi ro chuyển hạch toán ngoại bảng tại Ngân hàng.<br><br>Tỷ lệ đòn bẩy của khách hàng tại thời điểm 31/12/2023 là 17,10%&lt;50%, tại 30/09/2024 là 18,04%&lt;50%.<br><br>Vốn lưu động ròng của Công ty tại 31/12/2024 là 156.961trđ&gt; 0, tại 30/09/2024 là 156.932trđ&gt;0.<br><br>Lợi nhuận sau thuế 2 năm gần nhất: 2022: 46trđ; 2023: 50trđ.</td>
-<td align="right"><strong>Đáp ứng</strong><br><br>Khách hàng đáp ứng tiêu chí của nhóm tăng trưởng cấp tín dụng<br><br>Tiếp thị cấp tín dụng theo định hướng gia tăng giới hạn tín dụng, đáp ứng tối đa nhu cầu vốn hợp pháp của Khách hàng.</td>
-</tr>
-<tr>
-<td>3</td>
-<td>Chính sách về tài sản bảo đảm (Khách hàng XHTDNB là A-):<br><br>- TSBĐ: bằng toàn bộ tài sản hình thành từ vốn vay</td>
-<td>Khách hàng thế chấp toàn bộ tài sản hình thành từ vốn vay</td>
-<td align="right"><strong>Đáp ứng</strong></td>
-</tr>
-<tr>
-<td>4</td>
-<td>Chính sách về tỷ lệ vốn chủ sở hữu (Khách hàng XHTDNB là A-):<br><br>- Tỷ lệ VCSH tham gia dự án tối thiểu <strong>15%</strong> hoặc theo quy định của Pháp luật tuỳ mức nào cao hơn.<br>- Vốn chủ sở hữu tham gia, vốn tham gia khác của khách hàng phải được giải ngân trước và/hoặc đồng thời với vốn vay theo tỷ lệ cơ cấu vốn của Dự án.</td>
-<td>- Vốn chủ sở hữu tham gia dự án của khách hàng là <strong>31,4%</strong>.<br>- Vốn chủ sở hữu tham gia của khách hàng được giải ngân trước và/hoặc đồng thời vốn vay theo tỷ lệ cơ cấu vốn của dự án.</td>
-<td align="right"><strong>Đáp ứng</strong></td>
-</tr>
-<tr>
-<td>5</td>
-<td>Chính sách về tỷ lệ cho vay tối đa (Khách hàng XHTDNB là A-): 75%</td>
-<td>Tỷ lệ cho vay đối với khách hàng <strong>68,6%</strong></td>
-<td align="right"><strong>Đáp ứng</strong></td>
-</tr>
-</tbody>
-</table>
-"""
+| TT | Điều kiện | Tình trạng thực tế của khách hàng | Khả năng đáp ứng theo quy định |
+|:---|:----------|:----------------------------------|-------------------------------:|
+| | **Quy định số 9427/QĐ ngày 26/12/2024** | | |
+| 1 | **Định hướng quan hệ tín dụng:** Tiêu chí nhóm tăng trưởng cấp tín dụng: (1) Phân loại nợ nhóm 1; (2) Không có nợ nhóm 2, nợ xấu (bao gồm dư nợ bán VAMC) tại các TCTD trong 01 năm gần nhất; (3) Xếp hạng từ BBB trở lên (trừ DN dự án), tỷ lệ điểm phi tài chính/điểm tài chính ≤1,7; (4) Không có nợ quá hạn >10 ngày tại NH trong 06 tháng gần nhất; (5) Không có nợ cơ cấu lại trong 6 tháng gần nhất; (6) Không có dư nợ đã dùng dự phòng xử lý rủi ro chuyển hạch toán ngoại bảng; (7) Tỷ lệ đòn bẩy ≤50% hoặc hệ số nợ ≤3, vốn lưu động ròng dương; (8) Lợi nhuận sau thuế 02 năm gần nhất ≥0 (trừ lỗ theo kế hoạch). | KH phân loại nợ nhóm 1; không có nợ nhóm 2, nợ xấu (bao gồm dư nợ bán VAMC) tại các TCTD trong 01 năm gần nhất. KH là DN dự án, xếp hạng A-, tỷ lệ điểm phi tài chính/điểm tài chính = 1,3. KH không có nợ quá hạn >10 ngày trong 06 tháng gần nhất, không có nợ cơ cấu lại trong 6 tháng gần nhất, không có dư nợ đã dùng dự phòng xử lý rủi ro. Tỷ lệ đòn bẩy: 31/12/2023 = 17,10% (<50%), 30/09/2024 = 18,04% (<50%). Vốn lưu động ròng: 31/12/2024 = 156.961 tỷ đồng (>0), 30/09/2024 = 156.932 tỷ đồng (>0). Lợi nhuận sau thuế: 2022 = 46 tỷ đồng, 2023 = 50 tỷ đồng. | **Đáp ứng.** KH đáp ứng tiêu chí nhóm tăng trưởng cấp tín dụng. Tiếp thị cấp tín dụng theo định hướng gia tăng giới hạn tín dụng, đáp ứng tối đa nhu cầu vốn hợp pháp của KH. |
+| 3 | **Chính sách về tài sản bảo đảm (KH XHTDNB là A-):** TSBĐ bằng toàn bộ tài sản hình thành từ vốn vay. | KH thế chấp toàn bộ tài sản hình thành từ vốn vay. | **Đáp ứng** |
+| 4 | **Chính sách về tỷ lệ vốn chủ sở hữu (KH XHTDNB là A-):** (1) Tỷ lệ VCSH tham gia dự án tối thiểu 15% hoặc theo quy định pháp luật (mức nào cao hơn); (2) VCSH tham gia, vốn tham gia khác phải giải ngân trước và/hoặc đồng thời với vốn vay theo tỷ lệ cơ cấu vốn dự án. | (1) VCSH tham gia dự án = 31,4%; (2) VCSH tham gia được giải ngân trước và/hoặc đồng thời vốn vay theo tỷ lệ cơ cấu vốn dự án. | **Đáp ứng** |
+| 5 | **Chính sách về tỷ lệ cho vay tối đa (KH XHTDNB là A-):** 75% | Tỷ lệ cho vay = 68,6% | **Đáp ứng** |"""
 
 
