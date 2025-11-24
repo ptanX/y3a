@@ -9,20 +9,45 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from frontend.menu import menu_with_redirect, display_logo
+from frontend.utils import get_base64_image
 from src.lending import e2e_usecases
 from src.lending.constant import REQUIRED_EXTRACTION_FIELDS
 from src.lending.db.bidv_entity import DocumentationInformation
 from src.lending.startup.environment_initialization import DATABASE_PATH
 
 menu_with_redirect()
-logo_path = Path(__file__).parent.absolute().joinpath("logo.ico")
+logo_path = Path(__file__).parent.parent.joinpath("images").joinpath("logo.jpg").absolute()
 logo_image = Image.open(logo_path)
 
 # Streamlit App
 st.set_page_config(
-    page_title="Bảng Kiểm Tra Dữ Liệu", page_icon=logo_image, layout="wide"
+    page_title="Bảng kiểm tra dữ liệu", page_icon=logo_image, layout="wide"
 )
-st.title("Kết Quả Bóc Tách Chi Tiết")
+# st.title("Kết Quả Bóc Tách Chi Tiết")
+logo_base64 = get_base64_image(logo_path)
+st.markdown(f"""
+    <style>
+    .logo-title-container {{
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }}
+    .logo-title-container img {{
+        width: 60px;
+        height: auto;
+    }}
+    .logo-title-container h1 {{
+        margin: 0;
+        font-size: 2.5rem;
+    }}
+    </style>
+
+    <div class="logo-title-container">
+        <img src="data:image/jpeg;base64,{logo_base64}" alt="Logo">
+        <h1>Kết quả bóc tách chi tiết</h1>
+    </div>
+""", unsafe_allow_html=True)
+st.divider()
 
 document_id = st.session_state.document_id
 if not document_id:

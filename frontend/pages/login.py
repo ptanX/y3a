@@ -1,3 +1,4 @@
+import base64
 from pathlib import Path
 
 import streamlit as st
@@ -5,9 +6,10 @@ from PIL import Image
 
 from frontend.menu import has_permission, display_logo
 from frontend.role_controller import USERS
+from frontend.utils import get_base64_image
 
 # display_logo()
-logo_path = Path(__file__).parent.absolute().joinpath("logo.ico")
+logo_path = Path(__file__).parent.parent.joinpath("images").joinpath("logo.jpg").absolute()
 logo_image = Image.open(logo_path)
 st.set_page_config(page_title="Login", page_icon=logo_image)
 
@@ -24,7 +26,29 @@ if query_params is not None:
         )
 
 with col2:
-    st.title("Đăng nhập")
+    logo_base64 = get_base64_image(logo_path)
+    st.markdown(f"""
+        <style>
+        .logo-title-container {{
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }}
+        .logo-title-container img {{
+            width: 60px;
+            height: auto;
+        }}
+        .logo-title-container h1 {{
+            margin: 0;
+            font-size: 2.5rem;
+        }}
+        </style>
+
+        <div class="logo-title-container">
+            <img src="data:image/jpeg;base64,{logo_base64}" alt="Logo">
+            <h1>Đăng nhập</h1>
+        </div>
+    """, unsafe_allow_html=True)
 
     with st.form("login_form"):
         username = st.text_input("Tài khoản", placeholder="Nhập tên tài khoản")

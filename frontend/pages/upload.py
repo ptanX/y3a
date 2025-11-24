@@ -7,15 +7,39 @@ import streamlit as st
 from PIL import Image
 
 from frontend.menu import menu_with_redirect
+from frontend.utils import get_base64_image
 from src.lending import e2e_usecases
 
 menu_with_redirect()
 
 # UPLOAD PAGE
-st.title("📤 Upload Tài liệu Thủ Tục Vay Vốn")
-st.divider()
-logo_path = Path(__file__).parent.absolute().joinpath("logo.ico")
+logo_path = Path(__file__).parent.parent.joinpath("images").joinpath("logo.jpg").absolute()
 logo_image = Image.open(logo_path)
+
+logo_base64 = get_base64_image(logo_path)
+st.markdown(f"""
+    <style>
+    .logo-title-container {{
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }}
+    .logo-title-container img {{
+        width: 60px;
+        height: auto;
+    }}
+    .logo-title-container h1 {{
+        margin: 0;
+        font-size: 2.5rem;
+    }}
+    </style>
+
+    <div class="logo-title-container">
+        <img src="data:image/jpeg;base64,{logo_base64}" alt="Logo">
+        <h1>Upload tài liệu thủ tục vay vốn</h1>
+    </div>
+""", unsafe_allow_html=True)
+st.divider()
 
 
 def submit():
