@@ -251,11 +251,16 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         }
         if analysis_type == "deep_analysis" and analysis_type_label:
             chain_params["analysis_type"] = lambda _: analysis_type_label
+        rag_chain = chain_params | prompt_template | self.llm | StrOutputParser()
+        # return {"message": rag_chain.invoke(question)}
+
         rag_chain = chain_params | prompt_template | self.llm
         writer = get_stream_writer()
         final_answer_id = str(uuid.uuid4())
+        import logging
+        logging.warning("here 1 ")
         accumulated_content = ""
-        for chunk in rag_chain.stream(state):
+        for chunk in rag_chain.stream(state, stream_mode="custom"):
             accumulated_content += chunk.content
             writer(
                 {
@@ -264,7 +269,7 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
                     "id": final_answer_id,
                 }
             )
-
+        logging.warning(f"accumulated_content: {accumulated_content}")
         return {"message": [AIMessage(content=accumulated_content)]}
 
 
@@ -883,7 +888,7 @@ mlflow.langchain.autolog()
 graph = BusinessLoanValidationGraphProvider().provide()
 chat_agent = AgentApplication.initialize(graph=graph)
 # incoming_message = ChatAgentMessage(role="user", content=SSI_TEST_QUESTION)
-# response = chat_agent.predict([incoming_message])
+# response = chat_agent.predict_stream([incoming_message], "custom")
 # print(response)
 mlflow.models.set_model(chat_agent)
 

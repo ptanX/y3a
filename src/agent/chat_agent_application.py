@@ -53,6 +53,7 @@ class DefaultChatAgentApplication(
             for event in graph.stream(
                     input_state, config=config, stream_mode=["custom", "updates"]
             ):
+                logging.warning("predict stream events thucnm")
                 # Handle updates mode - progress messages
                 if event[0] == "updates":
                     logging.warning("Update events thucnm")
@@ -60,6 +61,7 @@ class DefaultChatAgentApplication(
                 # Handle custom mode - final answer chunks
                 elif event[0] == "custom":
                     logging.warning("custom events thucnm")
+                    logging.warning(event[0])
                     if event[1].get("type") == "final_answer_chunk":
                         yield ChatAgentChunk(
                             delta=ChatAgentMessage(
