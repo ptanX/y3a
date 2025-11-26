@@ -55,10 +55,11 @@ class DefaultChatAgentApplication(
             ):
                 # Handle updates mode - progress messages
                 if event[0] == "updates":
-                    logging.warning("Update events")
+                    logging.warning("Update events thucnm")
 
                 # Handle custom mode - final answer chunks
                 elif event[0] == "custom":
+                    logging.warning("custom events thucnm")
                     if event[1].get("type") == "final_answer_chunk":
                         yield ChatAgentChunk(
                             delta=ChatAgentMessage(
@@ -84,6 +85,7 @@ class DefaultChatAgentApplication(
         context: ChatContext | None = None,
         custom_inputs: dict[str, Any] | None = None,
     ) -> ChatAgentResponse:
+        logging.warning("predict events thucnm")
         input_state = self.mapper.map_from_message_to_state(messages)
         if isinstance(self.graph, GraphProvider):
             graph = self.graph.provide()
