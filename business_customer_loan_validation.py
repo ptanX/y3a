@@ -32,6 +32,10 @@ from src.lending.agent.lending_prompt import (
 )
 from src.lending.agent.mapping import DIMENSIONAL_MAPPING
 from src.lending.agent.short_term_context import InMemoryShortTermContextRepository
+from langgraph.config import get_stream_writer
+from langchain_core.messages import AIMessage
+import uuid
+
 
 load_dotenv()
 
@@ -248,7 +252,21 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         if analysis_type == "deep_analysis" and analysis_type_label:
             chain_params["analysis_type"] = lambda _: analysis_type_label
         rag_chain = chain_params | prompt_template | self.llm | StrOutputParser()
-        return {"message": rag_chain.invoke(question)}
+        writer = get_stream_writer()
+        final_answer_id = str(uuid.uuid4())
+        accumulated_content = ""
+        for chunk in rag_chain.stream(state):
+            accumulated_content += chunk.content
+            writer(
+                {
+                    "content": chunk.content,
+                    "type": "final_answer_chunk",
+                    "id": final_answer_id,
+                }
+            )
+
+        return {"message": [AIMessage(content=accumulated_content)]}
+
 
 
 def calculate_financial_metrics(data):
