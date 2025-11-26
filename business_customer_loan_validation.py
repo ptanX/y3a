@@ -251,7 +251,7 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         }
         if analysis_type == "deep_analysis" and analysis_type_label:
             chain_params["analysis_type"] = lambda _: analysis_type_label
-        rag_chain = chain_params | prompt_template | self.llm | StrOutputParser()
+        rag_chain = chain_params | prompt_template | self.llm
         writer = get_stream_writer()
         final_answer_id = str(uuid.uuid4())
         accumulated_content = ""
@@ -879,13 +879,13 @@ def generate_analysis_type_label(query_scopes: list) -> str:
     return LAYER_MAPPING.get(query_scope, "TABLE")
 
 
-mlflow.langchain.autolog()
+# mlflow.langchain.autolog()
 graph = BusinessLoanValidationGraphProvider().provide()
 chat_agent = AgentApplication.initialize(graph=graph)
-# incoming_message = ChatAgentMessage(role="user", content=SSI_TEST_QUESTION)
-# response = chat_agent.predict([incoming_message])
-# print(response)
-mlflow.models.set_model(chat_agent)
+incoming_message = ChatAgentMessage(role="user", content=SSI_TEST_QUESTION)
+response = chat_agent.predict([incoming_message])
+print(response)
+# mlflow.models.set_model(chat_agent)
 
 # if __name__ == '__main__':
 #     documents = json.loads(SSI_TEST_QUESTION).get("documents")
