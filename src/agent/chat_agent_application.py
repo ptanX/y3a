@@ -13,6 +13,8 @@ from mlflow.types.agent import (
 from src.graph.graph_provider import GraphProvider
 from src.state.mapper import StateMapper, DefaultStateMapper
 from src.state.type import GRAPH_STATE, MESSAGE_DTO, DefaultState
+import logging
+import uuid
 
 
 class ChatAgentApplication(ABC, ChatAgent, Generic[GRAPH_STATE, MESSAGE_DTO]):
@@ -35,7 +37,49 @@ class DefaultChatAgentApplication(
         context: ChatContext | None = None,
         custom_inputs: dict[str, Any] | None = None,
     ) -> Generator[ChatAgentChunk, None, None]:
-        pass
+        logging.warning("hey in predict stream function")
+
+        input_state = self.mapper.map_from_message_to_state(messages)
+        if isinstance(self.graph, GraphProvider):
+            graph = self.graph.provide(self.config_yaml)
+        else:
+            graph = self.graph
+
+        config = {}
+        if custom_inputs:
+            config.update(custom_inputs)
+
+        try:
+            for event in graph.stream(
+                    input_state, config=config, stream_mode=["custom", "updates"]
+            ):
+                logging.warning("predict stream events thucnm")
+                # Handle updates mode - progress messages
+                if event[0] == "updates":
+                    logging.warning("Update events thucnm")
+
+                # Handle custom mode - final answer chunks
+                elif event[0] == "custom":
+                    logging.warning("custom events thucnm")
+                    logging.warning(event[0])
+                    if event[1].get("type") == "final_answer_chunk":
+                        yield ChatAgentChunk(
+                            delta=ChatAgentMessage(
+                                role="assistant",
+                                content=event[1].get("content", ""),
+                                id=event[1].get("id"),
+                            )
+                        )
+        except Exception as e:
+            logging.error(f"Error in predict_stream: {e}")
+            # Yield error message as a chunk
+            yield ChatAgentChunk(
+                delta=ChatAgentMessage(
+                    role="assistant",
+                    content="Agent is encountering some weird signal -.- Please try again after a little moment.",
+                    id=str(uuid.uuid4()),
+                )
+            )
 
     def predict(
         self,
@@ -43,6 +87,7 @@ class DefaultChatAgentApplication(
         context: ChatContext | None = None,
         custom_inputs: dict[str, Any] | None = None,
     ) -> ChatAgentResponse:
+        logging.warning("predict events thucnm")
         input_state = self.mapper.map_from_message_to_state(messages)
         if isinstance(self.graph, GraphProvider):
             graph = self.graph.provide()
