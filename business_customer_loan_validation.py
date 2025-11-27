@@ -251,7 +251,7 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         }
         if analysis_type == "deep_analysis" and analysis_type_label:
             chain_params["analysis_type"] = lambda _: analysis_type_label
-        rag_chain = chain_params | prompt_template | self.llm | StrOutputParser()
+        # rag_chain = chain_params | prompt_template | self.llm | StrOutputParser()
         # return {"message": rag_chain.invoke(question)}
 
         rag_chain = chain_params | prompt_template | self.llm
@@ -260,7 +260,7 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         import logging
         logging.warning("here 1 ")
         accumulated_content = ""
-        for chunk in rag_chain.stream(state, stream_mode="custom"):
+        for chunk in rag_chain.stream(state):
             accumulated_content += chunk.content
             writer(
                 {
