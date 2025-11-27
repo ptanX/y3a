@@ -261,6 +261,7 @@ class BusinessLoanValidationGraphProvider(GraphProvider[BusinessLoanValidationSt
         logging.warning("here 1 ")
         accumulated_content = ""
         for chunk in rag_chain.stream(state):
+            logging.warning(f"chunk thucnm : {chunk}")
             accumulated_content += chunk.content
             writer(
                 {
