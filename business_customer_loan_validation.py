@@ -888,7 +888,7 @@ mlflow.langchain.autolog()
 graph = BusinessLoanValidationGraphProvider().provide()
 chat_agent = AgentApplication.initialize(graph=graph)
 # incoming_message = ChatAgentMessage(role="user", content=SSI_TEST_QUESTION)
-# response = chat_agent.predict_stream([incoming_message], "custom")
+# response = chat_agent.predict_stream([incoming_message])
 # print(response)
 mlflow.models.set_model(chat_agent)
 
