@@ -42,14 +42,15 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 
-def submit(question):
+def submit_stream(question):
     try:
         engine = create_engine(f"sqlite:///{DATABASE_PATH}")
         session = sessionmaker(bind=engine)()
         entity = session.get(DocumentationInformation, financial_document_id)
 
         if not entity:
-            st.write(f"Không tìm thấy tài liệu với mã {financial_document_id}")
+            yield "Không tìm thấy tài liệu với mã {}".format(financial_document_id)
+            return
 
         content = {
             "question": question,
@@ -57,7 +58,6 @@ def submit(question):
             "documents": json.loads(entity.data),
         }
 
-        # Prompt template
         message = {
             "inputs": {
                 "messages": [
@@ -73,16 +73,15 @@ def submit(question):
         url = "http://127.0.0.1:8080/invocations"
         headers = {"Content-Type": "application/json"}
 
-        response = requests.request(
-            "POST", url, headers=headers, data=json.dumps(message), timeout=300
-        )
-        return response.json().get("predictions").get("messages")[0].get("content")
-        # return "Hello"
+        with requests.post(url, headers=headers, json=message, stream=True, timeout=300) as response:
+            for chunk in response.iter_content(chunk_size=1024, decode_unicode=True):
+                if chunk:
+                    yield chunk
     except EntityNotFound as e:
-        return str(e)
+        yield str(e)
     except Exception as e:
         print(e)
-        return "Error: Could not submit message. Please check your setup."
+        yield "Error: Could not submit message. Please check your setup."
 
 
 def disable_chat_input():
@@ -98,15 +97,20 @@ if prompt := st.chat_input(
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     with st.chat_message("assistant"):
-        with st.spinner("Đang tiến hành phân tích dữ liệu..."):
-            try:
-                response = submit(prompt)
-                st.markdown(response, unsafe_allow_html=True)
-                st.session_state.messages.append(
-                    {"role": "assistant", "content": response}
-                )
-            except Exception as e:
-                st.error(f"❌ Error processing documents: {e}")
+        try:
+            response_placeholder = st.empty()
+            full_response = ""
+            
+            for chunk in submit_stream(prompt):
+                full_response += chunk
+                response_placeholder.markdown(full_response + "▌")
+            
+            response_placeholder.markdown(full_response)
+            st.session_state.messages.append(
+                {"role": "assistant", "content": full_response}
+            )
+        except Exception as e:
+            st.error(f"❌ Error processing documents: {e}")
 
     st.session_state.chat_input_disabled = False
     st.rerun()
