@@ -61,8 +61,8 @@ field_labels_mapping = {
 }
 
 field_columns_mapping = {
-    "displayed_field": "Chỉ tiêu",
-    "field": "Chỉ tiêu (viết tắt)",
+    "full_field_name": "Chỉ tiêu",
+    "field_name": "Chỉ tiêu (viết tắt)",
     "business_registration_cert": "Giấy phép ĐKKD",
     "company_charter": "Điều lệ",
     "database_value": "CSDL nội bộ (DB)",
@@ -90,8 +90,8 @@ def build_extraction_data(data):
 
         coalesce = cert_value or charter_value or item["database_value"]
         row = {
-            "displayed_field": field_labels_mapping.get(item["field_name"]),
-            "field": item["field_name"],
+            "full_field_name": field_labels_mapping.get(item["field_name"]),
+            "field_name": item["field_name"],
             "business_registration_cert": cert_value,
             "company_charter": charter_value,
             "database_value": item["database_value"],
@@ -107,13 +107,14 @@ def build_extraction_data(data):
 
 
 def highlight_rows(row):
-    style = ["background-color: white"] * (len(row))
-    if not row["coalesce"]:
+    length = len(row)
+    style = ["background-color: white"] * length
+    if not row["user_input"]:
         # Red
-        style = ["background-color: #FFCDD2"] * (len(row))
+        style = ["background-color: #FFCDD2"] * length
     if not row["is_consistent"]:
         # Yellow
-        style = ["background-color: #FFF9C4"] * (len(row))
+        style = ["background-color: #FFF9C4"] * length
 
     return style
 
@@ -125,7 +126,7 @@ def get_column_config():
 
     column_config = {
         **cols,
-        "field": None,
+        "field_name": None,
         "coalesce": None,
         "is_consistent": None,
         "is_match_db": None,
@@ -142,6 +143,8 @@ if "my_data" not in st.session_state:
 def handle_data_change():
     edited_rows = st.session_state.my_editor["edited_rows"]
     for index, values in edited_rows.items():
+        if "user_input" not in values:
+            continue
         st.session_state.my_data.at[index, "user_input"] = values["user_input"]
 
 
@@ -149,16 +152,17 @@ def handle_data_change():
 st.data_editor(
     st.session_state.my_data.style.apply(highlight_rows, axis=1),
     column_config=get_column_config(),
-    use_container_width=True,
+    width="stretch",
     key="my_editor",
     on_change=handle_data_change,
     height=400,
+    hide_index=True,
 )
 
 
 def submit():
     customer_info_result = dict(
-        zip(st.session_state.my_data["field"], st.session_state.my_data["user_input"])
+        zip(st.session_state.my_data["field_name"], st.session_state.my_data["user_input"])
     )
 
     financial_document_id = document_data["financial_document_id"]
@@ -212,7 +216,7 @@ with st.form("detail_form"):
     recipient_email = st.text_input("Email QTTD", placeholder="Email QTTD")
 
     submitted = st.form_submit_button(
-        "Submit", use_container_width=True, type="primary"
+        "Submit", width="stretch", type="primary"
     )
 
     if submitted:

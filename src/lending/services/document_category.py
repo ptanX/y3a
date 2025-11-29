@@ -41,7 +41,6 @@ LEGAL_DOCS = [
     },
 ]
 
-# Category II: Financial Documents
 FINANCIAL_DOCS = [
     {
         "name": "financial_report",
@@ -87,6 +86,8 @@ def process_document_categories(document_categories):
         processed_docs = []
 
         for doc in docs:
+            if not doc.get("required", False):
+                continue
             quantity = get_quantity(doc["name"])
             processed_docs.append(
                 {
