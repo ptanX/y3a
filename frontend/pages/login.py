@@ -16,10 +16,6 @@ query_params = st.query_params
 if query_params is not None:
     if query_params.get("document_id"):
         st.session_state.document_id = query_params.get("document_id")
-    if query_params.get("financial_document_id"):
-        st.session_state.financial_document_id = query_params.get(
-            "financial_document_id"
-        )
 
 with col2:
     st.markdown(
@@ -53,7 +49,7 @@ with col2:
                     if has_permission("upload"):
                         st.switch_page("pages/upload.py")
                     elif (
-                            has_permission("details") and "document_id" in st.session_state
+                        has_permission("details") and "document_id" in st.session_state
                     ):
                         st.switch_page("pages/detail.py")
                     else:

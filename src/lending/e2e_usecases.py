@@ -14,6 +14,7 @@ from src.lending.constant import REQUIRED_FIELDS
 from src.lending.db.bidv_entity import DocumentationInformation
 from src.lending.full_flow import handle_heavy_tasks
 from src.lending.services.data_validator_service import DataValidatorService
+from src.lending.services.db_service import query_document_information_by_id
 from src.lending.services.document_category import process_document_categories
 from src.lending.startup.environment_initialization import DATABASE_PATH
 
@@ -42,15 +43,12 @@ def execute_upload_document(content):
         file_paths.append(temp_file_path)
 
     del content["files"]
-    raw_data, financial_documents, document_categories = asyncio.run(
+    legal_documents, financial_documents, document_categories = asyncio.run(
         handle_heavy_tasks(file_paths)
     )
-    document_data = _build_document_data(content, raw_data, financial_documents)
+    document_data = _build_document_data(content, legal_documents, financial_documents)
 
     save_document(document_id, document_data)
-
-    financial_document_id = document_data["financial_document_id"]
-    save_document(financial_document_id, financial_documents)
 
     email_handling.send_lending_email(
         **document_data,
@@ -60,18 +58,14 @@ def execute_upload_document(content):
 
 def execute_submit_document(content):
     document_id = content["document_id"]
-    engine = create_engine(f"sqlite:///{DATABASE_PATH}")
-    session = sessionmaker(bind=engine)()
-    document_entity = session.get(DocumentationInformation, document_id)
+    document_entity = query_document_information_by_id(document_id)
     document_data = json.loads(document_entity.data)
     email_content = merge_first_not_none(content, document_data)
     email_handling.send_verified_lending_email(**email_content)
 
 
-def _build_document_data(content, extracted_data, financial_documents):
-    document_id = content["document_id"]
-    financial_document_id = str(uuid.uuid4())
-    validate_results = validate_with_database(extracted_data)
+def _build_document_data(content, legal_documents, financial_documents):
+    validate_results = validate_with_database(legal_documents)
     customer_name = next(
         (
             doc.value
@@ -98,18 +92,18 @@ def _build_document_data(content, extracted_data, financial_documents):
         f"{consistent_count} trường thông tin cần kiểm tra",
         f"{none_count} trường thông tin bị thiếu",
     ]
-    base_url = os.environ.get("BASE_URL", "http://localhost:8501")
-    detail_url = f"{base_url}/detail?document_id={document_id}"
 
     document_data = {
         **content,
-        "financial_document_id": financial_document_id,
         "verification_time": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
         "customer_name": customer_name,
         "total_fields": total_fields,
         "document_status": document_status,
-        "detail_url": detail_url,
         "validation_results": validate_results,
+        "base_information": {
+            "legal_documents": legal_documents,
+            "financial_documents": financial_documents,
+        },
     }
     return document_data
 

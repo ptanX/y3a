@@ -3,15 +3,12 @@ import json
 import requests
 import streamlit as st
 from PIL import Image
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 from frontend.constants import LOGO_ICO_PATH
 from frontend.menu import menu_with_redirect
 from frontend.utils import build_logo_before_title_html
 from src.exceptions import EntityNotFound
-from src.lending.db.bidv_entity import DocumentationInformation
-from src.lending.startup.environment_initialization import DATABASE_PATH
+from src.lending.services.db_service import query_document_information_by_id
 
 menu_with_redirect()
 logo_image = Image.open(LOGO_ICO_PATH)
@@ -23,12 +20,12 @@ st.markdown(
 )
 st.divider()
 
-financial_document_id = st.session_state.financial_document_id
-if not financial_document_id:
+document_id = st.session_state.document_id
+if not document_id:
     st.write("Không tìm thấy mã tài liệu")
     st.stop()
 
-st.query_params.financial_document_id = financial_document_id
+st.query_params.document_id = document_id
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -44,17 +41,17 @@ for message in st.session_state.messages:
 
 def submit(question):
     try:
-        engine = create_engine(f"sqlite:///{DATABASE_PATH}")
-        session = sessionmaker(bind=engine)()
-        entity = session.get(DocumentationInformation, financial_document_id)
+        document_entity = query_document_information_by_id(document_id)
+        if not document_entity:
+            st.write(f"Không tìm thấy tài liệu với mã {document_id}")
 
-        if not entity:
-            st.write(f"Không tìm thấy tài liệu với mã {financial_document_id}")
-
+        documents = json.loads(document_entity)["base_information"][
+            "financial_documents"
+        ]
         content = {
             "question": question,
-            "document_id": financial_document_id,
-            "documents": json.loads(entity.data),
+            "document_id": document_id,
+            "documents": documents,
         }
 
         # Prompt template
@@ -90,9 +87,9 @@ def disable_chat_input():
 
 
 if prompt := st.chat_input(
-        "How can I help you today?",
-        disabled=st.session_state.chat_input_disabled,
-        on_submit=disable_chat_input,
+    "How can I help you today?",
+    disabled=st.session_state.chat_input_disabled,
+    on_submit=disable_chat_input,
 ):
     st.chat_message("user").markdown(prompt)
     st.session_state.messages.append({"role": "user", "content": prompt})

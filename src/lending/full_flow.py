@@ -89,7 +89,7 @@ async def handle_heavy_tasks(files: List[str]):
         .build()
     )
     execution_items = []
-    financial_data = []
+    financial_documents = []
     company_charter_data = {}
     business_registration_data = {}
     document_categories = {
@@ -131,15 +131,15 @@ async def handle_heavy_tasks(files: List[str]):
         elif execution_output.handler_name == "handle_business_registration":
             business_registration_data = execution_output.output_content
         elif execution_output.handler_name == "handle_securities_financial_report":
-            financial_data.append(execution_output.output_content)
+            financial_documents.append(execution_output.output_content)
 
-    raw_data = {
+    legal_documents = {
         "business_registration_cert": business_registration_data,
         "company_charter": company_charter_data,
     }
     # validate_results = validate_with_database(raw_data)
 
-    return raw_data, financial_data, document_categories
+    return legal_documents, financial_documents, document_categories
 
 
 def handle_business_registration(execution_input: ExecutionInput) -> ExecutionOutput:

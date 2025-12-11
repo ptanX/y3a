@@ -3,8 +3,6 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-from src.lending.constant import REQUIRED_EXTRACTION_FIELDS
-
 
 def build_validation_table_html(document_id, data):
     """
@@ -350,7 +348,10 @@ def build_lending_content(**kwargs):
     total_fields = kwargs.get("total_fields")
     document_status = kwargs.get("document_status")
     document_categories = kwargs.get("document_categories")
-    detail_url = kwargs.get("detail_url")
+
+    base_url = os.environ.get("BASE_URL", "http://localhost:8501")
+    detail_url = f"{base_url}/chat_agent?document_id={document_id}"
+    base_information_url = f"{base_url}/base_information?document_id={document_id}"
 
     categories_html = ""
     for category in document_categories:
@@ -491,7 +492,9 @@ def _build_verified_lending_content(**kwargs):
     verification_time = kwargs.get("verification_time")
     missing_key_names = kwargs.get("missing_key_names")
 
-    detail_url = kwargs.get("detail_url")
+    base_url = os.environ.get("BASE_URL", "http://localhost:8501")
+    document_id = kwargs.get("document_id")
+    chat_agent_url = f"{base_url}/chat_agent?document_id={document_id}"
 
     content = f"""
     Kính gửi anh/chị {qttd_name}.
@@ -509,7 +512,7 @@ def _build_verified_lending_content(**kwargs):
        - Hồ sơ đã được phân loại và bóc tách đầy đủ
        - Các trường thông tin bắt buộc đã được xác minh, ngoại trừ {missing_key_names}
     Anh/chị vui lòng truy cập đường dẫn bên dưới để ra soát và hoàn thiện thông tin phân tích tín dụng.
-    Link truy cập hồ sơ: {detail_url}"""
+    Link truy cập hồ sơ: {chat_agent_url}"""
     return content
 
 

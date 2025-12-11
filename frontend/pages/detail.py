@@ -1,19 +1,15 @@
 import json
-import os
 
 import pandas as pd
 import streamlit as st
 from PIL import Image
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 from frontend.constants import LOGO_ICO_PATH
 from frontend.menu import menu_with_redirect
 from frontend.utils import build_logo_before_title_html
 from src.lending import e2e_usecases
 from src.lending.constant import REQUIRED_EXTRACTION_FIELDS
-from src.lending.db.bidv_entity import DocumentationInformation
-from src.lending.startup.environment_initialization import DATABASE_PATH
+from src.lending.services.db_service import query_document_information_by_id
 
 menu_with_redirect()
 logo_image = Image.open(LOGO_ICO_PATH)
@@ -35,9 +31,7 @@ if not document_id:
 
 st.query_params.document_id = document_id
 
-engine = create_engine(f"sqlite:///{DATABASE_PATH}")
-session = sessionmaker(bind=engine)()
-document_entity = session.get(DocumentationInformation, document_id)
+document_entity = query_document_information_by_id(document_id)
 if not document_entity:
     st.write(f"Không tìm thấy tài liệu với mã {document_id}")
     st.stop()
@@ -162,12 +156,11 @@ st.data_editor(
 
 def submit():
     customer_info_result = dict(
-        zip(st.session_state.my_data["field_name"], st.session_state.my_data["user_input"])
+        zip(
+            st.session_state.my_data["field_name"],
+            st.session_state.my_data["user_input"],
+        )
     )
-
-    financial_document_id = document_data["financial_document_id"]
-    base_url = os.environ.get("BASE_URL", "http://localhost:8501")
-    detail_url = f"{base_url}/chat_agent?financial_document_id={financial_document_id}"
 
     all_keys = list(customer_info_result.keys())
     missing_keys = set(REQUIRED_EXTRACTION_FIELDS) - set(all_keys)
@@ -182,14 +175,12 @@ def submit():
 
     request_body = {
         "document_id": document_data["document_id"],
-        "financial_document_id": financial_document_id,
         "recipient_name": recipient_name,
         "recipient_email": recipient_email,
         "verification_time": document_data["verification_time"],
         "qhkh_name": document_data["recipient_name"],
         "customer_name": customer_info_result["company_name_vn"],
         "customer_info_result": customer_info_result,
-        "detail_url": detail_url,
         "missing_key_names": missing_key_names,
     }
 
@@ -215,9 +206,7 @@ with st.form("detail_form"):
     recipient_name = st.text_input("Tên QTTD", placeholder="Tên QTTD")
     recipient_email = st.text_input("Email QTTD", placeholder="Email QTTD")
 
-    submitted = st.form_submit_button(
-        "Submit", width="stretch", type="primary"
-    )
+    submitted = st.form_submit_button("Submit", width="stretch", type="primary")
 
     if submitted:
         if not recipient_name:

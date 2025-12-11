@@ -21,6 +21,6 @@ USERS = {
 # Role permissions
 ROLE_PERMISSIONS = {
     "admin": ["upload", "details", "users", "settings"],
-    "manager": ["details", "chat_agent"],
+    "manager": ["details", "chat_agent", "base_information"],
     "user": ["upload"],
 }
