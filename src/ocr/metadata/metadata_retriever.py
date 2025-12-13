@@ -49,37 +49,47 @@ def extract_single_securities_raw_metadata_report_page(
         input_path=path, start_page=page_number, end_page=page_number
     )
     prompt = """
-            Phân tích trang PDF và trả về JSON:
-    
-            Nếu là MỤC LỤC:
-            {
-              "page_type": "table_of_contents",
-              "table_of_contents": [
-                {
-                  "section_name": "English translation using standard financial terms",
-                  "from_page": number,
-                  "to_page": number
-                }
-              ]
-            }
-            
-            Nếu là NỘI DUNG:
-            {
-              "page_type": "content", 
-              "raw_content": "toàn bộ văn bản"
-            }
-            
-            Thuật ngữ chuẩn:
-            - Thông tin chung → General Information
-            - Báo cáo của Ban Tổng Giám đốc → Board of Directors Report  
-            - Báo cáo kiểm toán độc lập → Independent Auditor's Report
-            - Báo cáo tình hình tài chính hợp nhất → Consolidated Financial Statements
-            - Báo cáo kết quả hoạt động hợp nhất → Consolidated Income Statement
-            - Báo cáo lưu chuyển tiền tệ hợp nhất → Consolidated Cash Flow Statement
-            - Thuyết minh báo cáo tài chính hợp nhất → Notes to Consolidated Financial Statements
-            
-            Chỉ trả về JSON thuần:
-            """
+    Phân tích trang PDF và trả về JSON:
+
+    Nếu là MỤC LỤC:
+    {
+      "page_type": "table_of_contents",
+      "table_of_contents": [
+        {
+          "section_name": "English translation using standard financial terms",
+          "from_page": number,
+          "to_page": number
+        }
+      ]
+    }
+
+    Nếu là NỘI DUNG:
+    {
+      "page_type": "content", 
+      "raw_content": "toàn bộ văn bản"
+    }
+
+    QUY TẮC DỊCH BẮT BUỘC:
+    1. LUÔN dịch section_name sang tiếng Anh, KHÔNG giữ nguyên tiếng Việt
+    2. Bỏ qua mã mẫu (Mẫu số B01, B02, B03b, B04, B09, CTCK...) khi dịch
+    3. Dịch theo nghĩa, không dịch từng từ
+
+    Bảng thuật ngữ chuẩn (Vietnamese → English):
+    - Thông tin chung / Thông tin về doanh nghiệp / Thông tin doanh nghiệp → General Information
+    - Báo cáo của Ban Tổng Giám đốc / Báo cáo của Ban Điều hành / Báo cáo Ban Giám đốc → Board of Directors Report
+    - Báo cáo kiểm toán độc lập → Independent Auditor's Report
+    - Báo cáo tình hình tài chính (hợp nhất) → Consolidated Statement of Financial Position
+    - Báo cáo kết quả hoạt động (hợp nhất) → Consolidated Income Statement
+    - Báo cáo lưu chuyển tiền tệ (hợp nhất) → Consolidated Cash Flow Statement
+    - Báo cáo tình hình biến động vốn chủ sở hữu (hợp nhất) → Consolidated Statement of Changes in Equity
+    - Thuyết minh báo cáo tài chính (hợp nhất) → Notes to the Consolidated Financial Statements
+    - Bảng cân đối kế toán → Balance Sheet
+    - Báo cáo tài chính → Financial Statements
+
+    Nếu không có từ "hợp nhất", bỏ "Consolidated" trong bản dịch.
+
+    Chỉ trả về JSON thuần, không markdown:
+    """
 
     client = genai.Client()
     response = client.models.generate_content(
@@ -92,7 +102,15 @@ def extract_single_securities_raw_metadata_report_page(
             prompt,
         ],
     )
-    output = json.loads(response.text.replace("```json", "").replace("```", "").strip())
+    try:
+        cleaned = response.text.replace("```json", "").replace("```", "").strip()
+        output = json.loads(cleaned)
+    except json.JSONDecodeError as e:
+        print("Failed to parse JSON:", e)
+        output = {}
+    except Exception as e:
+        print("Unexpected error:", e)
+        output = {}
     return ExecutionOutput(
         handler_name=execution_input.handler_name,
         execution_id=execution_input.execution_id,
