@@ -8,13 +8,13 @@ from business_customer_loan_validation import (
     calculate_financial_metrics,
     build_financial_table_output,
 )
-from frontend.constants import LOGO_ICO_PATH, DICTIONARY_MAPPING
+from frontend.constants import LOGO_ICO_PATH, DICTIONARY_MAPPING, Pages
 from frontend.menu import menu_with_redirect
 from frontend.utils import build_logo_before_title_html
 from src.lending.agent.mapping import DIMENSIONAL_MAPPING
 from src.lending.services.db_service import query_document_information_by_id
 
-menu_with_redirect()
+menu_with_redirect(Pages.BASE_INFORMATION)
 logo_image = Image.open(LOGO_ICO_PATH)
 
 # Streamlit App
@@ -123,6 +123,7 @@ def convert_financial_to_dataframe(fields_list):
 
 def render_extracted_data():
     data = st.session_state.data["base_information"]
+    print(data)
 
     tab1, tab2 = st.tabs(["Giấy chứng nhận đăng ký kinh doanh", "Báo cáo Tài chính"])
     with tab1:
@@ -132,7 +133,7 @@ def render_extracted_data():
         with col1:
             st.markdown("#### Thông tin Doanh nghiệp")
             df_business = convert_legal_to_dataframe(
-                data["legal_documents"]["business_registration_cert"]["business_info"]
+                data["legal_documents"]["business_registration_cert"]
             )
             st.dataframe(
                 df_business, use_container_width=True, hide_index=True, height=400
@@ -141,7 +142,7 @@ def render_extracted_data():
         with col2:
             st.markdown("#### Thông tin Người đại diện pháp luật")
             df_legal = convert_legal_to_dataframe(
-                data["legal_documents"]["business_registration_cert"]["legal_rep_info"]
+                data["legal_documents"]["business_registration_cert"]
             )
             st.dataframe(
                 df_legal, use_container_width=True, hide_index=True, height=400
@@ -154,7 +155,7 @@ def render_extracted_data():
         with col1:
             st.markdown("#### Thông tin Doanh nghiệp")
             df_charter_business = convert_legal_to_dataframe(
-                data["legal_documents"]["company_charter"]["business_info"]
+                data["legal_documents"]["company_charter"]
             )
             st.dataframe(
                 df_charter_business,
@@ -166,7 +167,7 @@ def render_extracted_data():
         with col2:
             st.markdown("#### Thông tin Người đại diện pháp luật")
             df_charter_legal = convert_legal_to_dataframe(
-                data["legal_documents"]["company_charter"]["legal_rep_info"]
+                data["legal_documents"]["company_charter"]
             )
             st.dataframe(
                 df_charter_legal, use_container_width=True, hide_index=True, height=400

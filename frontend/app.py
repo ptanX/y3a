@@ -17,14 +17,14 @@ def initialize_session_state():
         st.session_state.role = ""
     if "full_name" not in st.session_state:
         st.session_state.full_name = ""
-    if "uploaded_data" not in st.session_state:
-        st.session_state.uploaded_data = []
     if "document_id" not in st.session_state:
         st.session_state.document_id = None
+    if "redirect_to" not in st.session_state:
+        st.session_state.redirect_to = None
 
 
 if __name__ == "__main__":
     logo_image = Image.open(LOGO_ICO_PATH)
     st.set_page_config(page_title="RawIQ App", page_icon=logo_image)
     initialize_session_state()
-    menu_with_redirect()
+    menu_with_redirect(None)

@@ -1,7 +1,16 @@
+from enum import StrEnum
 from pathlib import Path
 
 LOGO_PATH = Path(__file__).parent.joinpath("images").joinpath("logo.jpg").absolute()
 LOGO_ICO_PATH = Path(__file__).parent.joinpath("images").joinpath("logo.ico").absolute()
+
+
+class Pages(StrEnum):
+    BASE_INFORMATION = "base_information"
+    CHAT_AGENT = "chat_agent"
+    DETAIL = "detail"
+    UPLOAD = "upload"
+
 
 DICTIONARY_MAPPING = {
     "business_code": "Mã số doanh nghiệp",

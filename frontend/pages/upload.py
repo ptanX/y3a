@@ -5,12 +5,12 @@ from datetime import datetime
 import streamlit as st
 from PIL import Image
 
-from frontend.constants import LOGO_ICO_PATH
+from frontend.constants import LOGO_ICO_PATH, Pages
 from frontend.menu import menu_with_redirect
 from frontend.utils import build_logo_before_title_html
 from src.lending import e2e_usecases
 
-menu_with_redirect()
+menu_with_redirect(Pages.UPLOAD)
 
 # UPLOAD PAGE
 logo_image = Image.open(LOGO_ICO_PATH)

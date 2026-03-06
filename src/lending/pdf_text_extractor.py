@@ -91,6 +91,7 @@ class DocumentAIExtractor:
 
         result = self._client.process_document(request=request)
         document_json = Document.to_json(result.document)
+        print(document_json)
 
         return json.loads(document_json)
 

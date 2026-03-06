@@ -45,6 +45,9 @@ with col2:
                         f"Đăng nhập thành công! Chào mừng {user_data['full_name']}"
                     )
 
+                    if st.session_state.redirect_to is not None:
+                        st.switch_page(f"pages/{st.session_state.redirect_to}.py")
+
                     # Navigate to first available page
                     if has_permission("upload"):
                         st.switch_page("pages/upload.py")

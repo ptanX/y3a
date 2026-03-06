@@ -4,13 +4,13 @@ import requests
 import streamlit as st
 from PIL import Image
 
-from frontend.constants import LOGO_ICO_PATH
+from frontend.constants import LOGO_ICO_PATH, Pages
 from frontend.menu import menu_with_redirect
 from frontend.utils import build_logo_before_title_html
 from src.exceptions import EntityNotFound
 from src.lending.services.db_service import query_document_information_by_id
 
-menu_with_redirect()
+menu_with_redirect(Pages.CHAT_AGENT)
 logo_image = Image.open(LOGO_ICO_PATH)
 
 st.set_page_config(page_title="Lending Chat Agent", page_icon=logo_image)
@@ -45,7 +45,8 @@ def submit(question):
         if not document_entity:
             st.write(f"Không tìm thấy tài liệu với mã {document_id}")
 
-        documents = json.loads(document_entity)["base_information"][
+        print(document_entity)
+        documents = json.loads(document_entity.data)["base_information"][
             "financial_documents"
         ]
         content = {

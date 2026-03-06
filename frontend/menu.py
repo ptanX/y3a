@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Union
 
 import streamlit as st
 
@@ -16,15 +17,6 @@ def has_permission(page):
     if not st.session_state.logged_in:
         return False
     return page in ROLE_PERMISSIONS.get(st.session_state.role, [])
-
-
-def get_role_badge(role):
-    badges = {
-        "admin": "🔴 Admin",
-        "manager": "🟡 Manager",
-        "user": "🟢 User",
-    }
-    return badges.get(role, "👤 User")
 
 
 def authenticated_menu():
@@ -47,17 +39,6 @@ def authenticated_menu():
         if st.sidebar.button("Chat Agentic", use_container_width=True, key="nav_chat_agent"):
             st.switch_page("pages/chat_agent.py")
 
-    if has_permission("users"):
-        if st.sidebar.button("👥 Users", use_container_width=True, key="nav_users"):
-            st.switch_page("pages/user.py")
-
-    # Settings page (admin only)
-    if has_permission("settings"):
-        if st.sidebar.button(
-                "⚙️ Settings", use_container_width=True, key="nav_settings"
-        ):
-            st.switch_page("pages/setting.py")
-
     st.sidebar.divider()
 
     if st.sidebar.button("Đăng xuất", use_container_width=True, key="nav_logout"):
@@ -74,7 +55,9 @@ def unauthenticated_menu():
     st.switch_page("pages/login.py")
 
 
-def menu_with_redirect():
+def menu_with_redirect(page_name: Union[str, None]):
+    st.session_state.redirect_to = page_name
+
     query_params = st.query_params
     if query_params is not None:
         if query_params.get("document_id"):

@@ -76,8 +76,8 @@ FIELD_MAPPING = {
 
 PROJECT_ID = "387819483924"
 LOCATION = "us"
-business_registration_processor_id = "5110722c3ac24f03"
-company_character_processor_id = "12676ebbd1c0ed5"
+business_registration_processor_id = "f0076476c16fe177"
+company_character_processor_id = "f0076476c16fe177"
 
 
 class DocumentDataRetriever(ABC):
@@ -168,6 +168,7 @@ class BusinessRegistrationDataRetriever(DocumentDataRetriever):
         business_regis_cert = business_regis_extractor.extract_normalized_text(
             file_content=content_in_bytes
         )
+        print(business_regis_cert)
         return business_regis_cert
 
 
@@ -187,7 +188,8 @@ class CompanyCharterDataRetriever(DocumentDataRetriever):
             location=LOCATION,
             processor_id=company_character_processor_id,
         )
-        business_regis_cert = company_charter_extractor.extract_normalized_text(
+        company_charter = company_charter_extractor.extract_normalized_text(
             file_content=content_in_bytes
         )
-        return business_regis_cert
+        print(company_charter)
+        return company_charter
