@@ -1,0 +1,23 @@
+{
+  "id": "esg-risk",
+  "name": "Phân tích Rủi ro ESG",
+  "version": "0.1.0",
+  "description": "Đánh giá rủi ro môi trường (Environmental), xã hội (Social) và quản trị (Governance) dựa trên hồ sơ doanh nghiệp. Plugin đang trong giai đoạn phát triển.",
+  "icon": "🌿",
+  "nav_label": "ESG Risk",
+  "nav_page": "frontend/pages/esg_risk.py",
+  "required_permission": "esg_risk",
+  "api_endpoint": null,
+  "requires_services": ["ocr-service"],
+  "tags": ["esg", "risk", "sustainability", "compliance"],
+  "author": "RAWIQ Team",
+  "contact": "support@rawiq.ai",
+  "pages": [
+    {
+      "id": "esg_dashboard",
+      "label": "🌿 ESG Dashboard",
+      "path": "frontend/pages/esg_risk.py",
+      "permission": "esg_risk"
+    }
+  ]
+}

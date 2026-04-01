@@ -1,0 +1,250 @@
+services:
+
+  # ─────────────────────────────────────────────
+  # API Gateway – Nginx (1 điểm vào duy nhất)
+  # ─────────────────────────────────────────────
+  gateway:
+    image: nginx:1.27-alpine
+    container_name: rawiq_gateway
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app
+      - ocr_service
+      - notification_service
+    networks:
+      - rawiq_network
+
+  # ─────────────────────────────────────────────
+  # Lending Service API – FastAPI (BE thuần)
+  # ─────────────────────────────────────────────
+  lending_api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rawiq_lending_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app
+      - app_data:/app/rawiq_db
+      - ./data:/app/data
+      - ./temp:/app/temp
+      - ./secrets:/app/secrets:ro
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - PYTHONPATH=/app
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_MODEL_ENDPOINT=http://mlflow_serve:8080/invocations
+      - OCR_SERVICE_URL=http://ocr_service:8001
+      - NOTIFICATION_SERVICE_URL=http://notification_service:8002
+      - BIDV_DB_PATH=/app/data/bidv.db
+      - CUSTOMER_PROFILE_DATA=/app/data/customer_profile.csv
+      - LEGAL_REPRESENTATIVE_DATA=/app/data/legal_representative.csv
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/secrets/gcp-service-account.json
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
+      # JWT & CORS
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-rawiq-change-me-in-production}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173}
+    depends_on:
+      - ollama
+      - ocr_service
+      - notification_service
+    command: >
+      uvicorn api.main:app
+        --host 0.0.0.0
+        --port 8000
+        --reload
+    networks:
+      - rawiq_network
+
+
+  ocr_service:
+    build:
+      context: ./services/ocr-service
+      dockerfile: Dockerfile
+    container_name: rawiq_ocr_service
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./secrets:/app/secrets:ro
+    environment:
+      - GCP_PROJECT_ID=${GOOGLE_CLOUD_PROJECT}
+      - DOCUMENT_AI_LOCATION=us
+      - DOCUMENT_AI_PROCESSOR_ID=${DOCUMENT_AI_PROCESSOR_ID}
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/secrets/gcp-service-account.json
+    networks:
+      - rawiq_network
+
+  # ─────────────────────────────────────────────
+  # Notification Microservice – Gmail SMTP
+  # ─────────────────────────────────────────────
+  notification_service:
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    container_name: rawiq_notification_service
+    restart: unless-stopped
+    ports:
+      - "8002:8002"
+    environment:
+      - SENDER_EMAIL=${SENDER_EMAIL}
+      - SENDER_PASSWORD=${SENDER_PASSWORD}
+    networks:
+      - rawiq_network
+
+  # ─────────────────────────────────────────────
+  # Ollama – local LLM server
+  # ─────────────────────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: rawiq_ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    networks:
+      - rawiq_network
+
+  # ─────────────────────────────────────────────
+  # MLflow Tracking Server
+  # ─────────────────────────────────────────────
+  mlflow:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rawiq_mlflow
+    restart: unless-stopped
+    ports:
+      - "5001:5000"   # MLflow UI
+    volumes:
+      - mlflow_data:/app/mlruns
+      - ./:/app
+    environment:
+      - MLFLOW_TRACKING_URI=http://localhost:5001
+      - OLLAMA_BASE_URL=http://ollama:11434
+    depends_on:
+      ollama:
+        condition: service_started
+    command: >
+      mlflow server
+        --host 0.0.0.0
+        --port 5000
+        --backend-store-uri sqlite:///mlruns/mlflow.db
+        --default-artifact-root /app/mlruns/artifacts
+    networks:
+      - rawiq_network
+
+  # ─────────────────────────────────────────────
+  # MLflow Model Serving
+  # ─────────────────────────────────────────────
+  mlflow_serve:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rawiq_mlflow_serve
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - mlflow_data:/app/mlruns
+      - ./:/app
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - OLLAMA_BASE_URL=http://ollama:11434
+    depends_on:
+      mlflow:
+        condition: service_started
+    command: >
+      mlflow models serve
+        -m "models:/rawiq-quickstart-model@champion"
+        --host 0.0.0.0
+        --port 8080
+        --env-manager=local
+    networks:
+      - rawiq_network
+
+  # ─────────────────────────────────────────────
+  # Lending Service – Streamlit App (core app)
+  # ─────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rawiq_app
+    restart: unless-stopped
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./:/app
+      - app_data:/app/rawiq_db
+      - ./data:/app/data
+      - ./temp:/app/temp
+      - ./secrets:/app/secrets:ro
+      - ./scripts:/app/scripts
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - PYTHONPATH=/app
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_MODEL_ENDPOINT=http://mlflow_serve:8080/invocations
+      # ── URLs tới các Microservices ──
+      - OCR_SERVICE_URL=http://ocr_service:8001
+      - NOTIFICATION_SERVICE_URL=http://notification_service:8002
+      # ── Data paths ──
+      - BIDV_DB_PATH=/app/data/bidv.db
+      - CUSTOMER_PROFILE_DATA=/app/data/customer_profile.csv
+      - LEGAL_REPRESENTATIVE_DATA=/app/data/legal_representative.csv
+      - BASE_URL=http://localhost:8501
+      # ── Google Cloud ──
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/secrets/gcp-service-account.json
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
+    depends_on:
+      - ollama
+      - ocr_service
+      - notification_service
+    command: >
+      streamlit run frontend/app.py
+        --server.port=8501
+        --server.address=0.0.0.0
+        --server.headless=true
+        --browser.gatherUsageStats=false
+    networks:
+      - rawiq_network
+
+# ─────────────────────────────────────────────
+# Named volumes
+# ─────────────────────────────────────────────
+volumes:
+  ollama_data:
+    driver: local
+  mlflow_data:
+    driver: local
+  app_data:
+    driver: local
+
+# ─────────────────────────────────────────────
+# Internal network
+# ─────────────────────────────────────────────
+networks:
+  rawiq_network:
+    driver: bridge

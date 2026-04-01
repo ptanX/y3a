@@ -93,7 +93,7 @@ def extract_single_securities_raw_metadata_report_page(
 
     client = genai.Client()
     response = client.models.generate_content(
-        model="gemini-2.0-flash-lite",
+        model="gemini-2.5-flash",
         contents=[
             types.Part.from_bytes(
                 data=page_content_in_bytes,
@@ -132,7 +132,7 @@ def extract_single_business_registration_raw_metadata_page(
 
     client = genai.Client()
     response = client.models.generate_content(
-        model="gemini-2.0-flash-lite",
+        model="gemini-2.5-flash",
         contents=[
             types.Part.from_bytes(
                 data=page_content_in_bytes,

@@ -1,0 +1,14 @@
+{
+  "platform": "RAWIQ",
+  "version": "1.0.0",
+  "plugins": [
+    {
+      "id": "lending-analysis",
+      "enabled": true
+    },
+    {
+      "id": "esg-risk",
+      "enabled": false
+    }
+  ]
+}

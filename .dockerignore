@@ -1,0 +1,61 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+conda-env/
+
+# IDE specific
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# MLflow artifacts (sẽ được mount qua volume)
+mlruns/
+
+# Streamlit cache
+.streamlit/secrets.toml
+
+# Temp files
+temp/
+*.tmp
+*.log
+
+# Tests
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Docs
+docs/
+*.puml

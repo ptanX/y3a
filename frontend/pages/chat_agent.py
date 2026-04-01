@@ -1,4 +1,5 @@
 import json
+import os
 
 import requests
 import streamlit as st
@@ -68,7 +69,7 @@ def submit(question):
                 ]
             }
         }
-        url = "http://127.0.0.1:8080/invocations"
+        url = os.environ.get("MLFLOW_MODEL_ENDPOINT", "http://127.0.0.1:8080/invocations")
         headers = {"Content-Type": "application/json"}
 
         response = requests.request(

@@ -1,0 +1,41 @@
+{
+  "id": "lending-analysis",
+  "name": "Phân tích Hồ sơ Cho vay",
+  "version": "1.0.0",
+  "description": "Phân tích toàn diện hồ sơ cho vay doanh nghiệp: trích xuất tài liệu pháp lý, bảng cân đối kế toán, báo cáo thu nhập và đánh giá rủi ro tín dụng.",
+  "icon": "💰",
+  "nav_label": "Phân tích Cho vay",
+  "nav_page": "frontend/pages/upload.py",
+  "required_permission": "upload",
+  "api_endpoint": "http://mlflow_serve:8080/invocations",
+  "requires_services": ["ocr-service", "notification-service"],
+  "tags": ["lending", "credit", "ocr", "financial-analysis"],
+  "author": "RAWIQ Team",
+  "contact": "support@rawiq.ai",
+  "pages": [
+    {
+      "id": "upload",
+      "label": "📤 Upload Hồ sơ",
+      "path": "frontend/pages/upload.py",
+      "permission": "upload"
+    },
+    {
+      "id": "detail",
+      "label": "📋 Chi tiết Hồ sơ",
+      "path": "frontend/pages/detail.py",
+      "permission": "details"
+    },
+    {
+      "id": "base_information",
+      "label": "🗃️ Dữ liệu có sẵn",
+      "path": "frontend/pages/base_information.py",
+      "permission": "base_information"
+    },
+    {
+      "id": "chat_agent",
+      "label": "🤖 Chat Agentic",
+      "path": "frontend/pages/chat_agent.py",
+      "permission": "chat_agent"
+    }
+  ]
+}

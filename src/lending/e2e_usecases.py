@@ -17,11 +17,30 @@ from src.lending.services.data_validator_service import DataValidatorService
 from src.lending.services.db_service import query_document_information_by_id
 from src.lending.services.document_category import process_document_categories
 from src.lending.startup.environment_initialization import DATABASE_PATH
+from src.notification.notification_service import NotificationService, NotificationMessage
+from src.notification.gmail_notification_service import GmailNotificationService
+
+
+def _get_default_notification_service() -> NotificationService:
+    """Factory: trả về NotificationService mặc định (Gmail).
+    Sau này muốn đổi sang Slack, SMS... chỉ cần sửa hàm này."""
+    return GmailNotificationService()
+
+
+import traceback
+
+
+def safe_execute_upload_document(content):
+    try:
+        execute_upload_document(content)
+    except Exception as e:
+        print("LỖI KHI XỬ LÝ BACKGROUND:")
+        traceback.print_exc()
 
 
 def async_execute(content):
     threading.Thread(
-        target=lambda: execute_upload_document(content), daemon=True
+        target=lambda: safe_execute_upload_document(content), daemon=True
     ).start()
 
 

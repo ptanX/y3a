@@ -137,7 +137,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 def submit(question):
     # Prompt template
     message = {"inputs": {"messages": [{"role": "user", "content": question}]}}
-    url = "http://127.0.0.1:8080/invocations"
+    url = os.environ.get("MLFLOW_MODEL_ENDPOINT", "http://127.0.0.1:8080/invocations")
     headers = {"Content-Type": "application/json"}
 
     # Explain: just the curl sample
